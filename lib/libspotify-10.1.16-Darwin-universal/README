@@ -1,0 +1,111 @@
+
+                                 libspotify 10.1.16
+                   ----------------------------------------
+
+                       Copyright © 2006-2011 Spotify Ltd
+
+1.  INTRODUCTION
+
+    This is the libspotify C API package.  With it, you can write applications
+    that utilize the Spotify music streaming service.
+
+
+2.  PACKAGE STRUCTURE
+
+    The package is structured as follows:
+
+      libspotify-Darwin-10.1.16/
+        README                       This README file
+        LICENSE                      License governing the library,
+                                     and associated files.
+      libspotify.framework           The libspotify framework,
+                                     including the header and shared library.
+        doc/
+          examples/                  Root directory for the example
+                                     source code
+          html/                      Documentation in HTML format
+                                     This information is also available online.
+          images/                    Graphics for use with applications
+                                     using libspotify. See section 6 below.
+       licenses.xhtml                Licenses governing third party libraries
+                                     included in libspotify.
+         share/man/                  Manual pages for libspotify
+
+
+3.  COMPATIBILITY AND REQUIREMENTS
+
+    The library was compiled as a three-way universal binary on Mac OS X 10.6.
+    It requires:
+    - a PPC G4 processor or better, or an Intel processor
+    - Mac OS X 10.4 or later
+
+
+4.  INSTALLATION
+    
+4.1 Bundling in applications and plugins
+
+    libspotify.framework is built with an install_name of
+    @loader_path/../Frameworks/libspotify.framework/Versions/Current/libspotify,
+    and should work as-is when bundled with your application or plugin.
+    
+    To bundle it using Xcode:
+    1. Drag libspotify.framework into your project, checking the target
+       box for your target if it's not already checked. You might also
+       want to choose to copy items into destination group's folder.
+    2. Right-click your target and choose 
+         Add ▸ New Build Phase ▸ New Copy Files Build Phase
+    3. Change "Destination" to "Frameworks" in the build phase properties
+       dialog that just popped up.
+    4. You probably want to right-click this build phase in the Groups & Files
+       sidebar and choose "Rename" to rename it "Copy Frameworks"
+    5. Drag libspotify.framework into this build phase in the Groups & Files
+       sidebar, as not to confuse it with any other Copy Files phases.
+    6. Build. You can confirm that the above worked by choosing
+       "Show package contents" on your app/plugin bundle from Finder,
+       and confirming that you have a Contents/Frameworks/libspotify.framework
+       folder in there.
+    
+4.2 Building command line applications
+    
+    Since libspotify.framework is built with an install_name appropriate
+    for bundling with apps, it will be tedious to use with command line
+    utilities by default. The recommended procedure in this situation
+    is to install libspotify.framework into /Library/Frameworks, and then use
+    install_name_tool to rewrite the install_name to that path in your
+    executable. The examples show how to do this, but in essence:
+        install_name_tool -change \     
+            @loader_path/../Frameworks/libspotify.framework/libspotify \    
+            /Library/Frameworks/libspotify.framework/libspotify \
+            path_to_executable
+            
+    If you'd like to bundle the framework with your executable some other
+    way, switch /Library/Frameworks in the above command to something else,
+    possibly relative to @loader_path (which is the path to your executable
+    at runtime).
+    
+4.3 Examples
+    There are a number of examples in doc/examples that will act as great
+    starting points. Have fun!
+
+
+5.  APPLICATION KEYS
+
+    The example programs require a file called appkey.c which is not present in
+    the package.  You will need to request an application key at the
+    developer website at http://developer.spotify.com/ before being able to
+    run them.
+
+
+6.  LOGOTYPES AND TRADEMARK
+
+    The graphics found in the images/ subdirectory are available for use in
+    applications using libspotify. The terms and conditions for the use of these
+    are available on http://developer.spotify.com/.
+
+    A text file is included in images/, containing the text to be used in
+    non-graphical applications.
+
+
+7.  LICENSE
+
+    You should have received a separate LICENSE file together with this README.
