@@ -104,6 +104,7 @@ void end_of_track(sp_session * sess) {
 
 }
 
+
 //nice per session wrapper class
 //
 class SpotifySession {
@@ -235,7 +236,6 @@ class SpotifySession {
 		sp_session *m_sess;
 		int m_notify_do;
 		int m_playback_done;
-		sp_session *m_sess;
 		sp_playlist *m_jukeboxlist;
 		sp_playlistcontainer * m_pc; //gotta read the documentation on this... Is this a fixed ptr?
 		char *m_listname;
@@ -245,6 +245,29 @@ class SpotifySession {
 
 		shared_ptr<sp_playlistcontainer> playlists;
 
+}
+
+//move elsewhere.
+class Lockable {
+public:
+	Lockable() {
+		//
+	}
+	void lock() {
+		pthread_mutex_unlock(&m_notify_mutex);
+	}
+
+	void cond_signal() {
+		pthread_cond_signal(&g_notify_cond);
+	}
+
+	void unlock() {
+		pthread_mutex_unlock(&m_notify_mutex);
+	}
+
+private:
+	pthread_mutex_t m_notify_mutex;
+	pthread_cond_t m_notify_cond;
 }
 
 // This baby here, the SpotifyHandler, should be a singleton. The main reason
@@ -260,7 +283,7 @@ class SpotifySession {
 // can make the entire handler singleton. One instance is enough to handler all
 // incoming requests.
 //
-class SpotifyHandler : virtual public SpotifyIf {
+class SpotifyHandler : virtual public SpotifyIf, private Lockable {
 	public:
 		static SpotifyHandler * getInstance() {
 			if(!m_handler_ptr) {
@@ -284,6 +307,14 @@ class SpotifyHandler : virtual public SpotifyIf {
 
 			//load playlists, even if user was logged in (reload)...
 			sess.loadPlaylists(); //Implement this....
+		}
+
+		static audio_fifo_t * getAudioFIFO(void) {
+			return &m_audiofifo;
+		}
+
+		void switchSession() {
+			//change session, allow it to be played.
 		}
 
 		void logoutSession(const SpotifyCredential& cred) {
@@ -577,7 +608,7 @@ class SpotifyHandler : virtual public SpotifyIf {
 		}
 
 	private:
-		SpotifyHandler(const uint8_t *appkey, const size_t appkey_size) {
+		SpotifyHandler(const uint8_t *appkey, const size_t appkey_size) : Lockable() {
 			//private so it can't be called.
 			spconfig = {
 				.api_version = SPOTIFY_API_VERSION,
@@ -631,9 +662,65 @@ class SpotifyHandler : virtual public SpotifyIf {
 
 		static sp_session_config m_spconfig;
 		static audio_fifo_t m_audiofifo;
+
 		static SpotifyHandler * m_handler_ptr = NULL;
 
 };
+#define STOP 0
+#define PLAY 1
+#define DONE 2
+static void end_of_track(sp_session *sess)
+{
+	SpotifyHandler * h = SpotifyHandler::getInstance();
+	h->lock();
+	//h->setPlaybackState(DONE);
+	h->switchSession();
+	h->cond_signal();
+	h->unlock();
+}
+
+//I would honestly love to avoid mallocs...
+//
+//when one session is playing all other sessions must be mute.
+//
+static int music_delivery(sp_session *sess, const sp_audioformat *format,
+                                  const void *frames, int num_frames)
+{
+        audio_fifo_t *af = SpotifyHandler::getAudioFIFO();
+        audio_fifo_data_t *afd;
+        size_t s;
+
+        if (num_frames == 0)
+        {
+                return 0; // Audio discontinuity, do nothing
+        }
+
+        pthread_mutex_lock(&af->mutex);
+
+        /* Buffer one second of audio */
+        if (af->qlen > format->sample_rate)
+        {
+                pthread_mutex_unlock(&af->mutex);
+                return 0;
+        }
+
+        s = num_frames * sizeof(int16_t) * format->channels;
+
+        afd = malloc(sizeof(audio_fifo_data_t) + s);
+        memcpy(afd->samples, frames, s);
+
+        afd->nsamples = num_frames;
+        afd->rate = format->sample_rate;
+        afd->channels = format->channels;
+
+        TAILQ_INSERT_TAIL(&af->q, afd, link);
+        af->qlen += num_frames;
+
+        pthread_cond_signal(&af->cond);
+        pthread_mutex_unlock(&af->mutex);
+
+        return num_frames;
+}
 
 int main(int argc, char **argv) {
 	int port = 9090;
