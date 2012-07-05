@@ -63,7 +63,7 @@ public:
 		}
 		return sp_session_playlistcontainer(m_sess);
 	}
-	void setPlaylist(sp_playlist * pl ) {
+	void setPlaylist(sp_playlist * pl) {
 		if(pl) {
 			m_jukeboxlist = pl;
 		}
@@ -191,13 +191,9 @@ public:
 			//are SpotifyCredentials hashable? 
 			m_sessions.insert( cred, sess)
 		}
-
-		//load playlists, even if user was logged in (reload)...
-		sess.loadPlaylists(); //Implement this....
-	}
-
-	void switchSession() {
-		//change session, allow it to be played.
+		
+		//do we need to do anything else? Load playlsits or whatever?
+		//callback should handle that.
 	}
 
 	void logoutSession(const SpotifyCredential& cred) {
@@ -229,6 +225,10 @@ public:
 		default:
 		break;
 		}
+	}
+
+	void switchSession() {
+		//change session, allow it to be played.
 	}
 
 	void tracks_added_cb(sp_playlist *pl, sp_track * const *tracks,
@@ -442,7 +442,7 @@ public:
 			sp_playlist *pl = sp_playlistcontainer_playlist(pc, i);
 
 			std::string s_pl(sp_playlist_name(pl));
-			_return.insert(*spl);
+			_return.insert(*s_pl);
 		}
 
 		return;
@@ -524,6 +524,31 @@ public:
 	void selectPlaylist(const SpotifyCredential& cred, const std::string& playlist) {
 		// Your implementation goes here
 		printf("selectPlaylist\n");
+		shared_ptr< SpotifySession > sess = getSession(cred);
+		if(!sess) {
+			return;
+		}
+
+
+		sp_playlistcontainer * pc = sess->getPlaylistContainer();
+		if(!pc) {
+			return;
+		}
+
+		//O(n) ugly, but this is really the libspotify way of doing it :(
+		for (int i = 0; i < sp_playlistcontainer_num_playlists(pc); ++i) {
+			sp_playlist *pl = sp_playlistcontainer_playlist(pc, i);
+
+			if(!pl) {
+				continue;
+			}
+
+			std::string plname(sp_playlist_name(pl));
+			if(plname.equals(name)) {
+				setPlaylist(pl);
+				break;
+			}
+		}
 	}
 
 	bool merge2playlist(const SpotifyCredential& cred, const std::string& pl, const SpotifyPlaylist& tracks) {
