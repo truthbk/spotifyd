@@ -108,142 +108,93 @@ void end_of_track(sp_session * sess) {
 //nice per session wrapper class
 //
 class SpotifySession {
-	public:
-		SpotifySession( ) 
-			 :m_notify_do(0)
-			 ,m_playback_done(1)
-			 ,m_pc(NULL) //playlist container
-			 ,m_jukeboxlist(NULL)
-			 ,m_listname(NULL)
-			 ,m_remove_tracks(0)
-			 ,m_currenttrack(0)
-			 ,m_track_index(0){
-				 //
-				 m_sess = new sp_session;
-			 }
+public:
+	SpotifySession() 
+		 :m_notify_do(0)
+		 ,m_playback_done(1)
+		 ,m_pc(NULL) //playlist container
+		 ,m_jukeboxlist(NULL)
+		 ,m_remove_tracks(0)
+		 ,m_currenttrack(0)
+		 ,m_track_idx(-1){
+			 //
+			 m_sess = new sp_session;
+		 }
 
-		sp_session * getSession(void) {
-			return m_sess;
+	sp_session * getSession(void) {
+		return m_sess;
+	}
+	int playback_done(void) {
+		return m_playback_done;
+	}
+	sp_playlist * getCurrentPlaylist(void) {
+		return m_jukeboxlist;
+	}
+	sp_playlistcontainer * getPlaylistContainer(void) {
+		if(!m_sess) {
+			return NULL;
 		}
-		int playback_done(void) {
-			return m_playback_done;
+		return sp_session_playlistcontainer(m_sess);
+	}
+	void setPlaylist(sp_playlist * pl ) {
+		if(pl) {
+			m_jukeboxlist = pl;
 		}
-		sp_playlist * getCurrentPlaylist(void) {
-			return m_jukeboxlist;
-		}
-		std::string getPlaylistName(void) {
-			return std::string(m_listname);
-		}
-#if 0	
-		void getPlaylists(SpotifyPlaylistList& _return, const SpotifyCredential& cred) 
-		{
+	}
 
-			shared_ptr< sp_playlistcontainer > pc = getPlaylistContainer(cred);
-			if(!pc) {
-				return;
-			}
-
-			for (int i = 0; i < sp_playlistcontainer_num_playlists(pc); ++i)
-			{
-				sp_playlist *pl = sp_playlistcontainer_playlist(pc, i);
-
-				std::string s_pl(sp_playlist_name(pl));
-				_return.insert(*spl);
-			}
-
-			return;
-
+	std::string getPlaylistName(void) {
+		if(m_jukeboxlist) {
+			return std::string("");
 		}
 
-		void getPlaylist(SpotifyPlaylist& _return, const SpotifyCredential& cred, const int32_t plist_id) {
-			// Your implementation goes here
-			printf("getPlaylist\n");
-			
-			shared_ptr< sp_session > sess = getSession(cred);
-			if(!sess) {
-				return;
-			}
+		return std::string(sp_playlist_name(m_jukeboxlist));
+	}
 
-			shared_ptr< sp_playlistcontainer > pc = getPlaylistContainer(cred);
-			if(!pc) {
-				return;
-			}
+	sp_track * setCurrentTrack(int idx) {
 
-			sp_playlist *pl = sp_playlistcontainer_playlist(pc, plist_id);
+		sp_track * t = NULL;
+		int n_tracks = 0;
 
-			if(!pl) {
-				return;
-			}
-
-			for(int j = 0 ; j < sp_playlist_num_tracks(pl) ; j++ ) {
-				sp_track * t = sp_playlist_track(pl, j);
-				int duration = sp_track_duration(t); //millisecs?
-				shared_ptr<SpotifyTrack> spt(
-						new SpotifyTrack(
-							, sp_track_name(t)
-							, sp_artist_name(sp_track_artist(t, 0) )
-							, (duration / 60000 )
-							, ((duration / 1000) % 60)
-							, sp_track_popularity(t)
-							, NULL //TODO: genre
-							, sp_track_is_starred(t)));
-				_return.insert(*spt);
-
-
-			}
-
-			return;
+		if(!m_jukeboxlist) {
+			return NULL;
 		}
 
-		void getPlaylistByName(SpotifyPlaylist& _return, const SpotifyCredential& cred, const std::string& name) {
-			// Your implementation goes here
-			printf("getPlaylistByName\n");
-			
-			shared_ptr< sp_session > sess = getSession(cred);
-			if(!sess) {
-				return;
-			}
-
-			shared_ptr< sp_playlistcontainer > pc = getPlaylistContainer(cred);
-			if(!pc) {
-				return;
-			}
-
-			for (int i = 0; i < sp_playlistcontainer_num_playlists(pc); ++i) {
-				sp_playlist *pl = sp_playlistcontainer_playlist(pc, i);
-
-				if(!pl) {
-					continue;
-				}
-
-				std::string plname(sp_playlist_name(pl));
-				if(plname.equals(name)) {
-					getPlaylist(_return, cred, i);
-					break;
-				}
-
-			}
-			return;
-		}
+		n_tracks = sp_playlist_num_tracks(m_jukeboxlist);
+		if(!n_tracks || n_tracks < idx) {
+			return NULL;
 		}
 
-		void selectPlaylist(const SpotifyCredential& cred, const std::string& playlist) {
-			// Your implementation goes here
-			printf("selectPlaylist\n");
-		}
+		sp_track * t = sp_playlist_track(m_jukeboxlist, idx);
+		m_currenttrack = t;
+		m_track_idx = idx;
+		
+		return t;
+	
+	}
+
+	sp_track * getCurrentTrack() {
+		return m_currenttrack;
+	
+	}
+	
+	int getCurrentTrackIdx() {
+		return m_track_idx;
+	}
+#if 0
+	void selectPlaylist(const SpotifyCredential& cred, const std::string& playlist) {
+		// Your implementation goes here
+		printf("selectPlaylist\n");
+	}
 #endif
-	private:
-		sp_session *m_sess;
-		int m_notify_do;
-		int m_playback_done;
-		sp_playlist *m_jukeboxlist;
-		sp_playlistcontainer * m_pc; //gotta read the documentation on this... Is this a fixed ptr?
-		char *m_listname;
-		int m_remove_tracks;
-		sp_track *m_currenttrack;
-		int m_track_index;
+private:
+	sp_session *m_sess;
+	int m_notify_do;
+	int m_playback_done;
+	sp_playlist *m_jukeboxlist;
+	int m_remove_tracks;
+	sp_track *m_currenttrack;
+	int m_track_idx;
 
-		shared_ptr<sp_playlistcontainer> playlists;
 
 }
 
@@ -284,386 +235,393 @@ private:
 // incoming requests.
 //
 class SpotifyHandler : virtual public SpotifyIf, private Lockable {
-	public:
-		static SpotifyHandler * getInstance() {
-			if(!m_handler_ptr) {
-				m_handler_ptr = new SpotifyHandler:
-			}
-			return m_handler_ptr;
-		};
+public:
+	static SpotifyHandler * getInstance() {
+		if(!m_handler_ptr) {
+			m_handler_ptr = new SpotifyHandler:
+		}
+		return m_handler_ptr;
+	};
 
-		void initiateSession(SpotifyCredential& _return, const SpotifyCredential& cred) {
-			// Your implementation goes here
-			printf("initiatingSession\n");
+	void initiateSession(SpotifyCredential& _return, const SpotifyCredential& cred) {
+		// Your implementation goes here
+		printf("initiatingSession\n");
 
-			shared_ptr< SpotifySession > sess = getSession(cred);
-			if(!sess) {
-				sess = shared_ptr< spotifySession>(new SpotifySession());
-				sp_session_login(sess->getSession(), cred.username, cred.passwd, 0);
+		shared_ptr< SpotifySession > sess = getSession(cred);
+		if(!sess) {
+			sess = shared_ptr< spotifySession>(new SpotifySession());
+			sp_session_login(sess->getSession(), cred.username, cred.passwd, 0);
 
-				//are SpotifyCredentials hashable? 
-				m_sessions.insert( cred, sess)
-			}
-
-			//load playlists, even if user was logged in (reload)...
-			sess.loadPlaylists(); //Implement this....
+			//are SpotifyCredentials hashable? 
+			m_sessions.insert( cred, sess)
 		}
 
-		static audio_fifo_t * getAudioFIFO(void) {
-			return &m_audiofifo;
-		}
+		//load playlists, even if user was logged in (reload)...
+		sess.loadPlaylists(); //Implement this....
+	}
 
-		void switchSession() {
-			//change session, allow it to be played.
-		}
+	static audio_fifo_t * getAudioFIFO(void) {
+		return &m_audiofifo;
+	}
 
-		void logoutSession(const SpotifyCredential& cred) {
-			// Your implementation goes here
-			printf("logoutSession\n");
-		}
+	void switchSession() {
+		//change session, allow it to be played.
+	}
 
-		void sendCommand(const SpotifyCredential& cred, const SpotifyCmd::type cmd) {
-			// Your implementation goes here
-			printf("sendCommand\n");
+	void logoutSession(const SpotifyCredential& cred) {
+		// Your implementation goes here
+		printf("logoutSession\n");
+	}
 
-			switch(cmd){
-			case SpotifyCmd::PLAY:
-				break;
-			case SpotifyCmd::PAUSE:
-				break;
-			case SpotifyCmd::NEXT:
-				break;
-			case SpotifyCmd::PREV:
-				break;
-			case SpotifyCmd::RAND:
-				break;
-			case SpotifyCmd::LINEAR:
-				break;
-			case SpotifyCmd::REPEAT_ONE:
-				break;
-			case SpotifyCmd::REPEAT:
-				break;
-			default:
+	void sendCommand(const SpotifyCredential& cred, const SpotifyCmd::type cmd) {
+		// Your implementation goes here
+		printf("sendCommand\n");
+
+		switch(cmd){
+		case SpotifyCmd::PLAY:
 			break;
-			}
+		case SpotifyCmd::PAUSE:
+			break;
+		case SpotifyCmd::NEXT:
+			break;
+		case SpotifyCmd::PREV:
+			break;
+		case SpotifyCmd::RAND:
+			break;
+		case SpotifyCmd::LINEAR:
+			break;
+		case SpotifyCmd::REPEAT_ONE:
+			break;
+		case SpotifyCmd::REPEAT:
+			break;
+		default:
+		break;
 		}
+	}
 
-		void tracks_added_cb(sp_playlist *pl, sp_track * const *tracks,
-				int num_tracks, int position, void *userdata) {
-			if (pl != g_jukeboxlist)
-			{
-				return;
-			}
-
-			printf("jukebox: %d tracks were added\n", num_tracks);
-			fflush(stdout);
-			try_jukebox_start();
-		}
-
-		void tracks_removed_cb(sp_playlist *pl, const int *tracks,
-				int num_tracks, void *userdata) {
-			int i, k = 0;
-
-			if (pl != g_jukeboxlist)
-			{
-				return;
-			}
-
-			for (i = 0; i < num_tracks; ++i)
-			{
-				if (tracks[i] < g_track_index)
-				{
-					++k;
-				}
-			}
-
-			g_track_index -= k;
-
-			printf("jukebox: %d tracks were removed\n", num_tracks);
-			fflush(stdout);
-			try_jukebox_start();
-		}
-
-		void tracks_moved_cb(sp_playlist *pl, const int *tracks,
-				int num_tracks, int new_position, void *userdata) {
-			if (pl != g_jukeboxlist)
-			{
-				return;
-			}
-
-			printf("jukebox: %d tracks were moved around\n", num_tracks);
-			fflush(stdout);
-
-			try_jukebox_start();
-		}
-
-		void playlist_renamed_cb(sp_playlist *pl, void *userdata) {
-			const char *name = sp_playlist_name(pl);
-
-
-			if (!strcasecmp(name, g_listname)) 
-			{
-				g_jukeboxlist = pl;
-				g_track_index = 0;
-				try_jukebox_start();
-
-			} else if (g_jukeboxlist == pl) {
-				printf("jukebox: current playlist renamed to \"%s\".\n", name);
-				g_jukeboxlist = NULL;
-				g_currenttrack = NULL;
-				sp_session_player_unload(g_sess);
-			}
-		}
-
-		void logged_in_cb(sp_session *sess, sp_error error) {
-			//get the session from the session list...
-			//
-			//Need to store those in the handler, fo sho.
-
-
-			sp_playlistcontainer *pc = sp_session_playlistcontainer(sess);
-			int i;
-
-			if (SP_ERROR_OK != error) 
-			{
-				fprintf(stderr, "jukebox: Login failed: %s\n",
-						sp_error_message(error));
-				exit(2);
-			}
-
-			printf("jukebox: Looking at %d playlists\n", sp_playlistcontainer_num_playlists(pc));
-
-			for (i = 0; i < sp_playlistcontainer_num_playlists(pc); ++i)
-			{
-				sp_playlist *pl = sp_playlistcontainer_playlist(pc, i);
-				sp_playlist_add_callbacks(pl, &pl_callbacks, NULL);
-
-
-				//we add the playlists to the list. Select the user's playlist as well.
-				if (!strcasecmp(sp_playlist_name(pl), g_listname))
-				{
-					g_jukeboxlist = pl;
-					try_jukebox_start();
-				}
-			}
-
-			if (!g_jukeboxlist)
-			{
-				printf("jukebox: No such playlist. Waiting for one to pop up...\n");
-				fflush(stdout);
-			}
-		}
-
-		void end_of_track_cb(sp_session *sess) {
-			pthread_mutex_lock(&m_notify_mutex);
-			g_playback_done = 1; //This is per session, no?
-			pthread_cond_signal(&m_notify_cond);
-			pthread_mutex_unlock(&m_notify_mutex);  
-		}
-
-		void play_token_lost_cb(sp_session *sess)
-		{
-			audio_fifo_flush(&m_audiofifo);
-
-			//Find the session and stop it.
-
-			if (spsession->g_currenttrack != NULL)
-			{
-				// unload the session that cause the token loss.
-				sp_session_player_unload(sess);
-				spsession->g_currenttrack = NULL;
-			}
-		}
-
-
-
-		void search(SpotifyPlaylist& _return, const SpotifyCredential& cred, const SpotifySearch& criteria) {
-			// Your implementation goes here
-			printf("search\n");
-			shared_ptr< sp_session > sess = getSession(cred);
-			if(!sess) {
-				sess = shared_ptr< SpotifySessuib>(new SpotifySession()));
-				sp_session_login(sess, cred.username, cred.passwd, 0);
-
-				// Write a SpotifyCredentials hashing function?
-				sessions.insert( cred, sess)
-			}
-		}
-
-		void getPlaylists(SpotifyPlaylistList& _return, const SpotifyCredential& cred) 
-		{
-			printf("getPlaylists\n");
-			shared_ptr< sp_session > sess = getSession(cred);
-			if(!sess) {
-				return;
-			}
-
-			shared_ptr< sp_playlistcontainer > pc = getPlaylistContainer(cred);
-			if(!pc) {
-				return;
-			}
-
-			for (int i = 0; i < sp_playlistcontainer_num_playlists(pc); ++i)
-			{
-				sp_playlist *pl = sp_playlistcontainer_playlist(pc, i);
-
-				std::string s_pl(sp_playlist_name(pl));
-				_return.insert(*spl);
-			}
-
+	void tracks_added_cb(sp_playlist *pl, sp_track * const *tracks,
+			int num_tracks, int position, void *userdata) {
+		shared_ptr<SpotifySession> sess = getActiveSession();
+		if(!sess) {
 			return;
+		}
+
+		if (pl != sess->getCurrentPlaylist())
+		{
+			return;
+		}
+
+		printf("jukebox: %d tracks were added\n", num_tracks);
+		fflush(stdout);
+		//try_jukebox_start();
+	}
+
+	void tracks_removed_cb(sp_playlist *pl, const int *tracks,
+			int num_tracks, void *userdata) {
+		int i, k = 0;
+
+		shared_ptr<SpotifySession> sess = getActiveSession();
+		if(!sess) {
+			return;
+		}
+
+		if (pl != sess->getCurrentPlaylist())
+		{
+			return;
+		}
+
+		int track_idx = sess->getCurrentTrackIdx();
+		for (i = 0; i < num_tracks; ++i)
+		{
+			if (tracks[i] < track_idx)
+			{
+				++k;
+			}
+		}
+
+		track_idx -= k;
+		sess->setCurrentTrack(track_idx);
+
+		fflush(stdout);
+		//try_jukebox_start();
+	}
+
+	void tracks_moved_cb(sp_playlist *pl, const int *tracks,
+			int num_tracks, int new_position, void *userdata) {
+		shared_ptr<SpotifySession> sess = getActiveSession();
+		if(!sess) {
+			return;
+		}
+
+		if (pl != sess->getCurrentPlaylist())
+		{
+			return;
+		}
+
+		printf("jukebox: %d tracks were moved around\n", num_tracks);
+		fflush(stdout);
+
+		//try_jukebox_start();
+	}
+
+	void playlist_renamed_cb(sp_playlist *pl, void *userdata) {
+		const char *name = sp_playlist_name(pl);
+
+
+		if (!strcasecmp(name, g_listname)) 
+		{
+			g_jukeboxlist = pl;
+			g_track_index = 0;
+			try_jukebox_start();
+
+		} else if (m_jukeboxlist == pl) {
+			printf("jukebox: current playlist renamed to \"%s\".\n", name);
+			g_jukeboxlist = NULL;
+			g_currenttrack = NULL;
+			sp_session_player_unload(g_sess);
+		}
+	}
+
+	void logged_in_cb(sp_session *sess, sp_error error) {
+		//get the session from the session list...
+		//
+		//Need to store those in the handler, fo sho.
+
+
+		sp_playlistcontainer *pc = sp_session_playlistcontainer(sess);
+		int i;
+
+		if (SP_ERROR_OK != error) 
+		{
+			fprintf(stderr, "jukebox: Login failed: %s\n",
+					sp_error_message(error));
+			exit(2);
+		}
+
+		printf("jukebox: Looking at %d playlists\n", sp_playlistcontainer_num_playlists(pc));
+
+		for (i = 0; i < sp_playlistcontainer_num_playlists(pc); ++i)
+		{
+			//we add the playlists to the list. Select the user's playlist as well.
+			sp_playlist *pl = sp_playlistcontainer_playlist(pc, i);
+			sp_playlist_add_callbacks(pl, &pl_callbacks, NULL);
 
 		}
 
-		void getPlaylist(SpotifyPlaylist& _return, const SpotifyCredential& cred, const int32_t plist_id) {
-			// Your implementation goes here
-			printf("getPlaylist\n");
-			
-			shared_ptr< SpotifySession > sess = getSession(cred);
-			if(!sess) {
-				return;
-			}
+	}
 
-			shared_ptr< sp_playlistcontainer > pc = getPlaylistContainer(cred);
-			if(!pc) {
-				return;
-			}
+	void end_of_track_cb(sp_session *sess) {
+		lock()
+		m_playback_done = 1;
+		signal();
+		unlock();
+	}
 
-			sp_playlist *pl = sp_playlistcontainer_playlist(pc, plist_id);
+	void play_token_lost_cb(sp_session *sess)
+	{
+		audio_fifo_flush(&m_audiofifo);
+
+		//Find the session and stop it.
+
+		if (spsession->g_currenttrack != NULL)
+		{
+			// unload the session that cause the token loss.
+			sp_session_player_unload(sess);
+			spsession->g_currenttrack = NULL;
+		}
+	}
+
+
+
+	void search(SpotifyPlaylist& _return, const SpotifyCredential& cred, const SpotifySearch& criteria) {
+		// Your implementation goes here
+		printf("search\n");
+		shared_ptr< sp_session > sess = getSession(cred);
+		if(!sess) {
+			sess = shared_ptr< SpotifySessuib>(new SpotifySession());
+			sp_session_login(sess, cred.username, cred.passwd, 0);
+
+			// Write a SpotifyCredentials hashing function?
+			sessions.insert( cred, sess)
+		}
+	}
+
+	void getPlaylists(SpotifyPlaylistList& _return, const SpotifyCredential& cred) 
+	{
+		printf("getPlaylists\n");
+		shared_ptr< SpotifySession > sess = getSession(cred);
+		if(!sess) {
+			return;
+		}
+		sp_playlistcontainer * pc = sess->getPlaylistContainer();
+		if(!pc) {
+			return;
+		}
+
+		for (int i = 0; i < sp_playlistcontainer_num_playlists(pc); ++i)
+		{
+			sp_playlist *pl = sp_playlistcontainer_playlist(pc, i);
+
+			std::string s_pl(sp_playlist_name(pl));
+			_return.insert(*spl);
+		}
+
+		return;
+
+	}
+
+	void getPlaylist(SpotifyPlaylist& _return, const SpotifyCredential& cred, const int32_t plist_id) {
+		// Your implementation goes here
+		printf("getPlaylist\n");
+		
+		shared_ptr< SpotifySession > sess = getSession(cred);
+		if(!sess) {
+			return;
+		}
+
+		sp_playlistcontainer * pc = sess->getPlaylistContainer();
+		if(!pc) {
+			return;
+		}
+
+		sp_playlist *pl = sp_playlistcontainer_playlist(pc, plist_id);
+
+		if(!pl) {
+			return;
+		}
+
+		for(int j = 0 ; j < sp_playlist_num_tracks(pl) ; j++ ) {
+			sp_track * t = sp_playlist_track(pl, j);
+			int duration = sp_track_duration(t); //millisecs?
+			shared_ptr<SpotifyTrack> spt(
+					new SpotifyTrack(
+						, sp_track_name(t)
+						, sp_artist_name(sp_track_artist(t, 0) )
+						, (duration / 60000 )
+						, ((duration / 1000) % 60)
+						, sp_track_popularity(t)
+						, NULL //TODO: genre
+						, sp_track_is_starred(t)));
+			_return.insert(*spt);
+
+
+		}
+
+		return;
+	}
+
+	void getPlaylistByName(SpotifyPlaylist& _return, const SpotifyCredential& cred, const std::string& name) {
+		// Your implementation goes here
+		printf("getPlaylistByName\n");
+		
+		shared_ptr< SpotifySession > sess = getSession(cred);
+		if(!sess) {
+			return;
+		}
+
+
+		sp_playlistcontainer * pc = sess->getPlaylistContainer();
+		if(!pc) {
+			return;
+		}
+
+		for (int i = 0; i < sp_playlistcontainer_num_playlists(pc); ++i) {
+			sp_playlist *pl = sp_playlistcontainer_playlist(pc, i);
 
 			if(!pl) {
-				return;
+				continue;
 			}
 
-			for(int j = 0 ; j < sp_playlist_num_tracks(pl) ; j++ ) {
-				sp_track * t = sp_playlist_track(pl, j);
-				int duration = sp_track_duration(t); //millisecs?
-				shared_ptr<SpotifyTrack> spt(
-						new SpotifyTrack(
-							, sp_track_name(t)
-							, sp_artist_name(sp_track_artist(t, 0) )
-							, (duration / 60000 )
-							, ((duration / 1000) % 60)
-							, sp_track_popularity(t)
-							, NULL //TODO: genre
-							, sp_track_is_starred(t)));
-				_return.insert(*spt);
-
-
+			std::string plname(sp_playlist_name(pl));
+			if(plname.equals(name)) {
+				getPlaylist(_return, cred, i);
+				break;
 			}
 
-			return;
+		}
+		return;
+	}
+
+	void selectPlaylist(const SpotifyCredential& cred, const std::string& playlist) {
+		// Your implementation goes here
+		printf("selectPlaylist\n");
+	}
+
+	bool merge2playlist(const SpotifyCredential& cred, const std::string& pl, const SpotifyPlaylist& tracks) {
+		// Your implementation goes here
+		printf("merge2playlist\n");
+	}
+
+	bool add2playlist(const SpotifyCredential& cred, const std::string& pl, const SpotifyTrack& track) {
+		// Your implementation goes here
+		printf("add2playlist\n");
+	}
+
+	void whats_playing(SpotifyTrack& _return) {
+		// Your implementation goes here
+		printf("whats_playing\n");
+	}
+
+private:
+	SpotifyHandler(const uint8_t *appkey, const size_t appkey_size) 
+		: Lockable() {
+		//private so it can't be called.
+		spconfig = {
+			.api_version = SPOTIFY_API_VERSION,
+			.cache_location = "tmp",
+			.settings_location = "tmp",
+			.application_key = g_appkey,
+			.application_key_size = 0, // Set in main()
+			.user_agent = "spotifyd",
+			.callbacks = &session_callbacks,
+			NULL,
+		};
+	}
+
+	shared_ptr<SpotifySession> getSession(SpotifyCredential& cred) {
+		typedef session_map::const_iterator cspit;
+		cspit it;
+		if(im_sessions.find(cred) == it.end())
+		{
+			return NULL;
 		}
 
-		void getPlaylistByName(SpotifyPlaylist& _return, const SpotifyCredential& cred, const std::string& name) {
-			// Your implementation goes here
-			printf("getPlaylistByName\n");
-			
-			shared_ptr< SpotifySession > sess = getSession(cred);
-			if(!sess) {
-				return;
-			}
+		return *it.second;
 
-			shared_ptr< sp_playlistcontainer > pc = getPlaylistContainer(cred);
-			if(!pc) {
-				return;
-			}
+	}
+	//we also need to be able to search by sp_session, that's quite important; callbacks rely very heavily
+	//on it.
+	typedef std::map< shared_ptr<SpotifyCredential>, shared_ptr<SpotifySession> > session_map;
 
-			for (int i = 0; i < sp_playlistcontainer_num_playlists(pc); ++i) {
-				sp_playlist *pl = sp_playlistcontainer_playlist(pc, i);
-
-				if(!pl) {
-					continue;
-				}
-
-				std::string plname(sp_playlist_name(pl));
-				if(plname.equals(name)) {
-					getPlaylist(_return, cred, i);
-					break;
-				}
-
-			}
-			return;
-		}
+	sp_playlistcontainer * getPlaylistContainer(SpotifyCredential& cred) {
+		shared_ptr<SpotifySession> sess = getSession(cred);
+		if(!sess) {
+			return NULL;
 		}
 
-		void selectPlaylist(const SpotifyCredential& cred, const std::string& playlist) {
-			// Your implementation goes here
-			printf("selectPlaylist\n");
-		}
+		return sp_session_playlistcontainer(sess.getSession());
+	}
 
-		bool merge2playlist(const SpotifyCredential& cred, const std::string& pl, const SpotifyPlaylist& tracks) {
-			// Your implementation goes here
-			printf("merge2playlist\n");
-		}
+	m_sessions& sessions() {
+		return m_sessions;
+	}
 
-		bool add2playlist(const SpotifyCredential& cred, const std::string& pl, const SpotifyTrack& track) {
-			// Your implementation goes here
-			printf("add2playlist\n");
-		}
+	audio_fifo_t audio_fifo() {
+		return m_audiofifo;
+	}
 
-		void whats_playing(SpotifyTrack& _return) {
-			// Your implementation goes here
-			printf("whats_playing\n");
-		}
+	sp_session_config app_config() {
+		return m_spconfig;
+	}
 
-	private:
-		SpotifyHandler(const uint8_t *appkey, const size_t appkey_size) : Lockable() {
-			//private so it can't be called.
-			spconfig = {
-				.api_version = SPOTIFY_API_VERSION,
-				.cache_location = "tmp",
-				.settings_location = "tmp",
-				.application_key = g_appkey,
-				.application_key_size = 0, // Set in main()
-				.user_agent = "spotifyd",
-				.callbacks = &session_callbacks,
-				NULL,
-			};
-		}
+	//libspotify wrapped
+	sp_session_config m_spconfig;
+	audio_fifo_t m_audiofifo;
 
-		shared_ptr<SpotifySession> getSession(SpotifyCredential& cred) {
-			typedef session_map::const_iterator cspit;
-			cspit it;
-			if(im_sessions.find(cred) == it.end())
-			{
-				return NULL;
-			}
-
-			return *it.second;
-
-		}
-		//we also need to be able to search by sp_session, that's quite important; callbacks rely very heavily
-		//on it.
-		typedef std::map< shared_ptr<SpotifyCredential>, shared_ptr<SpotifySession> > session_map;
-
-		sp_playlistcontainer * getPlaylistContainer(SpotifyCredential& cred) {
-			shared_ptr<SpotifySession> sess = getSession(cred);
-			if(!sess) {
-				return NULL;
-			}
-
-			return sp_session_playlistcontainer(sess.getSession());
-		}
-
-		m_sessions& sessions() {
-			return m_sessions;
-		}
-
-		audio_fifo_t audio_fifo() {
-			return m_audiofifo;
-		}
-
-		sp_session_config app_config() {
-			return m_spconfig;
-		}
-
-		session_map m_sessions;
-
-		static sp_session_config m_spconfig;
-		static audio_fifo_t m_audiofifo;
-
-		static SpotifyHandler * m_handler_ptr = NULL;
+	//proper members
+	session_map m_sessions;
+	shared_ptr<SpotifySession> m_active_session;
+	SpotifyHandler * m_handler_ptr = NULL;
 
 };
 #define STOP 0
@@ -686,9 +644,11 @@ static void end_of_track(sp_session *sess)
 static int music_delivery(sp_session *sess, const sp_audioformat *format,
                                   const void *frames, int num_frames)
 {
-        audio_fifo_t *af = SpotifyHandler::getAudioFIFO();
-        audio_fifo_data_t *afd;
         size_t s;
+        audio_fifo_data_t *afd;
+
+	SpotifyHandler * h = SpotifyHandler::getInstance();
+        audio_fifo_t *af = h->getAudioFIFO();
 
         if (num_frames == 0)
         {
