@@ -29,81 +29,8 @@ extern const uint8_t g_appkey[];
 extern const size_t g_appkey_size;
 
 
-/* --------------------------  PLAYLIST CALLBACKS  ------------------------- */
-/* Are we really cool about regular C callbacks, or should we wrap these? */
-static void tracks_added(sp_playlist *pl, sp_track * const *tracks,
-		int num_tracks, int position, void *userdata)
-{
-	if(!g_handler) {
-		return;
-	}
 
-	return g_handler->tracks_added_cb(pl, tracks, num_tracks, position, userdata);
-}
-
-static void tracks_removed(sp_playlist *pl, const int *tracks,
-		int num_tracks, void *userdata)
-{
-	if(!g_handler) {
-		return;
-	}
-
-	return g_handler->tracks_removed_cb(pl, tracks, num_tracks, userdata);
-}
-
-static void tracks_moved(sp_playlist *pl, const int *tracks,
-		int num_tracks, int new_position, void *userdata)
-{
-	if(!g_handler) {
-		return;
-	}
-
-	return g_handler->tracks_moved_cb(pl, tracks, num_tracks, newposition, userdata);
-}
-
-static void playlist_renamed(sp_playlist *pl, void *userdata)
-{
-	if(!g_handler) {
-		return;
-	}
-
-	return g_handler->playlist_renamed_cb(pl, userdata);
-}
-
-static sp_playlist_callbacks pl_callbacks = {
-	.tracks_added = &tracks_added,
-	.tracks_removed = &tracks_removed,
-	.tracks_moved = &tracks_moved,
-	.playlist_renamed = &playlist_renamed,
-};
-
-
-static void logged_in(sp_session *sess, sp_error error) {
-
-	if(!g_handler) {
-		return;
-	}
-
-	return g_handler->logged_in_cb(sess, error);
-}
-
-static void play_token_lost(sp_session *sess) {
-	if(!g_handler) {
-		return;
-	}
-
-	return g_handler->play_token_lost_cb(sess);
-}
-
-void end_of_track(sp_session * sess) {
-	if(!g_handler) {
-		return;
-	}
-
-	return g_handler->end_of_track_cb(sess);
-
-}
-
+static sp_playlist_callbacks pl_callbacks;
 
 //nice per session wrapper class
 //
@@ -127,7 +54,7 @@ public:
 	int playback_done(void) {
 		return m_playback_done;
 	}
-	sp_playlist * getCurrentPlaylist(void) {
+	sp_playlist * getActivePlaylist(void) {
 		return m_jukeboxlist;
 	}
 	sp_playlistcontainer * getPlaylistContainer(void) {
@@ -151,6 +78,12 @@ public:
 	}
 
 	sp_track * setCurrentTrack(int idx) {
+#define NOTRACK -1
+		if( idx < 0 ) {
+			m_track_idx = idx;
+			m_currenttrack = NULL;
+			return NULL;
+		}
 
 		sp_track * t = NULL;
 		int n_tracks = 0;
@@ -197,6 +130,9 @@ private:
 
 
 }
+
+//forward declaration.
+static sp_session_callbacks session_callbacks;
 
 //move elsewhere.
 class Lockable {
@@ -306,7 +242,7 @@ public:
 			return;
 		}
 
-		if (pl != sess->getCurrentPlaylist())
+		if (pl != sess->getActivePlaylist())
 		{
 			return;
 		}
@@ -325,7 +261,7 @@ public:
 			return;
 		}
 
-		if (pl != sess->getCurrentPlaylist())
+		if (pl != sess->getActivePlaylist())
 		{
 			return;
 		}
@@ -353,7 +289,7 @@ public:
 			return;
 		}
 
-		if (pl != sess->getCurrentPlaylist())
+		if (pl != sess->getActivePlaylist())
 		{
 			return;
 		}
@@ -366,19 +302,25 @@ public:
 
 	void playlist_renamed_cb(sp_playlist *pl, void *userdata) {
 		const char *name = sp_playlist_name(pl);
+		const char *current = NULL;
 
+		shared_ptr<SpotifySession> sess = getActiveSession();
+		if(!sess) {
+			return;
+		}
+		currentpl = sp_playlist_name(sess->getActivePlaylist());
 
-		if (!strcasecmp(name, g_listname)) 
+		if (!strcasecmp(name, currentpl)) 
 		{
-			g_jukeboxlist = pl;
-			g_track_index = 0;
-			try_jukebox_start();
+			sess->setActivePlaylist(pl);
+			sess->setCurrentTrack(0);
+			//try_jukebox_start();
 
-		} else if (m_jukeboxlist == pl) {
+		} else if (sess->getActivePlaylist() == pl) {
 			printf("jukebox: current playlist renamed to \"%s\".\n", name);
-			g_jukeboxlist = NULL;
-			g_currenttrack = NULL;
-			sp_session_player_unload(g_sess);
+			sess->setActivePlaylist(NULL);
+			sess->setCurrentTrack(NOTRACK);
+			//sp_session_player_unload(g_sess);
 		}
 	}
 
@@ -411,9 +353,11 @@ public:
 	}
 
 	void end_of_track_cb(sp_session *sess) {
-		lock()
+		lock();
 		m_playback_done = 1;
-		signal();
+		//h->setPlaybackState(DONE);
+		h->switchSession();
+		cond_signal();
 		unlock();
 	}
 
@@ -422,15 +366,57 @@ public:
 		audio_fifo_flush(&m_audiofifo);
 
 		//Find the session and stop it.
+		shared_ptr<SpotifySession> spsession = getActiveSession();
 
-		if (spsession->g_currenttrack != NULL)
+		if (spsession->getCurrentTrack() != NULL)
 		{
-			// unload the session that cause the token loss.
+			// unload the session that caused the token loss.
 			sp_session_player_unload(sess);
-			spsession->g_currenttrack = NULL;
+			spsession->setCurrentTrack(NO_TRACK);
 		}
+		switchSession():
 	}
 
+	int music_delivery_cb(sp_session *sess, const sp_audioformat *format,
+                                  const void *frames, int num_frames)
+	{
+		size_t s;
+		audio_fifo_data_t *afd;
+
+		SpotifyHandler * h = SpotifyHandler::getInstance();
+		audio_fifo_t *af = h->getAudioFIFO();
+
+		if (num_frames == 0)
+		{
+			return 0; // Audio discontinuity, do nothing
+		}
+
+		pthread_mutex_lock(&af->mutex);
+
+		/* Buffer one second of audio */
+		if (af->qlen > format->sample_rate)
+		{
+			pthread_mutex_unlock(&af->mutex);
+			return 0;
+		}
+
+		s = num_frames * sizeof(int16_t) * format->channels;
+
+		afd = malloc(sizeof(audio_fifo_data_t) + s);
+		memcpy(afd->samples, frames, s);
+
+		afd->nsamples = num_frames;
+		afd->rate = format->sample_rate;
+		afd->channels = format->channels;
+
+		TAILQ_INSERT_TAIL(&af->q, afd, link);
+		af->qlen += num_frames;
+
+		pthread_cond_signal(&af->cond);
+		pthread_mutex_unlock(&af->mutex);
+
+		return num_frames;
+	}
 
 
 	void search(SpotifyPlaylist& _return, const SpotifyCredential& cred, const SpotifySearch& criteria) {
@@ -606,12 +592,12 @@ private:
 		return m_sessions;
 	}
 
-	audio_fifo_t audio_fifo() {
-		return m_audiofifo;
+	audio_fifo_t * audio_fifo() {
+		return &m_audiofifo;
 	}
 
-	sp_session_config app_config() {
-		return m_spconfig;
+	sp_session_config * app_config() {
+		return &m_spconfig;
 	}
 
 	//libspotify wrapped
@@ -624,17 +610,83 @@ private:
 	SpotifyHandler * m_handler_ptr = NULL;
 
 };
+
+/* --------------------------  PLAYLIST CALLBACKS  ------------------------- */
+static void tracks_added(sp_playlist *pl, sp_track * const *tracks,
+		int num_tracks, int position, void *userdata)
+{
+	if(!g_handler) {
+		return;
+	}
+
+	return g_handler->tracks_added_cb(pl, tracks, num_tracks, position, userdata);
+}
+
+static void tracks_removed(sp_playlist *pl, const int *tracks,
+		int num_tracks, void *userdata)
+{
+	if(!g_handler) {
+		return;
+	}
+
+	return g_handler->tracks_removed_cb(pl, tracks, num_tracks, userdata);
+}
+
+static void tracks_moved(sp_playlist *pl, const int *tracks,
+		int num_tracks, int new_position, void *userdata)
+{
+	if(!g_handler) {
+		return;
+	}
+
+	return g_handler->tracks_moved_cb(pl, tracks, num_tracks, newposition, userdata);
+}
+
+static void playlist_renamed(sp_playlist *pl, void *userdata)
+{
+	if(!g_handler) {
+		return;
+	}
+
+	return g_handler->playlist_renamed_cb(pl, userdata);
+}
+
+pl_callbacks = {
+	.tracks_added = &tracks_added,
+	.tracks_removed = &tracks_removed,
+	.tracks_moved = &tracks_moved,
+	.playlist_renamed = &playlist_renamed,
+};
+
+
+/* --------------------------  SESSION CALLBACKS  ------------------------- */
+static void logged_in(sp_session *sess, sp_error error) {
+
+	if(!g_handler) {
+		return;
+	}
+
+	return g_handler->logged_in_cb(sess, error);
+}
+
+static void play_token_lost(sp_session *sess) {
+	if(!g_handler) {
+		return;
+	}
+
+	return g_handler->play_token_lost_cb(sess);
+}
+
 #define STOP 0
 #define PLAY 1
 #define DONE 2
-static void end_of_track(sp_session *sess)
-{
-	SpotifyHandler * h = SpotifyHandler::getInstance();
-	h->lock();
-	//h->setPlaybackState(DONE);
-	h->switchSession();
-	h->cond_signal();
-	h->unlock();
+void end_of_track(sp_session * sess) {
+	if(!g_handler) {
+		return;
+	}
+
+	return g_handler->end_of_track_cb(sess);
+
 }
 
 //I would honestly love to avoid mallocs...
@@ -644,43 +696,23 @@ static void end_of_track(sp_session *sess)
 static int music_delivery(sp_session *sess, const sp_audioformat *format,
                                   const void *frames, int num_frames)
 {
-        size_t s;
-        audio_fifo_data_t *afd;
+	if(!g_handler) {
+		return;
+	}
 
-	SpotifyHandler * h = SpotifyHandler::getInstance();
-        audio_fifo_t *af = h->getAudioFIFO();
-
-        if (num_frames == 0)
-        {
-                return 0; // Audio discontinuity, do nothing
-        }
-
-        pthread_mutex_lock(&af->mutex);
-
-        /* Buffer one second of audio */
-        if (af->qlen > format->sample_rate)
-        {
-                pthread_mutex_unlock(&af->mutex);
-                return 0;
-        }
-
-        s = num_frames * sizeof(int16_t) * format->channels;
-
-        afd = malloc(sizeof(audio_fifo_data_t) + s);
-        memcpy(afd->samples, frames, s);
-
-        afd->nsamples = num_frames;
-        afd->rate = format->sample_rate;
-        afd->channels = format->channels;
-
-        TAILQ_INSERT_TAIL(&af->q, afd, link);
-        af->qlen += num_frames;
-
-        pthread_cond_signal(&af->cond);
-        pthread_mutex_unlock(&af->mutex);
-
-        return num_frames;
+	return g_handler->music_delivery__cb(sess, format, frames, num_frames);
 }
+
+session_callbacks = {
+        .logged_in = &logged_in,
+        .notify_main_thread = &notify_main_thread,
+        .music_delivery = &music_delivery,
+        .metadata_updated = &metadata_updated,
+        .play_token_lost = &play_token_lost,
+        .log_message = NULL,
+        .end_of_track = &end_of_track,
+};
+
 
 int main(int argc, char **argv) {
 	int port = 9090;
