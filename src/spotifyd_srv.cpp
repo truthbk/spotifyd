@@ -196,10 +196,6 @@ public:
 		sess.loadPlaylists(); //Implement this....
 	}
 
-	static audio_fifo_t * getAudioFIFO(void) {
-		return &m_audiofifo;
-	}
-
 	void switchSession() {
 		//change session, allow it to be played.
 	}
@@ -383,20 +379,17 @@ public:
 		size_t s;
 		audio_fifo_data_t *afd;
 
-		SpotifyHandler * h = SpotifyHandler::getInstance();
-		audio_fifo_t *af = h->getAudioFIFO();
-
 		if (num_frames == 0)
 		{
 			return 0; // Audio discontinuity, do nothing
 		}
 
-		pthread_mutex_lock(&af->mutex);
+		pthread_mutex_lock(&m_audiofifo->mutex);
 
 		/* Buffer one second of audio */
 		if (af->qlen > format->sample_rate)
 		{
-			pthread_mutex_unlock(&af->mutex);
+			pthread_mutex_unlock(&m_audiofifo->mutex);
 			return 0;
 		}
 
@@ -409,11 +402,11 @@ public:
 		afd->rate = format->sample_rate;
 		afd->channels = format->channels;
 
-		TAILQ_INSERT_TAIL(&af->q, afd, link);
-		af->qlen += num_frames;
+		TAILQ_INSERT_TAIL(&m_audiofifo->q, afd, link);
+		m_audiofifo->qlen += num_frames;
 
-		pthread_cond_signal(&af->cond);
-		pthread_mutex_unlock(&af->mutex);
+		pthread_cond_signal(&m_audiofifo->cond);
+		pthread_mutex_unlock(&m_audiofifo->mutex);
 
 		return num_frames;
 	}
@@ -700,7 +693,7 @@ static int music_delivery(sp_session *sess, const sp_audioformat *format,
 		return;
 	}
 
-	return g_handler->music_delivery__cb(sess, format, frames, num_frames);
+	return g_handler->music_delivery_cb(sess, format, frames, num_frames);
 }
 
 session_callbacks = {
