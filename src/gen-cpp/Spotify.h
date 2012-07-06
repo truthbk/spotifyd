@@ -14,7 +14,7 @@
 class SpotifyIf {
  public:
   virtual ~SpotifyIf() {}
-  virtual void initiateSession(SpotifyCredential& _return, const SpotifyCredential& cred) = 0;
+  virtual void loginSession(SpotifyCredential& _return, const SpotifyCredential& cred) = 0;
   virtual void logoutSession(const SpotifyCredential& cred) = 0;
   virtual void sendCommand(const SpotifyCredential& cred, const SpotifyCmd::type cmd) = 0;
   virtual void search(SpotifyPlaylist& _return, const SpotifyCredential& cred, const SpotifySearch& criteria) = 0;
@@ -22,6 +22,7 @@ class SpotifyIf {
   virtual void getPlaylist(SpotifyPlaylist& _return, const SpotifyCredential& cred, const int32_t plist_id) = 0;
   virtual void getPlaylistByName(SpotifyPlaylist& _return, const SpotifyCredential& cred, const std::string& name) = 0;
   virtual void selectPlaylist(const SpotifyCredential& cred, const std::string& playlist) = 0;
+  virtual void selectPlaylistById(const SpotifyCredential& cred, const int32_t plist_id) = 0;
   virtual bool merge2playlist(const SpotifyCredential& cred, const std::string& pl, const SpotifyPlaylist& tracks) = 0;
   virtual bool add2playlist(const SpotifyCredential& cred, const std::string& pl, const SpotifyTrack& track) = 0;
   virtual void whats_playing(SpotifyTrack& _return) = 0;
@@ -30,7 +31,7 @@ class SpotifyIf {
 class SpotifyNull : virtual public SpotifyIf {
  public:
   virtual ~SpotifyNull() {}
-  void initiateSession(SpotifyCredential& /* _return */, const SpotifyCredential& /* cred */) {
+  void loginSession(SpotifyCredential& /* _return */, const SpotifyCredential& /* cred */) {
     return;
   }
   void logoutSession(const SpotifyCredential& /* cred */) {
@@ -54,6 +55,9 @@ class SpotifyNull : virtual public SpotifyIf {
   void selectPlaylist(const SpotifyCredential& /* cred */, const std::string& /* playlist */) {
     return;
   }
+  void selectPlaylistById(const SpotifyCredential& /* cred */, const int32_t /* plist_id */) {
+    return;
+  }
   bool merge2playlist(const SpotifyCredential& /* cred */, const std::string& /* pl */, const SpotifyPlaylist& /* tracks */) {
     bool _return = false;
     return _return;
@@ -67,34 +71,34 @@ class SpotifyNull : virtual public SpotifyIf {
   }
 };
 
-typedef struct _Spotify_initiateSession_args__isset {
-  _Spotify_initiateSession_args__isset() : cred(false) {}
+typedef struct _Spotify_loginSession_args__isset {
+  _Spotify_loginSession_args__isset() : cred(false) {}
   bool cred;
-} _Spotify_initiateSession_args__isset;
+} _Spotify_loginSession_args__isset;
 
-class Spotify_initiateSession_args {
+class Spotify_loginSession_args {
  public:
 
-  Spotify_initiateSession_args() {
+  Spotify_loginSession_args() {
   }
 
-  virtual ~Spotify_initiateSession_args() throw() {}
+  virtual ~Spotify_loginSession_args() throw() {}
 
   SpotifyCredential cred;
 
-  _Spotify_initiateSession_args__isset __isset;
+  _Spotify_loginSession_args__isset __isset;
 
-  bool operator == (const Spotify_initiateSession_args & rhs) const
+  bool operator == (const Spotify_loginSession_args & rhs) const
   {
     if (!(cred == rhs.cred))
       return false;
     return true;
   }
-  bool operator != (const Spotify_initiateSession_args &rhs) const {
+  bool operator != (const Spotify_loginSession_args &rhs) const {
     return !(*this == rhs);
   }
 
-  bool operator < (const Spotify_initiateSession_args & ) const;
+  bool operator < (const Spotify_loginSession_args & ) const;
 
   uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
   uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
@@ -102,11 +106,11 @@ class Spotify_initiateSession_args {
 };
 
 
-class Spotify_initiateSession_pargs {
+class Spotify_loginSession_pargs {
  public:
 
 
-  virtual ~Spotify_initiateSession_pargs() throw() {}
+  virtual ~Spotify_loginSession_pargs() throw() {}
 
   const SpotifyCredential* cred;
 
@@ -114,54 +118,54 @@ class Spotify_initiateSession_pargs {
 
 };
 
-typedef struct _Spotify_initiateSession_result__isset {
-  _Spotify_initiateSession_result__isset() : success(false) {}
+typedef struct _Spotify_loginSession_result__isset {
+  _Spotify_loginSession_result__isset() : success(false) {}
   bool success;
-} _Spotify_initiateSession_result__isset;
+} _Spotify_loginSession_result__isset;
 
-class Spotify_initiateSession_result {
+class Spotify_loginSession_result {
  public:
 
-  Spotify_initiateSession_result() {
+  Spotify_loginSession_result() {
   }
 
-  virtual ~Spotify_initiateSession_result() throw() {}
+  virtual ~Spotify_loginSession_result() throw() {}
 
   SpotifyCredential success;
 
-  _Spotify_initiateSession_result__isset __isset;
+  _Spotify_loginSession_result__isset __isset;
 
-  bool operator == (const Spotify_initiateSession_result & rhs) const
+  bool operator == (const Spotify_loginSession_result & rhs) const
   {
     if (!(success == rhs.success))
       return false;
     return true;
   }
-  bool operator != (const Spotify_initiateSession_result &rhs) const {
+  bool operator != (const Spotify_loginSession_result &rhs) const {
     return !(*this == rhs);
   }
 
-  bool operator < (const Spotify_initiateSession_result & ) const;
+  bool operator < (const Spotify_loginSession_result & ) const;
 
   uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
   uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
 
 };
 
-typedef struct _Spotify_initiateSession_presult__isset {
-  _Spotify_initiateSession_presult__isset() : success(false) {}
+typedef struct _Spotify_loginSession_presult__isset {
+  _Spotify_loginSession_presult__isset() : success(false) {}
   bool success;
-} _Spotify_initiateSession_presult__isset;
+} _Spotify_loginSession_presult__isset;
 
-class Spotify_initiateSession_presult {
+class Spotify_loginSession_presult {
  public:
 
 
-  virtual ~Spotify_initiateSession_presult() throw() {}
+  virtual ~Spotify_loginSession_presult() throw() {}
 
   SpotifyCredential* success;
 
-  _Spotify_initiateSession_presult__isset __isset;
+  _Spotify_loginSession_presult__isset __isset;
 
   uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
 
@@ -733,6 +737,58 @@ class Spotify_selectPlaylist_pargs {
 
 };
 
+typedef struct _Spotify_selectPlaylistById_args__isset {
+  _Spotify_selectPlaylistById_args__isset() : cred(false), plist_id(false) {}
+  bool cred;
+  bool plist_id;
+} _Spotify_selectPlaylistById_args__isset;
+
+class Spotify_selectPlaylistById_args {
+ public:
+
+  Spotify_selectPlaylistById_args() : plist_id(0) {
+  }
+
+  virtual ~Spotify_selectPlaylistById_args() throw() {}
+
+  SpotifyCredential cred;
+  int32_t plist_id;
+
+  _Spotify_selectPlaylistById_args__isset __isset;
+
+  bool operator == (const Spotify_selectPlaylistById_args & rhs) const
+  {
+    if (!(cred == rhs.cred))
+      return false;
+    if (!(plist_id == rhs.plist_id))
+      return false;
+    return true;
+  }
+  bool operator != (const Spotify_selectPlaylistById_args &rhs) const {
+    return !(*this == rhs);
+  }
+
+  bool operator < (const Spotify_selectPlaylistById_args & ) const;
+
+  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+};
+
+
+class Spotify_selectPlaylistById_pargs {
+ public:
+
+
+  virtual ~Spotify_selectPlaylistById_pargs() throw() {}
+
+  const SpotifyCredential* cred;
+  const int32_t* plist_id;
+
+  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+};
+
 typedef struct _Spotify_merge2playlist_args__isset {
   _Spotify_merge2playlist_args__isset() : cred(false), pl(false), tracks(false) {}
   bool cred;
@@ -1063,9 +1119,9 @@ class SpotifyClient : virtual public SpotifyIf {
   boost::shared_ptr< ::apache::thrift::protocol::TProtocol> getOutputProtocol() {
     return poprot_;
   }
-  void initiateSession(SpotifyCredential& _return, const SpotifyCredential& cred);
-  void send_initiateSession(const SpotifyCredential& cred);
-  void recv_initiateSession(SpotifyCredential& _return);
+  void loginSession(SpotifyCredential& _return, const SpotifyCredential& cred);
+  void send_loginSession(const SpotifyCredential& cred);
+  void recv_loginSession(SpotifyCredential& _return);
   void logoutSession(const SpotifyCredential& cred);
   void send_logoutSession(const SpotifyCredential& cred);
   void sendCommand(const SpotifyCredential& cred, const SpotifyCmd::type cmd);
@@ -1084,6 +1140,8 @@ class SpotifyClient : virtual public SpotifyIf {
   void recv_getPlaylistByName(SpotifyPlaylist& _return);
   void selectPlaylist(const SpotifyCredential& cred, const std::string& playlist);
   void send_selectPlaylist(const SpotifyCredential& cred, const std::string& playlist);
+  void selectPlaylistById(const SpotifyCredential& cred, const int32_t plist_id);
+  void send_selectPlaylistById(const SpotifyCredential& cred, const int32_t plist_id);
   bool merge2playlist(const SpotifyCredential& cred, const std::string& pl, const SpotifyPlaylist& tracks);
   void send_merge2playlist(const SpotifyCredential& cred, const std::string& pl, const SpotifyPlaylist& tracks);
   bool recv_merge2playlist();
@@ -1106,7 +1164,7 @@ class SpotifyProcessor : virtual public ::apache::thrift::TProcessor {
   virtual bool process_fn(::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, std::string& fname, int32_t seqid, void* callContext);
  private:
   std::map<std::string, void (SpotifyProcessor::*)(int32_t, ::apache::thrift::protocol::TProtocol*, ::apache::thrift::protocol::TProtocol*, void*)> processMap_;
-  void process_initiateSession(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext);
+  void process_loginSession(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext);
   void process_logoutSession(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext);
   void process_sendCommand(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext);
   void process_search(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext);
@@ -1114,13 +1172,14 @@ class SpotifyProcessor : virtual public ::apache::thrift::TProcessor {
   void process_getPlaylist(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext);
   void process_getPlaylistByName(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext);
   void process_selectPlaylist(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext);
+  void process_selectPlaylistById(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext);
   void process_merge2playlist(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext);
   void process_add2playlist(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext);
   void process_whats_playing(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext);
  public:
   SpotifyProcessor(boost::shared_ptr<SpotifyIf> iface) :
     iface_(iface) {
-    processMap_["initiateSession"] = &SpotifyProcessor::process_initiateSession;
+    processMap_["loginSession"] = &SpotifyProcessor::process_loginSession;
     processMap_["logoutSession"] = &SpotifyProcessor::process_logoutSession;
     processMap_["sendCommand"] = &SpotifyProcessor::process_sendCommand;
     processMap_["search"] = &SpotifyProcessor::process_search;
@@ -1128,6 +1187,7 @@ class SpotifyProcessor : virtual public ::apache::thrift::TProcessor {
     processMap_["getPlaylist"] = &SpotifyProcessor::process_getPlaylist;
     processMap_["getPlaylistByName"] = &SpotifyProcessor::process_getPlaylistByName;
     processMap_["selectPlaylist"] = &SpotifyProcessor::process_selectPlaylist;
+    processMap_["selectPlaylistById"] = &SpotifyProcessor::process_selectPlaylistById;
     processMap_["merge2playlist"] = &SpotifyProcessor::process_merge2playlist;
     processMap_["add2playlist"] = &SpotifyProcessor::process_add2playlist;
     processMap_["whats_playing"] = &SpotifyProcessor::process_whats_playing;
@@ -1149,14 +1209,14 @@ class SpotifyMultiface : virtual public SpotifyIf {
     ifaces_.push_back(iface);
   }
  public:
-  void initiateSession(SpotifyCredential& _return, const SpotifyCredential& cred) {
+  void loginSession(SpotifyCredential& _return, const SpotifyCredential& cred) {
     uint32_t sz = ifaces_.size();
     for (uint32_t i = 0; i < sz; ++i) {
       if (i == sz - 1) {
-        ifaces_[i]->initiateSession(_return, cred);
+        ifaces_[i]->loginSession(_return, cred);
         return;
       } else {
-        ifaces_[i]->initiateSession(_return, cred);
+        ifaces_[i]->loginSession(_return, cred);
       }
     }
   }
@@ -1227,6 +1287,13 @@ class SpotifyMultiface : virtual public SpotifyIf {
     uint32_t sz = ifaces_.size();
     for (uint32_t i = 0; i < sz; ++i) {
       ifaces_[i]->selectPlaylist(cred, playlist);
+    }
+  }
+
+  void selectPlaylistById(const SpotifyCredential& cred, const int32_t plist_id) {
+    uint32_t sz = ifaces_.size();
+    for (uint32_t i = 0; i < sz; ++i) {
+      ifaces_[i]->selectPlaylistById(cred, plist_id);
     }
   }
 
