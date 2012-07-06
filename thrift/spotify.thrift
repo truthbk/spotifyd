@@ -43,7 +43,7 @@ typedef map<string, SpotifyPlaylist> SpotifyLibrary
 typedef map<string, SpotifyCredential> SpotifySessions
 
 service Spotify {
-        SpotifyCredential initiateSession(1: SpotifyCredential cred);
+        SpotifyCredential loginSession(1: SpotifyCredential cred);
         oneway void logoutSession(1: SpotifyCredential cred);
 
         oneway void sendCommand(1: SpotifyCredential cred, 2: SpotifyCmd cmd);
