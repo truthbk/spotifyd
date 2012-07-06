@@ -54,6 +54,7 @@ service Spotify {
         SpotifyPlaylist getPlaylistByName(1: SpotifyCredential cred, 2: string name);
 
         oneway void selectPlaylist(1: SpotifyCredential cred, 2: string playlist);
+        oneway void selectPlaylistById(1: SpotifyCredential cred, 2: i32 plist_id);
         bool merge2playlist(1: SpotifyCredential cred, 2: string pl, 3: SpotifyPlaylist tracks); //MERGE multiple tracks to PL
         bool add2playlist(1: SpotifyCredential cred, 2: string pl, 3: SpotifyTrack track); //MERGE single track to PL
 

@@ -6,6 +6,10 @@
 #include <transport/TServerSocket.h>
 #include <transport/TBufferTransports.h>
 
+//Boost.
+#include <boost/algorithm/string.hpp>
+#include <boost/shared_ptr.hpp>
+
 #include "Spotify.h"
 
 //I don't believe these headers are C++ ready....
@@ -51,8 +55,11 @@ public:
 	sp_session * getSession(void) {
 		return m_sess;
 	}
-	int playback_done(void) {
+	int getPlaybackDone(void) {
 		return m_playback_done;
+	}
+	int setPlaybackDone(int done) {
+		m_playback_done = done;
 	}
 	sp_playlist * getActivePlaylist(void) {
 		return m_jukeboxlist;
@@ -63,12 +70,16 @@ public:
 		}
 		return sp_session_playlistcontainer(m_sess);
 	}
-	void setPlaylist(sp_playlist * pl) {
+	void setActivePlaylist(sp_playlist * pl) {
 		if(pl) {
 			m_jukeboxlist = pl;
 		}
 	}
-
+	sp_playlist * gsetActivePlaylist(void) {
+		if(pl) {
+			m_jukeboxlist = pl;
+		}
+	}
 	std::string getPlaylistName(void) {
 		if(m_jukeboxlist) {
 			return std::string("");
@@ -138,23 +149,30 @@ static sp_session_callbacks session_callbacks;
 class Lockable {
 public:
 	Lockable() {
-		//
+		//Init...
+		pthread_mutex_init(m_mutex, NULL);
+		pthread_cond_init(m_cond, NULL);
 	}
+	~Lockable() {
+		pthread_cond_destroy(m_cond);
+		pthread_mutex_destroy(m_mutex);
+	}
+
 	void lock() {
-		pthread_mutex_unlock(&m_notify_mutex);
+		pthread_mutex_unlock(&m_mutex);
 	}
 
 	void cond_signal() {
-		pthread_cond_signal(&g_notify_cond);
+		pthread_cond_signal(&m_cond);
 	}
 
 	void unlock() {
-		pthread_mutex_unlock(&m_notify_mutex);
+		pthread_mutex_unlock(&m_mutex);
 	}
 
 private:
-	pthread_mutex_t m_notify_mutex;
-	pthread_cond_t m_notify_cond;
+	pthread_mutex_t m_mutex;
+	pthread_cond_t m_cond;
 }
 
 // This baby here, the SpotifyHandler, should be a singleton. The main reason
@@ -227,8 +245,17 @@ public:
 		}
 	}
 
+	//change session, allow it to be played.
 	void switchSession() {
-		//change session, allow it to be played.
+		shared_ptr<SpotifySession> sess = it.second;
+		sp_session_player_unload(sess->getSession());
+
+		//Currently just round-robin.
+		if(++m_sess_it = m_sessions.end()) {
+			m_sess_it = m_sessions.begin();
+		}
+
+		return;
 	}
 
 	void tracks_added_cb(sp_playlist *pl, sp_track * const *tracks,
@@ -483,7 +510,6 @@ public:
 						, sp_track_is_starred(t)));
 			_return.insert(*spt);
 
-
 		}
 
 		return;
@@ -512,7 +538,7 @@ public:
 			}
 
 			std::string plname(sp_playlist_name(pl));
-			if(plname.equals(name)) {
+			if(boost::iequals(plname, name)) {
 				getPlaylist(_return, cred, i);
 				break;
 			}
@@ -544,11 +570,33 @@ public:
 			}
 
 			std::string plname(sp_playlist_name(pl));
-			if(plname.equals(name)) {
-				setPlaylist(pl);
+			if(boost::iequals(plname, name)) {
+				sess->setActivePlaylist(pl);
 				break;
 			}
 		}
+	}
+	void selectPlaylistById(const SpotifyCredential& cred, const int32_t plist_id) {
+		// Your implementation goes here
+		printf("selectPlaylist\n");
+		shared_ptr< SpotifySession > sess = getSession(cred);
+		if(!sess) {
+			return;
+		}
+
+
+		sp_playlistcontainer * pc = sess->getPlaylistContainer();
+		if(!pc) {
+			return;
+		}
+
+		sp_playlist *pl = sp_playlistcontainer_playlist(pc, plist_id);
+
+		if(!pl) {
+			return;
+		}
+
+		sess->setActivePlaylist(pl);
 	}
 
 	bool merge2playlist(const SpotifyCredential& cred, const std::string& pl, const SpotifyPlaylist& tracks) {
@@ -567,6 +615,8 @@ public:
 	}
 
 private:
+	typedef std::map< shared_ptr<SpotifyCredential>, shared_ptr<SpotifySession> > session_map;
+
 	SpotifyHandler(const uint8_t *appkey, const size_t appkey_size) 
 		: Lockable() {
 		//private so it can't be called.
@@ -580,12 +630,12 @@ private:
 			.callbacks = &session_callbacks,
 			NULL,
 		};
+		m_sess_it = m_sessions.begin();
 	}
 
 	shared_ptr<SpotifySession> getSession(SpotifyCredential& cred) {
-		typedef session_map::const_iterator cspit;
-		cspit it;
-		if(im_sessions.find(cred) == it.end())
+		session_map::const_iterator it;
+		if(m_sessions.find(cred) == it.end())
 		{
 			return NULL;
 		}
@@ -593,10 +643,15 @@ private:
 		return *it.second;
 
 	}
+	shared_ptr<SpotifySession> getActiveSession(void) {
+		return m_active_session;
+	}
+	void setActiveSession(shared_ptr<SpotifySession> session) {
+		m_active_session = session;
+	}
+
 	//we also need to be able to search by sp_session, that's quite important; callbacks rely very heavily
 	//on it.
-	typedef std::map< shared_ptr<SpotifyCredential>, shared_ptr<SpotifySession> > session_map;
-
 	sp_playlistcontainer * getPlaylistContainer(SpotifyCredential& cred) {
 		shared_ptr<SpotifySession> sess = getSession(cred);
 		if(!sess) {
@@ -625,6 +680,7 @@ private:
 	//proper members
 	session_map m_sessions;
 	shared_ptr<SpotifySession> m_active_session;
+	session_map::const_iterator m_sess_it;
 	SpotifyHandler * m_handler_ptr = NULL;
 
 };
