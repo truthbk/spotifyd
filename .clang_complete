@@ -1,3 +1,6 @@
+-DHAVE_INTTYPES_H
+-DHAVE_NETINET_IN_H
 -DDEBUG
 -I./include
+-I/usr/include
 -I/opt/thrift/include/thrift/

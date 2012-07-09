@@ -24,8 +24,7 @@ include_directories(${PROJECT_BINARY_DIR}
 
 #compiler stuff
 set(CMAKE_C_FLAGS "-ggdb -Wall -W -fbuiltin")
-set(CMAKE_CXX_FLAGS "-ggdb -Wall -W -fbuiltin")
+set(CMAKE_CXX_FLAGS "-ggdb -Wall -W -fbuiltin -pthread")
 # compile as C++0x
-add_definitions(-std=c++0x)
-
+add_definitions(-std=c++0x -DHAVE_INTTYPES_H -DHAVE_NETINET_IN_H)
 add_subdirectory(src)
