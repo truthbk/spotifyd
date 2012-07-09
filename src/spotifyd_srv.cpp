@@ -11,12 +11,18 @@
 #include <boost/shared_ptr.hpp>
 
 #include "Spotify.h"
+#include "lockable.h"
 
+	#include <libspotify/api.h>
+	#include "audio.h"
+
+#if 0
 //I don't believe these headers are C++ ready....
 extern "C" {
 	#include <libspotify/api.h>
 	#include "audio.h"
 }
+#endif
 
 using namespace ::apache::thrift;
 using namespace ::apache::thrift::protocol;
@@ -24,155 +30,87 @@ using namespace ::apache::thrift::transport;
 using namespace ::apache::thrift::server;
 
 
-//Global pointer to Spotify Handler. Used by callbacks.
-static SpotifyHandler * g_handler = NULL;
 
 /* --- Data --- */
 extern const uint8_t g_appkey[];
 extern const size_t g_appkey_size;
 
 
-
+//forward declarations.
 static sp_playlist_callbacks pl_callbacks;
-
-//nice per session wrapper class
-//
-class SpotifySession {
-public:
-	SpotifySession() 
-		 :m_notify_do(0)
-		 ,m_playback_done(1)
-		 ,m_pc(NULL) //playlist container
-		 ,m_jukeboxlist(NULL)
-		 ,m_remove_tracks(0)
-		 ,m_currenttrack(0)
-		 ,m_track_idx(-1){
-			 //
-			 m_sess = new sp_session;
-		 }
-
-	sp_session * getSession(void) {
-		return m_sess;
-	}
-	int getPlaybackDone(void) {
-		return m_playback_done;
-	}
-	int setPlaybackDone(int done) {
-		m_playback_done = done;
-	}
-	sp_playlist * getActivePlaylist(void) {
-		return m_jukeboxlist;
-	}
-	sp_playlistcontainer * getPlaylistContainer(void) {
-		if(!m_sess) {
-			return NULL;
-		}
-		return sp_session_playlistcontainer(m_sess);
-	}
-	void setActivePlaylist(sp_playlist * pl) {
-		if(pl) {
-			m_jukeboxlist = pl;
-		}
-	}
-	sp_playlist * gsetActivePlaylist(void) {
-		if(pl) {
-			m_jukeboxlist = pl;
-		}
-	}
-	std::string getPlaylistName(void) {
-		if(m_jukeboxlist) {
-			return std::string("");
-		}
-
-		return std::string(sp_playlist_name(m_jukeboxlist));
-	}
-
-	sp_track * setCurrentTrack(int idx) {
-#define NOTRACK -1
-		if( idx < 0 ) {
-			m_track_idx = idx;
-			m_currenttrack = NULL;
-			return NULL;
-		}
-
-		sp_track * t = NULL;
-		int n_tracks = 0;
-
-		if(!m_jukeboxlist) {
-			return NULL;
-		}
-
-		n_tracks = sp_playlist_num_tracks(m_jukeboxlist);
-		if(!n_tracks || n_tracks < idx) {
-			return NULL;
-		}
-
-		sp_track * t = sp_playlist_track(m_jukeboxlist, idx);
-		m_currenttrack = t;
-		m_track_idx = idx;
-		
-		return t;
-	
-	}
-
-	sp_track * getCurrentTrack() {
-		return m_currenttrack;
-	
-	}
-	
-	int getCurrentTrackIdx() {
-		return m_track_idx;
-	}
-#if 0
-	void selectPlaylist(const SpotifyCredential& cred, const std::string& playlist) {
-		// Your implementation goes here
-		printf("selectPlaylist\n");
-	}
-#endif
-private:
-	sp_session *m_sess;
-	int m_notify_do;
-	int m_playback_done;
-	sp_playlist *m_jukeboxlist;
-	int m_remove_tracks;
-	sp_track *m_currenttrack;
-	int m_track_idx;
-
-
-}
-
-//forward declaration.
 static sp_session_callbacks session_callbacks;
 
-//move elsewhere.
-class Lockable {
-public:
-	Lockable() {
-		//Init...
-		pthread_mutex_init(m_mutex, NULL);
-		pthread_cond_init(m_cond, NULL);
-	}
-	~Lockable() {
-		pthread_cond_destroy(m_cond);
-		pthread_mutex_destroy(m_mutex);
-	}
+SpotifySession::SpotifySession() 
+	 :m_notify_do(0)
+	 ,m_playback_done(1)
+	 ,m_jukeboxlist(NULL)
+	 ,m_remove_tracks(0)
+	 ,m_currenttrack(0)
+	 ,m_track_idx(-1){
+		 //
+		 m_sess = new sp_session;
+	 }
 
-	void lock() {
-		pthread_mutex_unlock(&m_mutex);
+sp_playlistcontainer * SpotifySession::getPlaylistContainer(void) {
+	if(!m_sess) {
+		return NULL;
 	}
-
-	void cond_signal() {
-		pthread_cond_signal(&m_cond);
-	}
-
-	void unlock() {
-		pthread_mutex_unlock(&m_mutex);
-	}
-
-private:
-	pthread_mutex_t m_mutex;
-	pthread_cond_t m_cond;
+	return sp_session_playlistcontainer(m_sess);
 }
+void SpotifySession::setActivePlaylist(sp_playlist * pl) {
+	if(pl) {
+		m_jukeboxlist = pl;
+	}
+}
+sp_playlist * SpotifySession::getActivePlaylist(void) {
+	if(pl) {
+		m_jukeboxlist = pl;
+	}
+}
+std::string SpotifySession::getPlaylistName(void) {
+	if(m_jukeboxlist) {
+		return std::string("");
+	}
+
+	return std::string(sp_playlist_name(m_jukeboxlist));
+}
+
+sp_track * SpotifySession::setCurrentTrack(int idx) {
+#define NOTRACK -1
+	if( idx < 0 ) {
+		m_track_idx = idx;
+		m_currenttrack = NULL;
+		return NULL;
+	}
+
+	sp_track * t = NULL;
+	int n_tracks = 0;
+
+	if(!m_jukeboxlist) {
+		return NULL;
+	}
+
+	n_tracks = sp_playlist_num_tracks(m_jukeboxlist);
+	if(!n_tracks || n_tracks < idx) {
+		return NULL;
+	}
+
+	sp_track * t = sp_playlist_track(m_jukeboxlist, idx);
+	m_currenttrack = t;
+	m_track_idx = idx;
+	
+	return t;
+
+}
+
+#if 0
+void selectPlaylist(const SpotifyCredential& cred, const std::string& playlist) {
+	// Your implementation goes here
+	printf("selectPlaylist\n");
+}
+#endif
+
+
 
 // This baby here, the SpotifyHandler, should be a singleton. The main reason
 // for this is the fact that we can only have one audio queue, and we only need one
@@ -196,9 +134,11 @@ public:
 		return m_handler_ptr;
 	};
 
-	void initiateSession(SpotifyCredential& _return, const SpotifyCredential& cred) {
+	void loginSession(SpotifyCredential& _return, const SpotifyCredential& cred) {
 		// Your implementation goes here
+#ifdef DEBUG
 		printf("initiatingSession\n");
+#endif
 
 		boost::shared_ptr< SpotifySession > sess = getSession(cred);
 		if(!sess) {
@@ -206,7 +146,7 @@ public:
 			sp_session_login(sess->getSession(), cred.username, cred.passwd, 0);
 
 			//are SpotifyCredentials hashable? 
-			m_sessions.insert( cred, sess)
+			m_sessions.insert( cred, sess);
 		}
 		
 		//do we need to do anything else? Load playlsits or whatever?
@@ -660,7 +600,7 @@ private:
 		return sp_session_playlistcontainer(sess.getSession());
 	}
 
-	m_sessions& sessions() {
+	session_map& sessions() {
 		return m_sessions;
 	}
 
@@ -680,9 +620,12 @@ private:
 	session_map m_sessions;
 	boost::shared_ptr<SpotifySession> m_active_session;
 	session_map::const_iterator m_sess_it;
-	SpotifyHandler * m_handler_ptr = NULL;
+	static SpotifyHandler * m_handler_ptr;
 
 };
+
+//Global pointer to Spotify Handler. Used by callbacks.
+static SpotifyHandler * g_handler = NULL;
 
 /* --------------------------  PLAYLIST CALLBACKS  ------------------------- */
 static void tracks_added(sp_playlist *pl, sp_track * const *tracks,
