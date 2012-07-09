@@ -1,0 +1,3 @@
+-DDEBUG
+-I./include
+-I/opt/thrift/include/thrift/
