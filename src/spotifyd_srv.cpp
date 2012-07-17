@@ -45,11 +45,12 @@ SpotifySession::SpotifySession()
     ,m_playback_done(1)
     ,m_jukeboxlist(NULL)
     ,m_remove_tracks(0)
-     ,m_currenttrack(0)
-     ,m_track_idx(-1){
-         //
-         m_sess = new sp_session;
-     }
+    ,m_currenttrack(0)
+    ,m_track_idx(-1)
+{
+        m_sess = new sp_session;
+}
+
 
 sp_playlistcontainer * SpotifySession::getPlaylistContainer(void) {
     if(!m_sess) {
