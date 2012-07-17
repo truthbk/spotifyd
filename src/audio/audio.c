@@ -59,6 +59,41 @@ void audio_fifo_flush(audio_fifo_t *af)
     pthread_mutex_unlock(&af->mutex);
 }
 
-void set_audio_init( audio_init_ptr ptr ) {
-	audio_init = ptr;
+int set_audio(enum audio_arch arch) 
+{
+    int ret = 0;
+
+    switch(arch)
+    {
+#ifdef _LINUX
+	case ALSA:
+#ifdef _ALSA
+		set_audio_init(alsa_audio_init);
+#else
+		set_audio_init(dummy_audio_init);
+		ret =1;
+#endif
+		break;
+	case OPENAL:
+#ifdef _OPENAL
+		set_audio_init(openal_audio_init);
+#else
+		set_audio_init(dummy_audio_init);
+		ret =1;
+#endif
+		break;
+	default:
+		set_audio_init(dummy_audio_init);
+		break;
+#endif
+#ifdef _OSX
+	case OSX:
+	default:
+		set_audio_init(osx_audio_init);
+		break;
+#endif
+
+    }
+
+    return ret;
 }

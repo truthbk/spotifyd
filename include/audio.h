@@ -34,24 +34,36 @@
 
 /* --- Types --- */
 typedef struct audio_fifo_data {
-	TAILQ_ENTRY(audio_fifo_data) link;
-	int channels;
-	int rate;
-	int nsamples;
-	int16_t samples[0];
+    TAILQ_ENTRY(audio_fifo_data) link;
+    int channels;
+    int rate;
+    int nsamples;
+    int16_t samples[0];
 } audio_fifo_data_t;
 
 typedef struct audio_fifo {
-	TAILQ_HEAD(, audio_fifo_data) q;
-	int qlen;
-	pthread_mutex_t mutex;
-	pthread_cond_t cond;
+    TAILQ_HEAD(, audio_fifo_data) q;
+    int qlen;
+    pthread_mutex_t mutex;
+    pthread_cond_t cond;
 } audio_fifo_t;
+
 
 
 /* --- Functions --- */
 
 typedef void (* audio_init_ptr)(audio_fifo_t *);
+
+enum audio_arch {
+#ifdef _LINUX
+    DUMMY = 1,
+    ALSA = 2,
+    OPENAL = 3,
+#endif
+#elif _OSX
+    OSX  = 1,
+#endif
+};
 
 #ifdef _LINUX
 #ifdef _ALSA
@@ -60,15 +72,20 @@ void alsa_audio_init(audio_fifo_t *af);
 #ifdef _OPENAL
 void openal_audio_init(audio_fifo_t *af);
 #endif
+void dummy_audio_init(audio_fifo_t *af);
+audio_init_ptr audio_init = dummy_audio_init;
 #elif _OSX
 void osx_audio_init(audio_fifo_t *af);
+audio_init_ptr audio_init = osx_audio_init;
 #endif
-void dummy_audio_init(audio_fifo_t *af);
 
-audio_init_ptr audio_init = dummy_audio_init;
 
 extern void audio_fifo_flush(audio_fifo_t *af);
-void set_audio_init(audio_init_ptr ptr);
+void set_audio_init( audio_init_ptr ptr ) {
+    audio_init = ptr;
+}
 audio_fifo_data_t* audio_get(audio_fifo_t *af);
+
+int set_audio(enum audio_arch arch);
 
 #endif /* _JUKEBOX_AUDIO_H_ */
