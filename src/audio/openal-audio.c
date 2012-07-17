@@ -137,7 +137,7 @@ static void* audio_start(void *aux)
 	}
 }
 
-void audio_init(audio_fifo_t *af)
+void openal_audio_init(audio_fifo_t *af)
 {
     pthread_t tid;
 

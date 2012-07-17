@@ -35,7 +35,7 @@
 
 #include "audio.h"
 
-static void* alsa_audio_start(void *aux)
+static void* dummy_audio_start(void *aux)
 {
 	audio_fifo_t *af = aux;
 
@@ -44,7 +44,7 @@ static void* alsa_audio_start(void *aux)
 	return NULL;
 }
 
-void audio_init(audio_fifo_t *af)
+void dummy_audio_init(audio_fifo_t *af)
 {
 	pthread_t tid;
 
@@ -54,7 +54,7 @@ void audio_init(audio_fifo_t *af)
 	pthread_mutex_init(&af->mutex, NULL);
 	pthread_cond_init(&af->cond, NULL);
 
-	pthread_create(&tid, NULL, alsa_audio_start, af);
+	pthread_create(&tid, NULL, dummy_audio_start, af);
 }
 
 

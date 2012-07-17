@@ -213,7 +213,7 @@ static void* alsa_audio_start(void *aux)
 	}
 }
 
-void audio_init(audio_fifo_t *af)
+void alsa_audio_init(audio_fifo_t *af)
 {
 	pthread_t tid;
 
@@ -225,4 +225,5 @@ void audio_init(audio_fifo_t *af)
 
 	pthread_create(&tid, NULL, alsa_audio_start, af);
 }
+
 

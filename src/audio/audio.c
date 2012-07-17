@@ -58,3 +58,7 @@ void audio_fifo_flush(audio_fifo_t *af)
     af->qlen = 0;
     pthread_mutex_unlock(&af->mutex);
 }
+
+void set_audio_init( audio_init_ptr ptr ) {
+	audio_init = ptr;
+}

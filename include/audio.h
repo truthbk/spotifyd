@@ -50,8 +50,25 @@ typedef struct audio_fifo {
 
 
 /* --- Functions --- */
-extern void audio_init(audio_fifo_t *af);
+
+typedef void (* audio_init_ptr)(audio_fifo_t *);
+
+#ifdef _LINUX
+#ifdef _ALSA
+void alsa_audio_init(audio_fifo_t *af);
+#endif
+#ifdef _OPENAL
+void openal_audio_init(audio_fifo_t *af);
+#endif
+#elif _OSX
+void osx_audio_init(audio_fifo_t *af);
+#endif
+void dummy_audio_init(audio_fifo_t *af);
+
+audio_init_ptr audio_init = dummy_audio_init;
+
 extern void audio_fifo_flush(audio_fifo_t *af);
+void set_audio_init(audio_init_ptr ptr);
 audio_fifo_data_t* audio_get(audio_fifo_t *af);
 
 #endif /* _JUKEBOX_AUDIO_H_ */

@@ -52,7 +52,7 @@ static void audio_callback (void *aux, AudioQueueRef aq, AudioQueueBufferRef buf
 
 static const int kSampleCountPerBuffer = 2048;
 
-void audio_init(audio_fifo_t *af)
+void osx_audio_init(audio_fifo_t *af)
 {
     int i;
     TAILQ_INIT(&af->q);
