@@ -11,10 +11,19 @@ set(Spotifyd_SRCS
 #if this doesn't work add it to the top-level
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/gen-cpp)
 
-add_library(SpotifydTrhift ${ThriftGen})
+#build thrift lib
+add_library(SpotifydThrift ${ThriftGen_SRCS})
+
+#build audio lib
+if(APPLE)
+add_library(spotaudio audio/osx-audio.c audio/dummy-audio.c audio/audio.c)
+else(APPLE)
+add_library(spotaudio audio/alsa-audio.c audio/openal-audio.c audio/dummy-audio.c audio/audio.c)
+endif(APPLE)
+
 add_library(spotify SHARED IMPORTED)
 add_executable(spotifyd Spotifyd_SRCS)
-target_link_libraries(${Thrift_LIB} spotify)
+target_link_libraries(SpotifydThrift ${Thrift_LIB} spotify spotaudio)
 
 add_custom_command(
 	OUTPUT    ${ThriftGen_SRCS}
