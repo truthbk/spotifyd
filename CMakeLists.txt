@@ -25,9 +25,21 @@ find_package(Thrift REQUIRED)
 find_package(Spotify REQUIRED)
 link_directories(${PROJECT_SOURCE_DIR}/lib)
 
+if (Boost_FOUND)
+	include_directories(${Boost_INCLUDE_DIR})
+	ADD_DEFINITIOS("-DHAS_BOOST")
+endif()
+
+if (Thrift_FOUND)
+	include_directories(${Thrift_INCLUDE_DIR} ${Thrift_INCLUDE_DIR}/thrift)
+endif()
+
+if (Spotify_FOUND)
+	include_directories(${Spotify_INCLUDE_DIR})
+endif()
+
 include_directories(${PROJECT_BINARY_DIR}
-	${PROJECT_SOURCE_DIR}/include
-	${Thrift_INCLUDE_DIR} ${Thrift_INCLUDE_DIR}/thrift)
+	${PROJECT_SOURCE_DIR}/include)
 
 #compiler stuff
 set(CMAKE_C_FLAGS "-ggdb -Wall -W -fbuiltin")
