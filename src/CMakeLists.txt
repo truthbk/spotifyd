@@ -21,8 +21,8 @@ else(APPLE)
 add_library(spotaudio audio/alsa-audio.c audio/openal-audio.c audio/dummy-audio.c audio/audio.c)
 endif(APPLE)
 
-add_executable(spotifyd Spotifyd_SRCS)
-target_link_libraries(SpotifydThrift spotaudio ${Thrift_LIBS} ${Spotify_LIB})
+add_executable(spotifyd ${Spotifyd_SRCS})
+target_link_libraries(spotifyd SpotifydThrift spotaudio ${Thrift_LIBS} ${Spotify_LIB})
 
 add_custom_command(
 	OUTPUT    ${ThriftGen_SRCS}

@@ -25,18 +25,11 @@ find_package(Thrift REQUIRED)
 find_package(Spotify REQUIRED)
 link_directories(${PROJECT_SOURCE_DIR}/lib)
 
-if (Boost_FOUND)
-	include_directories(${Boost_INCLUDE_DIR})
-	ADD_DEFINITIOS("-DHAS_BOOST")
-endif()
+include_directories(${Boost_INCLUDE_DIR})
+add_definitions("-DHAS_BOOST")
 
-if (Thrift_FOUND)
-	include_directories(${Thrift_INCLUDE_DIR} ${Thrift_INCLUDE_DIR}/thrift)
-endif()
-
-if (Spotify_FOUND)
-	include_directories(${Spotify_INCLUDE_DIR})
-endif()
+include_directories(${Thrift_INCLUDE_DIR})
+include_directories(${Spotify_INCLUDE_DIR})
 
 include_directories(${PROJECT_BINARY_DIR}
 	${PROJECT_SOURCE_DIR}/include)
