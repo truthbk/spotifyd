@@ -23,16 +23,32 @@ find_package(LibEvent REQUIRED)
 find_package(Boost REQUIRED)
 find_package(Thrift REQUIRED)
 find_package(Spotify REQUIRED)
+find_package(ALSA)
+find_package(OpenAL)
 link_directories(${PROJECT_SOURCE_DIR}/lib)
 
 include_directories(${Boost_INCLUDE_DIR})
-add_definitions("-DHAS_BOOST")
-
 include_directories(${Thrift_INCLUDE_DIR})
 include_directories(${Spotify_INCLUDE_DIR})
 
+if(ALSA_FOUND)
+	include_directories(${ALSA_INCLUDE_DIR})
+	add_definitions("-DHAS_ALSA")
+endif()
+
+if(OpenAL_FOUND)
+	add_definitions("-DHAS_OPENAL")
+endif()
+
 include_directories(${PROJECT_BINARY_DIR}
 	${PROJECT_SOURCE_DIR}/include)
+
+#should check for linux explicitly...
+if(APPLE)
+	add_definitions("-D_OSX")
+else()
+	add_definitions("-D_LINUX")
+endif()
 
 #compiler stuff
 set(CMAKE_C_FLAGS "-ggdb -Wall -W -fbuiltin")

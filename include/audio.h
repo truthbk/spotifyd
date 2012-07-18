@@ -57,9 +57,8 @@ typedef void (* audio_init_ptr)(audio_fifo_t *);
 enum audio_arch {
 #ifdef _LINUX
     DUMMY = 1,
-    ALSA = 2,
-    OPENAL = 3,
-#endif
+    ALSA,
+    OPENAL,
 #elif _OSX
     OSX  = 1,
 #endif
