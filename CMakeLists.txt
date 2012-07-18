@@ -15,7 +15,14 @@ set (spotifyd_VERSION_PATCH 0)
 # for what we're trying to achieve with out build env + thrift. It even includes the thrift
 # code generation snippets, such that when you make with cmake those are made too from the thrift
 # definition files. Plenty to be done, but looking good.
+
+# Locate required packages
+set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
+
+find_package(LibEvent REQUIRED)
+find_package(Boost REQUIRED)
 find_package(Thrift REQUIRED)
+find_package(Spotify REQUIRED)
 link_directories(${PROJECT_SOURCE_DIR}/lib)
 
 include_directories(${PROJECT_BINARY_DIR}
