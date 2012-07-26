@@ -105,54 +105,96 @@ void selectPlaylist(const SpotifyCredential& cred, const std::string& playlist) 
 
 
 SpotifyHandler::SpotifyHandler(const uint8_t *appkey, const size_t appkey_size)
-            : Lockable() {
-                //private so it can't be called.
-                m_spconfig.api_version = SPOTIFY_API_VERSION;
-                    m_spconfig.cache_location = "tmp";
-                    m_spconfig.settings_location = "tmp";
-                    m_spconfig.application_key = appkey;
-                    m_spconfig.application_key_size = appkey_size; // Set in main()
-                    m_spconfig.user_agent = "spotifyd";
-                    m_spconfig.callbacks = &session_callbacks;
-		    m_spconfig.userdata = NULL;
-                };
-                m_sess_it = m_sessions.begin();
-            }
+    : Lockable()
+    , m_sess_it(m_sessions.begin())
+    , m_playback_done(1)
+    {
+        //private so it can't be called.
+        m_spconfig.api_version = SPOTIFY_API_VERSION;
+        m_spconfig.cache_location = "tmp";
+        m_spconfig.settings_location = "tmp";
+        m_spconfig.application_key = appkey;
+        m_spconfig.application_key_size = appkey_size; // Set in main()
+        m_spconfig.user_agent = "spotifyd";
+        m_spconfig.callbacks = &session_callbacks;
+        m_spconfig.userdata = NULL;
+    };
 
-static SpotifyHandler * SpotifyHandler::getInstance() {
+SpotifyHandler * SpotifyHandler::getInstance() {
     if(!m_handler_ptr) {
-	m_handler_ptr = new SpotifyHandler:
+	m_handler_ptr = new SpotifyHandler;
     }
     return m_handler_ptr;
 };
 
 void SpotifyHandler::loginSession(SpotifyCredential& _return, const SpotifyCredential& cred) {
     // Your implementation goes here
+    sp_error err;
 #ifdef DEBUG
     printf("initiatingSession\n");
 #endif
 
     boost::shared_ptr< SpotifySession > sess = getSession(cred);
     if(!sess) {
-	sess = boost::shared_ptr< spotifySession>(new SpotifySession());
-	sp_session_login(sess->getSession(), cred.username, cred.passwd, 0);
+	sess = boost::shared_ptr<SpotifySession>(new SpotifySession());
+        //how does this behave if the login fails?
+	err = sp_session_login( 
+                sess->getSession(), 
+                cred._username.c_str(), 
+                cred._passwd.c_str(), 1, NULL);
 
 	//are SpotifyCredentials hashable? 
-	m_sessions.insert( cred, sess);
+        if(err != SP_ERROR_OK ) 
+        {
+            // problem loging in...
+            _return.__set__username("");
+            _return.__set__passwd("");
+            _return.__set__uid("");
+            return;
+        }
+	m_sessions.insert( 
+                SpotifyHandler::sess_map_pair( cred, sess ) );
     }
 
-    //do we need to do anything else? Load playlsits or whatever?
     //callback should handle that.
+    _return = cred;
 }
 
 void SpotifyHandler::logoutSession(const SpotifyCredential& cred) {
-    // Your implementation goes here
+
+    sp_error err;
+
     printf("logoutSession\n");
+    boost::shared_ptr< SpotifySession > sess = getSession(cred);
+    if(!sess) {
+        return;
+    }
+    if(sess == m_active_session) 
+    {
+        //stop track move onto next session.
+        switchSession();
+    }
+    err = sp_session_logout(sess->getSession());
+
+    //iterators are not invalidated by insertion/removal in maps!
+    if(err == SP_ERROR_OK )
+    {
+        //remove session from list....
+        session_map s = sessions();
+        s.erase(cred);
+    }
+
+    return;
 }
 
 void SpotifyHandler::sendCommand(const SpotifyCredential& cred, const SpotifyCmd::type cmd) {
     // Your implementation goes here
     printf("sendCommand\n");
+
+    boost::shared_ptr< SpotifySession > sess = getSession(cred);
+    if(!sess) {
+        return;
+    }
 
     switch(cmd){
 	case SpotifyCmd::PLAY:
@@ -174,17 +216,20 @@ void SpotifyHandler::sendCommand(const SpotifyCredential& cred, const SpotifyCmd
 	default:
 	    break;
     }
+    return;
 }
 
 //change session, allow it to be played.
 void SpotifyHandler::switchSession() {
-    boost::shared_ptr<SpotifySession> sess = it.second;
-    sp_session_player_unload(sess->getSession());
+    sp_session_player_unload(m_active_session->getSession());
 
     //Currently just round-robin.
-    if(++m_sess_it = m_sessions.end()) {
-	m_sess_it = m_sessions.begin();
+    if (++m_sess_it == m_sessions.end())
+    {
+        m_sess_it = m_sessions.begin();
     }
+
+    m_active_session = (*m_sess_it).second;
 
     return;
 }
@@ -256,7 +301,7 @@ void SpotifyHandler::tracks_moved_cb(sp_playlist *pl, const int *tracks,
 
 void SpotifyHandler::playlist_renamed_cb(sp_playlist *pl, void *userdata) {
     const char *name = sp_playlist_name(pl);
-    const char *current = NULL;
+    const char *currentpl = NULL;
 
     boost::shared_ptr<SpotifySession> sess = getActiveSession();
     if(!sess) {
@@ -310,7 +355,7 @@ void SpotifyHandler::end_of_track_cb(sp_session *sess) {
     lock();
     m_playback_done = 1;
     //h->setPlaybackState(DONE);
-    h->switchSession();
+    switchSession();
     cond_signal();
     unlock();
 }
@@ -328,7 +373,7 @@ void SpotifyHandler::play_token_lost_cb(sp_session *sess)
 	sp_session_player_unload(sess);
 	spsession->setCurrentTrack(NO_TRACK);
     }
-    switchSession():
+    switchSession();
 }
 
 int SpotifyHandler::music_delivery_cb(sp_session *sess, const sp_audioformat *format,
@@ -342,29 +387,30 @@ int SpotifyHandler::music_delivery_cb(sp_session *sess, const sp_audioformat *fo
 	return 0; // Audio discontinuity, do nothing
     }
 
-    pthread_mutex_lock(&m_audiofifo->mutex);
+    pthread_mutex_lock(&m_audiofifo.mutex);
 
     /* Buffer one second of audio */
-    if (af->qlen > format->sample_rate)
+    if (m_audiofifo.qlen > format->sample_rate)
     {
-	pthread_mutex_unlock(&m_audiofifo->mutex);
+	pthread_mutex_unlock(&m_audiofifo.mutex);
 	return 0;
     }
 
     s = num_frames * sizeof(int16_t) * format->channels;
 
-    afd = malloc(sizeof(audio_fifo_data_t) + s);
+    //dont want to malloc, change this to new....
+    afd = (audio_fifo_data_t *) malloc(sizeof(audio_fifo_data_t) + s);
     memcpy(afd->samples, frames, s);
 
     afd->nsamples = num_frames;
     afd->rate = format->sample_rate;
     afd->channels = format->channels;
 
-    TAILQ_INSERT_TAIL(&m_audiofifo->q, afd, link);
-    m_audiofifo->qlen += num_frames;
+    TAILQ_INSERT_TAIL(&m_audiofifo.q, afd, link);
+    m_audiofifo.qlen += num_frames;
 
-    pthread_cond_signal(&m_audiofifo->cond);
-    pthread_mutex_unlock(&m_audiofifo->mutex);
+    pthread_cond_signal(&m_audiofifo.cond);
+    pthread_mutex_unlock(&m_audiofifo.mutex);
 
     return num_frames;
 }
@@ -374,13 +420,16 @@ void SpotifyHandler::search(SpotifyPlaylist& _return, const SpotifyCredential& c
 		const SpotifySearch& criteria) {
     // Your implementation goes here
     printf("search\n");
-    boost::shared_ptr< sp_session > sess = getSession(cred);
+    boost::shared_ptr< SpotifySession > sess = getSession(cred);
     if(!sess) {
-	sess = boost::shared_ptr< SpotifySessuib>(new SpotifySession());
-	sp_session_login(sess, cred.username, cred.passwd, 0);
+        sess = boost::shared_ptr< SpotifySession>(new SpotifySession());
+        sp_session_login(
+                sess->getSession(), 
+                cred._username.c_str(), 
+                cred._passwd.c_str(), 0);
 
-	// Write a SpotifyCredentials hashing function?
-	sessions.insert( cred, sess)
+        // Write a SpotifyCredentials hashing function?
+        m_sessions.insert( SpotifyHandler::sess_map_pair( cred, sess) );
     }
 }
 
@@ -389,7 +438,7 @@ void SpotifyHandler::getPlaylists(SpotifyPlaylistList& _return, const SpotifyCre
     printf("getPlaylists\n");
     boost::shared_ptr< SpotifySession > sess = getSession(cred);
     if(!sess) {
-	return;
+        return;
     }
     sp_playlistcontainer * pc = sess->getPlaylistContainer();
     if(!pc) {
@@ -401,7 +450,7 @@ void SpotifyHandler::getPlaylists(SpotifyPlaylistList& _return, const SpotifyCre
 	sp_playlist *pl = sp_playlistcontainer_playlist(pc, i);
 
 	std::string s_pl(sp_playlist_name(pl));
-	_return.insert(*s_pl);
+	_return.insert(s_pl);
     }
 
     return;
@@ -434,13 +483,13 @@ void SpotifyHandler::getPlaylist(SpotifyPlaylist& _return, const SpotifyCredenti
 	int duration = sp_track_duration(t); //millisecs?
 	boost::shared_ptr<SpotifyTrack> spt(
 		new SpotifyTrack(
-		    , sp_track_name(t)
-		    , sp_artist_name(sp_track_artist(t, 0) )
-		    , (duration / 60000 )
-		    , ((duration / 1000) % 60)
-		    , sp_track_popularity(t)
-		    , NULL //TODO: genre
-		    , sp_track_is_starred(t)));
+		    sp_track_name(t) ,
+		    sp_artist_name(sp_track_artist(t, 0) ),
+		    (duration / 60000 ),
+		    ((duration / 1000) % 60),
+		    sp_track_popularity(t),
+		    NULL, //TODO: genre
+		    sp_track_is_starred(sess->getSession(), t)));
 	_return.insert(*spt);
 
     }
@@ -550,14 +599,16 @@ void SpotifyHandler::whats_playing(SpotifyTrack& _return) {
     printf("whats_playing\n");
 }
 
-boost::shared_ptr<SpotifySession> SpotifyHandler::getSession(SpotifyCredential& cred) {
-    session_map::const_iterator it;
-    if(m_sessions.find(cred) == it.end())
+boost::shared_ptr<SpotifySession> SpotifyHandler::getSession(const SpotifyCredential& cred) {
+    SpotifyHandler::session_map::const_iterator it;
+    
+    it = m_sessions.find(cred)
+    if( it == m_sessions.end() )
     {
 	return NULL;
     }
 
-    return *it.second;
+    return (*it).second;
 
 }
 boost::shared_ptr<SpotifySession> SpotifyHandler::getActiveSession(void) {
@@ -700,7 +751,7 @@ session_callbacks = {
 int main(int argc, char **argv) {
     int port = 9090;
 
-    g_handler = new SpotifyHandler(g_appkey, g_appket_size);
+    g_handler = new SpotifyHandler();
     boost::shared_ptr<SpotifyHandler> handler(g_handler);
 
     boost::shared_ptr<TProcessor> processor(new SpotifyProcessor(handler));

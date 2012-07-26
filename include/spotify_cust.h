@@ -104,27 +104,29 @@ class SpotifyHandler :
         void whats_playing(SpotifyTrack& _return);
     private:
         SpotifyHandler(const uint8_t *appkey = g_appkey, const size_t appkey_size = g_appkey_size);
-        typedef std::map< boost::shared_ptr<SpotifyCredential>, boost::shared_ptr<SpotifySession> > session_map;
+        typedef std::pair <SpotifyCredential, boost::shared_ptr<SpotifySession> > sess_map_pair; 
+        typedef std::map <SpotifyCredential, boost::shared_ptr<SpotifySession> > session_map;
 
-        boost::shared_ptr<SpotifySession> getSession(SpotifyCredential& cred);
+        boost::shared_ptr<SpotifySession> getSession(const SpotifyCredential& cred);
         boost::shared_ptr<SpotifySession> getActiveSession(void);
         void setActiveSession(boost::shared_ptr<SpotifySession> session);
 
         //we also need to be able to search by sp_session, that's quite important; callbacks rely very heavily
         //on it.
-        sp_playlistcontainer * getPlaylistContainer(SpotifyCredential& cred);
-        session_map& sessions();
-        audio_fifo_t * audio_fifo();
-        sp_session_config * app_config();
+        sp_playlistcontainer *                  getPlaylistContainer(SpotifyCredential& cred);
+        session_map&                            sessions();
+        audio_fifo_t *                          audio_fifo();
+        sp_session_config *                     app_config();
 
         //libspotify wrapped
-        sp_session_config m_spconfig;
-        audio_fifo_t m_audiofifo;
+        sp_session_config                       m_spconfig;
+        audio_fifo_t                            m_audiofifo;
 
         //proper members
-        session_map m_sessions;
-        boost::shared_ptr<SpotifySession> m_active_session;
-        session_map::const_iterator m_sess_it;
-        static SpotifyHandler * m_handler_ptr;
+        session_map                             m_sessions;
+        session_map::iterator                   m_sess_it;
+        boost::shared_ptr<SpotifySession>       m_active_session;
+        static SpotifyHandler *                 m_handler_ptr;
+        int                                     m_playback_done;
 };
 #endif
