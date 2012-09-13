@@ -64,6 +64,7 @@ enum audio_arch {
 #endif
 };
 
+audio_init_ptr audio_init;
 #ifdef _LINUX
 #ifdef _ALSA
 void alsa_audio_init(audio_fifo_t *af);
@@ -72,17 +73,13 @@ void alsa_audio_init(audio_fifo_t *af);
 void openal_audio_init(audio_fifo_t *af);
 #endif
 void dummy_audio_init(audio_fifo_t *af);
-audio_init_ptr audio_init = dummy_audio_init;
 #elif _OSX
 void osx_audio_init(audio_fifo_t *af);
-audio_init_ptr audio_init = osx_audio_init;
 #endif
 
 
 extern void audio_fifo_flush(audio_fifo_t *af);
-void set_audio_init( audio_init_ptr ptr ) {
-    audio_init = ptr;
-}
+void set_audio_init( audio_init_ptr ptr );
 audio_fifo_data_t* audio_get(audio_fifo_t *af);
 
 int set_audio(enum audio_arch arch);

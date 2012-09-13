@@ -14,8 +14,9 @@ sp_playlist_callbacks pl_callbacks;
 sp_session_callbacks session_callbacks;
 
 /* --- Data --- */
-extern const uint8_t g_appkey[];
-extern const size_t g_appkey_size;
+#define _SOMESIZE 8
+const uint8_t g_appkey[_SOMESIZE + 1] = "AABBCCDD";
+const size_t g_appkey_size = _SOMESIZE;
 
 //nice per session wrapper class
 class SpotifySession {
@@ -63,6 +64,18 @@ class SpotifySession {
 
 };
 
+#if 0
+template <typename T>
+struct lthelper
+{
+    bool operator()(const T * t1, const T * t2)
+    {
+        return ((t1-t2) < 0);
+    }
+}
+#endif
+
+
 
 // This baby here, the SpotifyHandler, should be a singleton. The main reason
 // for this is the fact that we can only have one audio queue, and we only need one
@@ -82,7 +95,11 @@ class SpotifyHandler
         , public Runnable
         , private Lockable {
     public:
-        static SpotifyHandler * getInstance();
+        static SpotifyHandler& getInstance()
+        {
+            static SpotifyHandler instance;
+            return instance;
+        }
         void loginSession(SpotifyCredential& _return, const SpotifyCredential& cred);
         void logoutSession(const SpotifyCredential& cred);
         void sendCommand(const SpotifyCredential& cred, const SpotifyCmd::type cmd);
@@ -122,7 +139,10 @@ class SpotifyHandler
         //implementing runnable
         void run();
     private:
-        SpotifyHandler(const uint8_t *appkey = g_appkey, const size_t appkey_size = g_appkey_size);
+        SpotifyHandler();
+        void SpotifyInitHandler(const uint8_t *appkey = g_appkey, const size_t appkey_size = g_appkey_size);
+        SpotifyHandler(SpotifyHandler const&); //Dont implement
+        void operator=(SpotifyHandler const&); //Dont implement
 
         boost::shared_ptr<SpotifySession> getSession(const SpotifyCredential& cred);
         boost::shared_ptr<SpotifySession> getActiveSession(void);
@@ -143,7 +163,6 @@ class SpotifyHandler
         session_map                             m_sessions;
         session_map::iterator                   m_sess_it;
         boost::shared_ptr<SpotifySession>       m_active_session;
-        static SpotifyHandler *                 m_handler_ptr;
         int                                     m_playback_done;
 };
 #endif

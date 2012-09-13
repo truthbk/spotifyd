@@ -30,6 +30,18 @@ using namespace ::apache::thrift::protocol;
 using namespace ::apache::thrift::transport;
 using namespace ::apache::thrift::server;
 
+//define the operators
+//these must be moved to their own file with other possible
+//definitions for thrift generated code.
+bool SpotifyTrack::operator < (const SpotifyTrack & other) const 
+{
+    return (this->_id - other._id) < 0;
+}
+
+bool SpotifyCredential::operator < (const SpotifyCredential & other) const 
+{
+    return this->_username.compare(other._username) < 0;
+}
 
 SpotifySession::SpotifySession() 
     :m_sess(NULL)
@@ -41,6 +53,11 @@ SpotifySession::SpotifySession()
     ,m_track_idx(-1)
 {
         //assign ssession later.
+}
+
+SpotifySession::~SpotifySession()
+{
+    //empty
 }
 
 
@@ -99,13 +116,16 @@ void selectPlaylist(const SpotifyCredential& cred, const std::string& playlist) 
 #endif
 
 
-SpotifyHandler::SpotifyHandler(const uint8_t *appkey, const size_t appkey_size)
+SpotifyHandler::SpotifyHandler()
     : Runnable()
     , Lockable()
     , m_sess_it(m_sessions.begin())
     , m_playback_done(1)
 {
-    //private so it can't be called.
+    //private so it can't be called, getInstance calls it...
+}
+void SpotifyHandler::SpotifyInitHandler(const uint8_t *appkey, const size_t appkey_size)
+{
     m_spconfig.api_version = SPOTIFY_API_VERSION;
     m_spconfig.cache_location = "tmp";
     m_spconfig.settings_location = "tmp";
@@ -116,12 +136,6 @@ SpotifyHandler::SpotifyHandler(const uint8_t *appkey, const size_t appkey_size)
     m_spconfig.userdata = NULL;
 };
 
-SpotifyHandler * SpotifyHandler::getInstance() {
-    if(!m_handler_ptr) {
-	m_handler_ptr = new SpotifyHandler;
-    }
-    return m_handler_ptr;
-};
 
 void SpotifyHandler::run() 
 {
@@ -196,12 +210,17 @@ void SpotifyHandler::loginSession(SpotifyCredential& _return, const SpotifyCrede
     _return = cred;
 }
 
+SpotifyHandler::session_map& SpotifyHandler::sessions()
+{
+    return m_sessions;
+}
+
 void SpotifyHandler::logoutSession(const SpotifyCredential& cred) {
 
     sp_error err;
 
     printf("logoutSession\n");
-    boost::shared_ptr< SpotifySession > sess = getSession(cred);
+    boost::shared_ptr<SpotifySession> sess = getSession(cred);
     if(!sess) {
         return;
     }
@@ -227,7 +246,7 @@ void SpotifyHandler::sendCommand(const SpotifyCredential& cred, const SpotifyCmd
     // Your implementation goes here
     printf("sendCommand\n");
 
-    boost::shared_ptr< SpotifySession > sess = getSession(cred);
+    boost::shared_ptr<SpotifySession> sess = getSession(cred);
     if(!sess) {
         return;
     }
@@ -463,9 +482,9 @@ void SpotifyHandler::search(SpotifyPlaylist& _return, const SpotifyCredential& c
 		const SpotifySearch& criteria) {
     // Your implementation goes here
     printf("search\n");
-    boost::shared_ptr< SpotifySession > sess = getSession(cred);
+    boost::shared_ptr<SpotifySession> sess = getSession(cred);
     if(!sess) {
-        sess = boost::shared_ptr< SpotifySession>(new SpotifySession());
+        sess = boost::shared_ptr<SpotifySession>(new SpotifySession());
 
         //gotta add blob support (see libspotify api).
         sp_session_login(
@@ -481,7 +500,7 @@ void SpotifyHandler::search(SpotifyPlaylist& _return, const SpotifyCredential& c
 void SpotifyHandler::getPlaylists(SpotifyPlaylistList& _return, const SpotifyCredential& cred) 
 {
     printf("getPlaylists\n");
-    boost::shared_ptr< SpotifySession > sess = getSession(cred);
+    boost::shared_ptr<SpotifySession> sess = getSession(cred);
     if(!sess) {
         return;
     }
@@ -507,7 +526,7 @@ void SpotifyHandler::getPlaylist(SpotifyPlaylist& _return, const SpotifyCredenti
     // Your implementation goes here
     printf("getPlaylist\n");
 
-    boost::shared_ptr< SpotifySession > sess = getSession(cred);
+    boost::shared_ptr<SpotifySession> sess = getSession(cred);
     if(!sess) {
 	return;
     }
@@ -548,7 +567,7 @@ void SpotifyHandler::getPlaylistByName(SpotifyPlaylist& _return, const SpotifyCr
     // Your implementation goes here
     printf("getPlaylistByName\n");
 
-    boost::shared_ptr< SpotifySession > sess = getSession(cred);
+    boost::shared_ptr<SpotifySession> sess = getSession(cred);
     if(!sess) {
 	return;
     }
@@ -579,7 +598,7 @@ void SpotifyHandler::getPlaylistByName(SpotifyPlaylist& _return, const SpotifyCr
 void SpotifyHandler::selectPlaylist(const SpotifyCredential& cred, const std::string& playlist) {
     // Your implementation goes here
     printf("selectPlaylist\n");
-    boost::shared_ptr< SpotifySession > sess = getSession(cred);
+    boost::shared_ptr<SpotifySession> sess = getSession(cred);
     if(!sess) {
 	return;
     }
@@ -835,7 +854,8 @@ int main(int argc, char **argv) {
     pl_callbacks.playlist_renamed = &playlist_renamed;
 
     //SpotifyHandler
-    g_handler = SpotifyHandler::getInstance();
+    SpotifyHandler& handle = SpotifyHandler::getInstance();
+    g_handler = &handle;
     boost::shared_ptr<SpotifyHandler> handler(g_handler);
 
     //THRIFT Server
@@ -847,7 +867,7 @@ int main(int argc, char **argv) {
     TSimpleServer server(processor, serverTransport, transportFactory, protocolFactory);
 
     server.serve();
-    g_handler->start();
+    handle.start();
 
     return 0;
 }
