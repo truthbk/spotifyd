@@ -16,19 +16,23 @@ add_library(SpotifydThrift ${ThriftGen_SRCS})
 
 #build audio lib
 if(APPLE)
-add_library(spotaudio audio/osx-audio.c audio/dummy-audio.c audio/audio.c)
+	add_library(spotaudio audio/osx-audio.c audio/dummy-audio.c audio/audio.c)
 else(APPLE)
-if(OpenAL_FOUND)
-	set(Audio_SRCS ${Audio_SRCS} audio/openal-audio.c) 
-endif(OpenAL_FOUND)
-if(ALSA_FOUND)
-	set(Audio_SRCS ${Audio_SRCS} audio/alsa-audio.c) 
-endif(ALSA_FOUND)
-add_library(spotaudio audio/audio.c audio/dummy-audio.c ${Audio_SRCS} )
+	if(OpenAL_FOUND)
+		set(Audio_SRCS ${Audio_SRCS} audio/openal-audio.c) 
+	endif(OpenAL_FOUND)
+	if(ALSA_FOUND)
+		set(Audio_SRCS ${Audio_SRCS} audio/alsa-audio.c) 
+	endif(ALSA_FOUND)
+	add_library(spotaudio audio/audio.c audio/dummy-audio.c ${Audio_SRCS} )
 endif(APPLE)
 
 add_executable(spotifyd ${Spotifyd_SRCS})
-target_link_libraries(spotifyd SpotifydThrift spotaudio ${Spotify_LIB} ${Thrift_LIBS} ${LibEvent_LIBS})
+if(UNIX AND NOT APPLE)
+	target_link_libraries(spotifyd SpotifydThrift spotaudio ${Boost_LIBRARIES} ${Spotify_LIB} ${Thrift_LIBS} ${LibEvent_LIBS})
+elseif(APPLE)
+	target_link_libraries(spotifyd SpotifydThrift spotaudio ${Boost_LIBRARIES} ${Spotify_LIB} ${Thrift_LIBS} ${LibEvent_LIBS} ${COREAUDIO} ${AUDIOUNIT} ${AUDIOTOOLBOX} )
+endif()
 
 add_custom_command(
 	OUTPUT    ${ThriftGen_SRCS}

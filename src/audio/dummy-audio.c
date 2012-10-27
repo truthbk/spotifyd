@@ -25,7 +25,9 @@
  * This file is part of the libspotify examples suite.
  */
 
+#ifdef HAS_ALSA
 #include <asoundlib.h>
+#endif
 #include <errno.h>
 #include <math.h>
 #include <stdio.h>

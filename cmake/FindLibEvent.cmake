@@ -7,9 +7,10 @@
 find_path(LibEvent_INCLUDE_DIR event.h PATHS
 	/usr/local/include
 	/opt/local/include
+	/usr/local/Cellar/libevent/2.0.20/include
 	)
 
-set(LibEvent_LIB_PATHS /usr/local/lib /opt/local/lib)
+set(LibEvent_LIB_PATHS /usr/local/lib /opt/local/lib /usr/local/Cellar/libevent/2.0.20/lib)
 find_library(LibEvent_LIB NAMES event PATHS ${LibEvent_LIB_PATHS})
 
 if (LibEvent_LIB AND LibEvent_INCLUDE_DIR)

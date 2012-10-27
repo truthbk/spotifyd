@@ -12,9 +12,10 @@ find_path(Thrift_INCLUDE_DIR Thrift.h PATHS
 	/usr/local/include/thrift
 	/opt/local/include/thrift
 	/opt/thrift/include/thrift
+	/usr/local/Cellar/thrift/0.8.0/include/thrift
 	)
 
-set(Thrift_LIB_PATHS /usr/local/lib /opt/local/lib /opt/thrift/lib)
+set(Thrift_LIB_PATHS /usr/local/lib /opt/local/lib /opt/thrift/lib /usr/local/Cellar/thrift/0.8.0/lib)
 
 find_library(Thrift_LIB NAMES thrift PATHS ${Thrift_LIB_PATHS})
 find_library(Thrift_NB_LIB NAMES thriftnb PATHS ${Thrift_LIB_PATHS})

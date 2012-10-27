@@ -20,39 +20,51 @@ set (spotifyd_VERSION_PATCH 0)
 set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
 
 find_package(LibEvent REQUIRED)
-find_package(Boost REQUIRED)
+find_package(Boost COMPONENTS system filesystem REQUIRED)
 find_package(Thrift REQUIRED)
 find_package(Spotify REQUIRED)
-find_package(ALSA)
-find_package(OpenAL)
+if(UNIX AND NOT APPLE)
+	find_package(ALSA)
+	find_package(OpenAL)
+elseif(APPLE)
+	find_library(COREAUDIO CoreAudio)
+	find_library(AUDIOUNIT AudioUnit)
+	find_library(AUDIOTOOLBOX AudioToolbox)
+endif()
 link_directories(${PROJECT_SOURCE_DIR}/lib)
 
 include_directories(${Boost_INCLUDE_DIR})
 include_directories(${Thrift_INCLUDE_DIR})
 include_directories(${Spotify_INCLUDE_DIR})
 
-if(ALSA_FOUND)
-	include_directories(${ALSA_INCLUDE_DIR})
-	add_definitions("-DHAS_ALSA")
-endif()
-
-if(OpenAL_FOUND)
-	add_definitions("-DHAS_OPENAL")
+if(UNIX AND NOT APPLE)
+	if(ALSA_FOUND)
+		include_directories(${ALSA_INCLUDE_DIR})
+		add_definitions("-DHAS_ALSA")
+	endif()
+	if(OpenAL_FOUND)
+		add_definitions("-DHAS_OPENAL")
+	endif()
 endif()
 
 include_directories(${PROJECT_BINARY_DIR}
 	${PROJECT_SOURCE_DIR}/include)
 
+#compiler stuff
+set(CMAKE_C_FLAGS "-ggdb -Wall -W -fbuiltin")
+
 #should check for linux explicitly...
 if(APPLE)
 	add_definitions("-D_OSX")
+	add_definitions(-DHAVE_INTTYPES_H -DHAVE_NETINET_IN_H)
+#	set(CMAKE_CXX_FLAGS "-std=c++11 -stdlib=libc++ -ggdb -Wall -W -fbuiltin -pthread")
+	set(CMAKE_CXX_FLAGS "-std=c++11 -stdlib=libc++ -ggdb -Wall -W -fbuiltin")
 else()
 	add_definitions("-D_LINUX")
+	add_definitions(-DHAVE_INTTYPES_H -DHAVE_NETINET_IN_H)
+	set(CMAKE_CXX_FLAGS "-std=c++0x -ggdb -Wall -W -fbuiltin -pthread")
 endif()
 
-#compiler stuff
-set(CMAKE_C_FLAGS "-ggdb -Wall -W -fbuiltin")
-set(CMAKE_CXX_FLAGS "-ggdb -Wall -W -fbuiltin -pthread")
 # compile as C++0x
-add_definitions(-std=c++0x -DHAVE_INTTYPES_H -DHAVE_NETINET_IN_H)
+#add_definitions(-std=c++0x -DHAVE_INTTYPES_H -DHAVE_NETINET_IN_H)
 add_subdirectory(src)
