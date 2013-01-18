@@ -1,7 +1,9 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 import sys
-sys.path.append('./gen-py/')
+
+#temporary hack, we'll be moving to virtualenv.
+sys.path.insert(1,'./gen-py')
 
 from spotify import Spotify
 from spotify.ttypes import *
