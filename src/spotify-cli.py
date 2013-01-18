@@ -1,7 +1,7 @@
-#!/usr/bin/env python
+#!/usr/bin/python
 
 import sys
-sys.path.append('./gen-py')
+sys.path.append('./gen-py/')
 
 from spotify import Spotify
 from spotify.ttypes import *
