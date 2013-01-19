@@ -52,8 +52,12 @@ class SpClient(object):
         username = self.get_param("username: ")
         password = self.get_param("password: ")
 
-        credentials = SpotifyCredential( username, password)
-        self._client.loginSession(credentials)
+        try:
+            credentials = SpotifyCredential( username, password)
+            self._client.loginSession(credentials)
+        except Exception, e:
+            return None
+
         return credentials
 
 
