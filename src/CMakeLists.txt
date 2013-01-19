@@ -4,6 +4,14 @@ set(ThriftGen_SRCS
 	${CMAKE_CURRENT_SOURCE_DIR}/gen-cpp/spotify_types.cpp
 	)
 
+set(ThriftPyGen_SRCS
+	${CMAKE_CURRENT_SOURCE_DIR}/gen-py/__init__.py
+	${CMAKE_CURRENT_SOURCE_DIR}/gen-py/spotify/__init__.py
+	${CMAKE_CURRENT_SOURCE_DIR}/gen-py/spotify/constants.py
+	${CMAKE_CURRENT_SOURCE_DIR}/gen-py/spotify/types.py
+	${CMAKE_CURRENT_SOURCE_DIR}/gen-py/spotify/Spotify.py
+	)
+
 set(Spotifyd_SRCS
 	spotifyd_srv.cpp
 	)
@@ -42,3 +50,15 @@ add_custom_command(
 	COMMENT   "thrift2cpp"
 	)
 
+add_custom_command(
+	OUTPUT    ${ThriftPyGen_SRCS}
+	COMMAND   thrift
+	ARGS      -r --gen py -o ${CMAKE_CURRENT_SOURCE_DIR}
+	${PROJECT_SOURCE_DIR}/thrift/spotify.thrift
+	COMMENT   "thrift2py"
+	)
+
+add_custom_target(
+	run ALL
+	DEPENDS ${ThriftPyGen_SRCS}
+	)
