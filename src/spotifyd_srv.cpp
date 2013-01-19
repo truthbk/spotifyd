@@ -10,6 +10,9 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/shared_ptr.hpp>
 
+#include <cstring>
+#include <string>
+
 #include "Spotify.h"
 
 #include "spotify_cust.h"
@@ -53,11 +56,21 @@ SpotifySession::SpotifySession()
     ,m_track_idx(-1)
 {
         //assign ssession later.
+
 }
 
 SpotifySession::~SpotifySession()
 {
     //empty
+}
+
+
+int SpotifySession::initSession(const sp_session_config *cfg) {
+    sp_error err;
+    err = sp_session_create(cfg, &m_sess);
+
+    //check errors, blah....
+    return 0;
 }
 
 
@@ -187,6 +200,7 @@ void SpotifyHandler::loginSession(SpotifyCredential& _return, const SpotifyCrede
     boost::shared_ptr< SpotifySession > sess = getSession(cred);
     if(!sess) {
 	sess = boost::shared_ptr<SpotifySession>(new SpotifySession());
+        sess->initSession( app_config() );
         //how does this behave if the login fails?
 	err = sp_session_login( 
                 sess->getSession(), 

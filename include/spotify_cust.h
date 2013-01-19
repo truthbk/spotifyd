@@ -48,6 +48,7 @@ class SpotifySession {
         sp_session * getSession(void){
             return m_sess;
         };
+        int initSession(const sp_session_config *cfg);
         int getPlaybackDone(void){
             return m_playback_done;
         };
