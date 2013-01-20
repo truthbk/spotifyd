@@ -15,11 +15,15 @@ from thrift.transport import TTransport
 from thrift.protocol import TBinaryProtocol
 
 import curses
+import signal
 
 SPOTIFYD_PORT = 9090
 
+def signal_handler(signal, frame):
+    curses.endwin()
+    sys.exit(0)
 
-class SpClient(object):
+class spclient(object):
 
     def __init__(self):
         # init curses screen
@@ -118,7 +122,9 @@ class SpClient(object):
 
 
 def main():
-    spoticlient = SpClient()
+
+    spoticlient = spclient()
+    signal.signal(signal.SIGINT, signal_handler)
 
     spoticlient.menu()
 
