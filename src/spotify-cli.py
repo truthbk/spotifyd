@@ -58,32 +58,41 @@ class SpClient(object):
             credentials = SpotifyCredential( username, password)
             self._client.loginSession(credentials)
         except Exception, e:
+            self._screen.clear()
             return None
 
         return credentials
 
 
-    def spot_selplaylist(self, client):
-        pass
+    def spot_selplaylist(self):
+        return None
 
-    def spot_seltrack(self, client):
-        pass
+    def spot_seltrack(self):
+        return None
 
-    def spot_playback(selfi, client):
-        pass
+    def spot_playback(self):
+        return None
 
-    def spot_getcurrent(self, client):
-        pass
+    def spot_getcurrent(self):
+        return None
 
-    def spot_logout(self, client):
-        pass
+    def spot_logout(self):
+        return None
 
     def menu(self):
         try:
 
             opt = 0
+            funcs = {
+                    ord('1'): self.spot_login, 
+                    ord('2'): self.spot_selplaylist,
+                    ord('3'): self.spot_seltrack,
+                    ord('4'): self.spot_playback,
+                    ord('5'): self.spot_getcurrent,
+                    ord('6'): self.spot_logout,
+            }
 
-            while opt is not '6':
+            while opt is not ord('7'):
                 self._screen.clear()
                 self._screen.addstr(2, 2, "What d'you wanna do??")
                 self._screen.addstr(4, 4, "1. Login")
@@ -92,23 +101,19 @@ class SpClient(object):
                 self._screen.addstr(7, 4, "4. Control Playback")
                 self._screen.addstr(8, 4, "5. Get current track")
                 self._screen.addstr(9, 4, "6. Logout")
+                self._screen.addstr(9, 4, "7. Exit")
                 self._screen.addstr(12, 4, "Option: ")
 
                 opt = self._screen.getch()
 
-                result = {
-                        '1': self.spot_login(),
-                        '2': self.spot_selplaylist(),
-                        '3': self.spot_seltrack(),
-                        '4': self.spot_playback(),
-                        '5': self.spot_getcurrent(),
-                        '6': self.spot_logout()
-                }[opt]()
+                if opt>ord('0') and opt<ord('7'):
+                    result = funcs[opt]()
 
-            transport.close()
+            self._transport.close()
             curses.endwin()
 
         except Thrift.TException, tx:
+            curses.endwin()
             print "%s" % (tx.message)
 
 
