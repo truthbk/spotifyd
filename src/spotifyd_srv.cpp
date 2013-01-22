@@ -136,6 +136,7 @@ SpotifyHandler::SpotifyHandler()
     , m_playback_done(1)
 {
     //private so it can't be called, getInstance calls it...
+    SpotifyInitHandler(); //defaults
 }
 void SpotifyHandler::SpotifyInitHandler(const uint8_t *appkey, const size_t appkey_size)
 {
