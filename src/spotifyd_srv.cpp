@@ -216,9 +216,11 @@ void SpotifyHandler::loginSession(SpotifyCredential& _return, const SpotifyCrede
             _return.__set__passwd("");
             _return.__set__uid("");
             return;
+        } else {
+            //Libspotify is asynchronous, we need to deal with this with the success/failure in callbacks.
+            m_sessions.insert( 
+                    SpotifyHandler::sess_map_pair( cred, sess ) );
         }
-	m_sessions.insert( 
-                SpotifyHandler::sess_map_pair( cred, sess ) );
     }
 
     //callback should handle that.
