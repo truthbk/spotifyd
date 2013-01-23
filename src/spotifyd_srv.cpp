@@ -135,7 +135,30 @@ SpotifyHandler::SpotifyHandler()
     , m_sess_it(m_sessions.begin())
     , m_playback_done(1)
 {
-    //private so it can't be called, getInstance calls it...
+
+    //get callbacks ready
+    session_callbacks.connection_error = cb_connection_error;
+    session_callbacks.logged_in = cb_logged_in;
+    session_callbacks.logged_out = cb_logged_out;
+    session_callbacks.notify_main_thread = cb_notify_main_thread;
+    session_callbacks.music_delivery = cb_music_delivery;
+    session_callbacks.metadata_updated = cb_metadata_updated;
+    session_callbacks.play_token_lost = cb_play_token_lost;
+    session_callbacks.message_to_user = cb_log_msg;
+    session_callbacks.log_message = cb_log_msg;
+    session_callbacks.end_of_track = cb_end_of_track;
+    session_callbacks.start_playback = cb_start_playback;
+    session_callbacks.stop_playback = cb_stop_playback;
+    session_callbacks.streaming_error = cb_streaming_error;
+    session_callbacks.get_audio_buffer_stats = cb_get_audio_buffer_stats;
+    session_callbacks.userinfo_updated = cb_userinfo_updated;
+
+#if 0 //PENDING
+    pl_callbacks.tracks_added = &tracks_added;
+    pl_callbacks.tracks_removed = &tracks_removed;
+    pl_callbacks.tracks_moved = &tracks_moved;
+    pl_callbacks.playlist_renamed = &playlist_renamed;
+#endif
     SpotifyInitHandler(); //defaults
 }
 void SpotifyHandler::SpotifyInitHandler(const uint8_t *appkey, const size_t appkey_size)
@@ -147,7 +170,8 @@ void SpotifyHandler::SpotifyInitHandler(const uint8_t *appkey, const size_t appk
     m_spconfig.application_key_size = appkey_size; // Set in main()
     m_spconfig.user_agent = "spotifyd";
     m_spconfig.callbacks = &session_callbacks;
-    m_spconfig.userdata = NULL;
+    m_spconfig.callbacks = &session_callbacks;
+    m_spconfig.userdata = this; //we'll use this in callbacks
 };
 
 
@@ -190,6 +214,16 @@ void SpotifyHandler::run()
 #endif
     }
 }
+
+//Should we include this in an anonymous namespace once we put relevant stuff 
+//in its namespace?
+static SpotifyHandler* getHandlerFromUserData( sp_session* session )
+{
+    SpotifyHandler* pHandler = 
+        reinterpret_cast<SpotifyHandler*>(sp_session_userdata(session));
+    return pHandler;
+}
+
 
 void SpotifyHandler::loginSession(SpotifyCredential& _return, const SpotifyCredential& cred) {
     // Your implementation goes here
@@ -732,7 +766,9 @@ sp_session_config * SpotifyHandler::app_config() {
 static SpotifyHandler * g_handler = NULL;
 
 /* --------------------------  PLAYLIST CALLBACKS  ------------------------- */
-static void tracks_added(sp_playlist *pl, sp_track * const *tracks,
+#if 0 //PENDING
+void SP_CALLCONV SpotifyHandler::cb_tracks_added(
+        sp_playlist *pl, sp_track * const *tracks,
         int num_tracks, int position, void *userdata)
 {
     if(!g_handler) {
@@ -742,7 +778,8 @@ static void tracks_added(sp_playlist *pl, sp_track * const *tracks,
     return g_handler->tracks_added(pl, tracks, num_tracks, position, userdata);
 }
 
-static void tracks_removed(sp_playlist *pl, const int *tracks,
+void SP_CALLCONV SpotifyHandler::cb_tracks_removed(
+        sp_playlist *pl, const int *tracks,
         int num_tracks, void *userdata)
 {
     if(!g_handler) {
@@ -752,7 +789,8 @@ static void tracks_removed(sp_playlist *pl, const int *tracks,
     return g_handler->tracks_removed(pl, tracks, num_tracks, userdata);
 }
 
-static void tracks_moved(sp_playlist *pl, const int *tracks,
+void SP_CALLCONV SpotifyHandler::cb_tracks_moved(
+        sp_playlist *pl, const int *tracks,
         int num_tracks, int new_position, void *userdata)
 {
     if(!g_handler) {
@@ -762,7 +800,8 @@ static void tracks_moved(sp_playlist *pl, const int *tracks,
     return g_handler->tracks_moved(pl, tracks, num_tracks, new_position, userdata);
 }
 
-static void playlist_renamed(sp_playlist *pl, void *userdata)
+void SP_CALLCONV SpotifyHandler::cb_playlist_renamed(
+        sp_playlist *pl, void *userdata)
 {
     if(!g_handler) {
         return;
@@ -770,113 +809,117 @@ static void playlist_renamed(sp_playlist *pl, void *userdata)
 
     return g_handler->playlist_renamed(pl, userdata);
 }
+#endif
 
 
 /* --------------------------  SESSION CALLBACKS  ------------------------- */
-static void logged_in(sp_session *sess, sp_error error) {
+void SP_CALLCONV SpotifyHandler::cb_logged_in(
+        sp_session *sess, sp_error error) {
 
-    if(!g_handler) {
-        return;
-    }
+    SpotifyHandler * handler = getHandlerFromUserData(sess);
 
-    return g_handler->logged_in(sess, error);
+    handler->logged_in(sess, error);
+    return;
 }
 
-/**
- * This callback is called from an internal libspotify thread to ask us to
- * reiterate the main loop.
- *
- * We notify the main thread using a condition variable and a protected variable.
- *
- * @sa sp_session_callbacks#notify_main_thread
- */
-static void notify_main_thread(sp_session *sess)
+void SP_CALLCONV SpotifyHandler::cb_logged_out(sp_session *sess) {
+
+    //TODO
+}
+
+void SP_CALLCONV SpotifyHandler::cb_metadata_updated(sp_session *sess) {
+
+    //TODO
+}
+
+void SP_CALLCONV SpotifyHandler::cb_connection_error(
+        sp_session *sess, sp_error error) {
+
+    //TODO
+}
+
+void SP_CALLCONV SpotifyHandler::cb_streaming_error(
+        sp_session *sess, sp_error error) {
+
+    //TODO
+}
+
+void SP_CALLCONV SpotifyHandler::cb_msg_to_user(
+        sp_session *sess, const char * message) {
+
+    //TODO
+}
+
+void SP_CALLCONV SpotifyHandler::cb_log_msg(
+        sp_session *sess, const char * data) {
+
+    //TODO
+}
+
+void SP_CALLCONV SpotifyHandler::cb_notify_main_thread(sp_session *sess)
 {
-    if(!g_handler) {
-        return;
-    }
 
-    return g_handler->notify_main_thread(sess);
+    SpotifyHandler * handler = getHandlerFromUserData(sess);
+
+    handler->notify_main_thread(sess);
+    return;
 }
 
-static void play_token_lost(sp_session *sess) {
-    if(!g_handler) {
-        return;
-    }
-
-    return g_handler->play_token_lost(sess);
-}
-
-#define STOP 0
-#define PLAY 1
-#define DONE 2
-void end_of_track(sp_session * sess) {
-    if(!g_handler) {
-        return;
-    }
-
-    return g_handler->end_of_track(sess);
-
-}
-
-//I would honestly love to avoid mallocs...
-//
-//when one session is playing all other sessions must be mute.
-//
-static int music_delivery(sp_session *sess, const sp_audioformat *format,
+int SP_CALLCONV SpotifyHandler::cb_music_delivery(
+        sp_session *sess, const sp_audioformat *format,
         const void *frames, int num_frames)
 {
-    if(!g_handler) {
-        return 0;
-    }
 
-    return g_handler->music_delivery(sess, format, frames, num_frames);
+    SpotifyHandler * handler = getHandlerFromUserData(sess);
+
+    handler->music_delivery(sess, format, frames, num_frames);
+    return 0; //or whatever...
 }
 
+void SP_CALLCONV SpotifyHandler::cb_play_token_lost(sp_session *sess) {
+
+    SpotifyHandler * handler = getHandlerFromUserData(sess);
+
+    handler->play_token_lost(sess);
+    return;
+}
+
+void SP_CALLCONV SpotifyHandler::cb_end_of_track(sp_session * sess) {
+
+    SpotifyHandler * handler = getHandlerFromUserData(sess);
+
+    handler->end_of_track(sess);
+    return;
+
+}
+
+void SP_CALLCONV SpotifyHandler::cb_userinfo_updated(sp_session *session) {
+    //TODO
+    return;
+}
+void SP_CALLCONV SpotifyHandler::cb_start_playback(sp_session *session) {
+    //TODO
+    return;
+}
+void SP_CALLCONV SpotifyHandler::cb_stop_playback(sp_session *session) {
+    //TODO
+    return;
+}
+void SP_CALLCONV SpotifyHandler::cb_get_audio_buffer_stats(sp_session *session,
+        sp_audio_buffer_stats *stats) {
+    //TODO
+    return;
+}
 
 int main(int argc, char **argv) {
     int port = 9090;
 
-#if 0
-    session_callbacks = {
-        .logged_in = &logged_in,
-        .notify_main_thread = &notify_main_thread,
-        .music_delivery = &music_delivery,
-        .metadata_updated = &metadata_updated,
-        .play_token_lost = &play_token_lost,
-        .log_message = NULL,
-        .end_of_track = &end_of_track,
-    };
-
-    pl_callbacks = {
-        .tracks_added = &tracks_added,
-        .tracks_removed = &tracks_removed,
-        .tracks_moved = &tracks_moved,
-        .playlist_renamed = &playlist_renamed,
-    };
-#endif
-
-    //get callbacks ready...
-    session_callbacks.logged_in = &logged_in;
-    session_callbacks.notify_main_thread = &notify_main_thread;
-    session_callbacks.music_delivery = &music_delivery;
-    //session_callbacks.metadata_updated = &metadata_updated;
-    session_callbacks.play_token_lost = &play_token_lost;
-    session_callbacks.log_message = NULL;
-    session_callbacks.end_of_track = &end_of_track;
-
-    pl_callbacks.tracks_added = &tracks_added;
-    pl_callbacks.tracks_removed = &tracks_removed;
-    pl_callbacks.tracks_moved = &tracks_moved;
-    pl_callbacks.playlist_renamed = &playlist_renamed;
 
     //SpotifyHandler
-    SpotifyHandler& handle = SpotifyHandler::getInstance();
-    g_handler = &handle;
-    boost::shared_ptr<SpotifyHandler> handler(g_handler);
+    boost::shared_ptr<SpotifyHandler> sHandler(new SpotifyHandler());
 
     //THRIFT Server
-    boost::shared_ptr<TProcessor> processor(new SpotifyProcessor(handler));
+    boost::shared_ptr<TProcessor> processor(new SpotifyProcessor(sHandler));
     boost::shared_ptr<TServerTransport> serverTransport(new TServerSocket(port));
     boost::shared_ptr<TTransportFactory> transportFactory(new TBufferedTransportFactory());
     boost::shared_ptr<TProtocolFactory> protocolFactory(new TBinaryProtocolFactory());
@@ -884,7 +927,7 @@ int main(int argc, char **argv) {
     TSimpleServer server(processor, serverTransport, transportFactory, protocolFactory);
 
     server.serve();
-    handle.start();
+    sHandler->start();
 
     return 0;
 }
