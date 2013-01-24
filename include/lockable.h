@@ -27,6 +27,14 @@ public:
             pthread_cond_signal(&m_cond);
     }
 
+    void cond_wait() {
+            pthread_cond_wait(&m_cond, &m_mutex);
+    }
+
+    void cond_timedwait(struct timespec * ts) {
+            pthread_cond_timedwait(&m_cond, &m_mutex, ts);
+    }
+
     void unlock() {
             pthread_mutex_unlock(&m_mutex);
     }

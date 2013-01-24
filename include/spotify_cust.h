@@ -1,6 +1,8 @@
 #ifndef _SPOTIFY_CUST_H
 #define _SPOTIFY_CUST_H
 
+#include <set>
+
 #include "lockable.h"
 #include "runnable.h"
 
@@ -96,11 +98,16 @@ struct lthelper
 
 
 
-// This baby here, the SpotifyHandler, should be a singleton. The main reason
-// for this is the fact that we can only have one audio queue, and we only need one
-// handler for incoming thrift requests. If we've got several  ongoing spotify 
-// sessions for different users, the idea is to randomly play music from each of 
-// their 'selected' playlists. 
+// This baby here, the SpotifyHandler, was originally conceived as a singleton. The 
+// main idea behind that decision was the fact that we are only supposed to have a 
+// single audio queue. Although perhaps fundamentally correct, because singleton's are
+// very often a bad decision which may bring nast consequences eventually, I rather leave 
+// that decision to the coder - if he decides to to implement several  SpotifyHandler, 
+// instances.... then he will be responsible for his actions ;)
+//
+// The Handler manages incoming thrift requests and most of the logic.
+// If we've got several ongoing spotify sessions for different users, the idea is to 
+// randomly play music from each of their 'selected' playlists. 
 //
 // For example: if Joe is listening to his Hip Hop playist, and Jane is listening
 // to her oldies playlists. We *do not* want several instances of the SpotifyHandler
@@ -147,8 +154,12 @@ class SpotifyHandler
 			const SpotifyTrack& track);
         void whats_playing(SpotifyTrack& _return);
 
+        //consider multindex container?
         typedef std::pair <SpotifyCredential, boost::shared_ptr<SpotifySession> > sess_map_pair; 
         typedef std::map <SpotifyCredential, boost::shared_ptr<SpotifySession> > session_map;
+
+        typedef std::pair <sp_session *, boost::shared_ptr<SpotifySession> > csess_map_pair; 
+        typedef std::map <sp_session *, boost::shared_ptr<SpotifySession> > csession_map;
 
     protected:
         //implementing runnable
@@ -202,9 +213,14 @@ class SpotifyHandler
 
         //proper members
         session_map                             m_sessions;
+        csession_map                            m_csessions;
         session_map::iterator                   m_sess_it;
+        csession_map::iterator                  m_csess_it;
         boost::shared_ptr<SpotifySession>       m_active_session;
+        std::set<sp_session *>                  m_event_spsessions;
+
         int                                     m_playback_done;
+        int                                     m_notify_events;
 
         sp_playlist_callbacks                   pl_callbacks;
         sp_session_callbacks                    session_callbacks;

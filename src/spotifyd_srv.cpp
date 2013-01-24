@@ -133,7 +133,9 @@ SpotifyHandler::SpotifyHandler()
     : Runnable()
     , Lockable()
     , m_sess_it(m_sessions.begin())
+    , m_csess_it(m_csessions.begin())
     , m_playback_done(1)
+    , m_notify_events(0)
 {
 
     //get callbacks ready
@@ -177,12 +179,13 @@ void SpotifyHandler::SpotifyInitHandler(const uint8_t *appkey, const size_t appk
 
 void SpotifyHandler::run() 
 {
+    int next_timeout = 0;
+
     while(!m_done)
     {
-#if 0
         if (next_timeout == 0) {
-            while(!g_notify_do && !g_playback_done)
-                pthread_cond_wait(&g_notify_cond, &g_notify_mutex);
+            while(!m_notify_events && !m_playback_done)
+                cond_wait();
         } else {
             struct timespec ts;
 
@@ -195,23 +198,27 @@ void SpotifyHandler::run()
 #endif
             ts.tv_sec += next_timeout / 1000;
             ts.tv_nsec += (next_timeout % 1000) * 1000000;
-            pthread_cond_timedwait(&g_notify_cond, &g_notify_mutex, &ts);
+            
+            cond_timedwait(&ts);
         }
 
-        g_notify_do = 0;
-        pthread_mutex_unlock(&g_notify_mutex);
+        m_notify_events = 0;
+        unlock();
 
-        if (g_playback_done) {
-            track_ended();
-            g_playback_done = 0;
+        if (m_playback_done) {
+            //track_ended();
+            m_playback_done = 0;
         }
 
         do {
-            sp_session_process_events(sp, &next_timeout);
+            std::set<sp_session *>::iterator sess_it;
+            for( sess_it = m_event_spsessions.begin() ;
+                    sess_it != m_event_spsessions.end() ;
+                    sess_it++ )
+            sp_session_process_events(*sess_it, &next_timeout);
         } while (next_timeout == 0);
 
-        pthread_mutex_lock(&g_notify_mutex);
-#endif
+        lock();
     }
 }
 
@@ -242,7 +249,7 @@ void SpotifyHandler::loginSession(SpotifyCredential& _return, const SpotifyCrede
                 cred._username.c_str(), 
                 cred._passwd.c_str(), 1, NULL);
 
-	//are SpotifyCredentials hashable? 
+        lock();
         if(err != SP_ERROR_OK ) 
         {
             // problem loging in...
@@ -253,8 +260,11 @@ void SpotifyHandler::loginSession(SpotifyCredential& _return, const SpotifyCrede
         } else {
             //Libspotify is asynchronous, we need to deal with this with the success/failure in callbacks.
             m_sessions.insert( 
-                    SpotifyHandler::sess_map_pair( cred, sess ) );
+                    SpotifyHandler::sess_map_pair(cred, sess));
+            m_csessions.insert( 
+                    SpotifyHandler::csess_map_pair(sess->getSession(), sess));
         }
+        unlock();
     }
 
     //callback should handle that.
@@ -524,6 +534,9 @@ int SpotifyHandler::music_delivery(sp_session *sess, const sp_audioformat *forma
 void SpotifyHandler::notify_main_thread(sp_session *sess)
 {
     lock();
+
+    m_event_spsessions.insert(sess);
+    m_notify_events = 1;
 
     unlock();
 }
