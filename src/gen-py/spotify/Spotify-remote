@@ -24,6 +24,7 @@ if len(sys.argv) <= 1 or sys.argv[1] == '--help':
   print ''
   print 'Functions:'
   print '  SpotifyCredential loginSession(SpotifyCredential cred)'
+  print '  bool isLoggedIn(SpotifyCredential cred)'
   print '  void logoutSession(SpotifyCredential cred)'
   print '  void sendCommand(SpotifyCredential cred, SpotifyCmd cmd)'
   print '  SpotifyPlaylist search(SpotifyCredential cred, SpotifySearch criteria)'
@@ -91,6 +92,12 @@ if cmd == 'loginSession':
     print 'loginSession requires 1 args'
     sys.exit(1)
   pp.pprint(client.loginSession(eval(args[0]),))
+
+elif cmd == 'isLoggedIn':
+  if len(args) != 1:
+    print 'isLoggedIn requires 1 args'
+    sys.exit(1)
+  pp.pprint(client.isLoggedIn(eval(args[0]),))
 
 elif cmd == 'logoutSession':
   if len(args) != 1:

@@ -271,6 +271,16 @@ void SpotifyHandler::loginSession(SpotifyCredential& _return, const SpotifyCrede
     _return = cred;
 }
 
+bool SpotifyHandler::isLoggedIn(const SpotifyCredential& cred) {
+    sess_map_it sit;
+    sit = m_sessions.find(cred);
+
+    if(sit == m_sessions.end())
+        return false;
+
+    return true;
+}
+
 SpotifyHandler::session_map& SpotifyHandler::sessions()
 {
     return m_sessions;

@@ -123,6 +123,7 @@ class SpotifyHandler
     public:
         SpotifyHandler();
         void loginSession(SpotifyCredential& _return, const SpotifyCredential& cred);
+        bool isLoggedIn(const SpotifyCredential& cred);
         void logoutSession(const SpotifyCredential& cred);
         void sendCommand(const SpotifyCredential& cred, const SpotifyCmd::type cmd);
         void switchSession();
@@ -156,6 +157,8 @@ class SpotifyHandler
 
         //consider multindex container?
         typedef std::pair <SpotifyCredential, boost::shared_ptr<SpotifySession> > sess_map_pair; 
+        typedef std::map <
+            SpotifyCredential, boost::shared_ptr<SpotifySession> >::iterator sess_map_it; 
         typedef std::map <SpotifyCredential, boost::shared_ptr<SpotifySession> > session_map;
 
         typedef std::pair <sp_session *, boost::shared_ptr<SpotifySession> > csess_map_pair; 
