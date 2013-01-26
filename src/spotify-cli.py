@@ -59,7 +59,7 @@ class spclient(object):
         password = self.get_param("password: ")
 
         try:
-            credentials = SpotifyCredential( username, password)
+            credentials = SpotifyCredential( username, password )
             self._client.loginSession(credentials)
         except Exception, e:
             self._screen.clear()
@@ -67,6 +67,22 @@ class spclient(object):
 
         return credentials
 
+    """"
+    Because libspotify is async we need this to check we logged 
+    in succesfully.
+    """
+    def spot_isloggedin(self, username=None, uid=None):
+       ret = False
+       if username is None and uid is None:
+           return ret
+
+       try:
+            credentials = SpotifyCredential( username )
+            ret = self._client.isLoggedIn(credentials)
+       except Exception, e:
+           self._screen.clear()
+       finally:
+           return ret
 
     def spot_selplaylist(self):
         return None
