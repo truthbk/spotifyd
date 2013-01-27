@@ -288,20 +288,20 @@ class SpotifyCredential:
   Attributes:
    - _username
    - _passwd
-   - _uid
+   - _uuid
   """
 
   thrift_spec = (
     None, # 0
     (1, TType.STRING, '_username', None, None, ), # 1
     (2, TType.STRING, '_passwd', None, None, ), # 2
-    (3, TType.STRING, '_uid', None, None, ), # 3
+    (3, TType.STRING, '_uuid', None, None, ), # 3
   )
 
-  def __init__(self, _username=None, _passwd=None, _uid=None,):
+  def __init__(self, _username=None, _passwd=None, _uuid=None,):
     self._username = _username
     self._passwd = _passwd
-    self._uid = _uid
+    self._uuid = _uuid
 
   def read(self, iprot):
     if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
@@ -324,7 +324,7 @@ class SpotifyCredential:
           iprot.skip(ftype)
       elif fid == 3:
         if ftype == TType.STRING:
-          self._uid = iprot.readString();
+          self._uuid = iprot.readString();
         else:
           iprot.skip(ftype)
       else:
@@ -345,9 +345,9 @@ class SpotifyCredential:
       oprot.writeFieldBegin('_passwd', TType.STRING, 2)
       oprot.writeString(self._passwd)
       oprot.writeFieldEnd()
-    if self._uid is not None:
-      oprot.writeFieldBegin('_uid', TType.STRING, 3)
-      oprot.writeString(self._uid)
+    if self._uuid is not None:
+      oprot.writeFieldBegin('_uuid', TType.STRING, 3)
+      oprot.writeString(self._uuid)
       oprot.writeFieldEnd()
     oprot.writeFieldStop()
     oprot.writeStructEnd()

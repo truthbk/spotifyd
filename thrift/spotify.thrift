@@ -31,7 +31,7 @@ enum SpotifyCmd {
 struct SpotifyCredential {
     1: required string _username;
     2: required string _passwd;
-    3: optional string _uid; //This could potentially be a i32 token as well...
+    3: optional string _uuid; //This could potentially be a i32 token as well...
 }
 
 //TODO: We must implement exceptions.

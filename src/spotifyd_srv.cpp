@@ -9,6 +9,10 @@
 //Boost.
 #include <boost/algorithm/string.hpp>
 #include <boost/shared_ptr.hpp>
+#include <boost/uuid/uuid.hpp>
+#include <boost/uuid/uuid_generators.hpp>
+#include <boost/uuid/uuid_io.hpp>
+#include <boost/lexical_cast.hpp>
 
 #include <cstring>
 #include <string>
@@ -255,20 +259,24 @@ void SpotifyHandler::loginSession(SpotifyCredential& _return, const SpotifyCrede
             // problem loging in...
             _return.__set__username("");
             _return.__set__passwd("");
-            _return.__set__uid("");
+            _return.__set__uuid("");
             return;
         } else {
+            //generate UUID
+            const boost::uuids::uuid uuid = boost::uuids::random_generator()();
+            const std::string uuid_str = boost::lexical_cast<std::string>(uuid);
+
             //Libspotify is asynchronous, we need to deal with this with the success/failure in callbacks.
             m_sessions.insert( 
                     SpotifyHandler::sess_map_pair(cred, sess));
             m_csessions.insert( 
                     SpotifyHandler::csess_map_pair(sess->getSession(), sess));
+
+            _return = cred;
+            _return.__set__uuid(uuid_str);
         }
         unlock();
     }
-
-    //callback should handle that.
-    _return = cred;
 }
 
 bool SpotifyHandler::isLoggedIn(const SpotifyCredential& cred) {
