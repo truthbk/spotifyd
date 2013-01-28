@@ -58,6 +58,7 @@ SpotifySession::SpotifySession()
     ,m_remove_tracks(0)
     ,m_currenttrack(0)
     ,m_track_idx(-1)
+    ,m_loggedin(false)
 {
         //assign ssession later.
 
@@ -243,11 +244,12 @@ void SpotifyHandler::loginSession(SpotifyCredential& _return, const SpotifyCrede
     printf("initiatingSession\n");
 #endif
 
-    boost::shared_ptr< SpotifySession > sess = getSession(cred);
+    boost::shared_ptr< SpotifySession > sess = getSession(cred._uuid);
     if(!sess) {
 	sess = boost::shared_ptr<SpotifySession>(new SpotifySession());
         sess->initSession( app_config() );
-        //how does this behave if the login fails?
+
+        //gotta add blob support (see libspotify api).
 	err = sp_session_login( 
                 sess->getSession(), 
                 cred._username.c_str(), 
@@ -268,7 +270,7 @@ void SpotifyHandler::loginSession(SpotifyCredential& _return, const SpotifyCrede
 
             //Libspotify is asynchronous, we need to deal with this with the success/failure in callbacks.
             m_sessions.insert( 
-                    SpotifyHandler::sess_map_pair(cred, sess));
+                    SpotifyHandler::sess_map_pair(uuid_str, sess));
             m_csessions.insert( 
                     SpotifyHandler::csess_map_pair(sess->getSession(), sess));
 
@@ -280,13 +282,12 @@ void SpotifyHandler::loginSession(SpotifyCredential& _return, const SpotifyCrede
 }
 
 bool SpotifyHandler::isLoggedIn(const SpotifyCredential& cred) {
-    sess_map_it sit;
-    sit = m_sessions.find(cred);
+    boost::shared_ptr< SpotifySession > sess = getSession(cred._uuid);
 
-    if(sit == m_sessions.end())
+    if(!sess)
         return false;
 
-    return true;
+    return sess->getLoggedIn();
 }
 
 SpotifyHandler::session_map& SpotifyHandler::sessions()
@@ -299,7 +300,7 @@ void SpotifyHandler::logoutSession(const SpotifyCredential& cred) {
     sp_error err;
 
     printf("logoutSession\n");
-    boost::shared_ptr<SpotifySession> sess = getSession(cred);
+    boost::shared_ptr<SpotifySession> sess = getSession(cred._uuid);
     if(!sess) {
         return;
     }
@@ -315,7 +316,7 @@ void SpotifyHandler::logoutSession(const SpotifyCredential& cred) {
     {
         //remove session from list....
         session_map s = sessions();
-        s.erase(cred);
+        s.erase(cred._uuid);
     }
 
     return;
@@ -325,7 +326,7 @@ void SpotifyHandler::sendCommand(const SpotifyCredential& cred, const SpotifyCmd
     // Your implementation goes here
     printf("sendCommand\n");
 
-    boost::shared_ptr<SpotifySession> sess = getSession(cred);
+    boost::shared_ptr<SpotifySession> sess = getSession(cred._uuid);
     if(!sess) {
         return;
     }
@@ -564,25 +565,16 @@ void SpotifyHandler::search(SpotifyPlaylist& _return, const SpotifyCredential& c
 		const SpotifySearch& criteria) {
     // Your implementation goes here
     printf("search\n");
-    boost::shared_ptr<SpotifySession> sess = getSession(cred);
+    boost::shared_ptr<SpotifySession> sess = getSession(cred._uuid);
     if(!sess) {
-        sess = boost::shared_ptr<SpotifySession>(new SpotifySession());
-
-        //gotta add blob support (see libspotify api).
-        sp_session_login(
-                sess->getSession(), 
-                cred._username.c_str(), 
-                cred._passwd.c_str(), 0, NULL); 
-
-        // Write a SpotifyCredentials hashing function?
-        m_sessions.insert( SpotifyHandler::sess_map_pair( cred, sess) );
+        return;
     }
 }
 
 void SpotifyHandler::getPlaylists(SpotifyPlaylistList& _return, const SpotifyCredential& cred) 
 {
     printf("getPlaylists\n");
-    boost::shared_ptr<SpotifySession> sess = getSession(cred);
+    boost::shared_ptr<SpotifySession> sess = getSession(cred._uuid);
     if(!sess) {
         return;
     }
@@ -608,7 +600,7 @@ void SpotifyHandler::getPlaylist(SpotifyPlaylist& _return, const SpotifyCredenti
     // Your implementation goes here
     printf("getPlaylist\n");
 
-    boost::shared_ptr<SpotifySession> sess = getSession(cred);
+    boost::shared_ptr<SpotifySession> sess = getSession(cred._uuid);
     if(!sess) {
 	return;
     }
@@ -649,7 +641,7 @@ void SpotifyHandler::getPlaylistByName(SpotifyPlaylist& _return, const SpotifyCr
     // Your implementation goes here
     printf("getPlaylistByName\n");
 
-    boost::shared_ptr<SpotifySession> sess = getSession(cred);
+    boost::shared_ptr<SpotifySession> sess = getSession(cred._uuid);
     if(!sess) {
 	return;
     }
@@ -680,7 +672,7 @@ void SpotifyHandler::getPlaylistByName(SpotifyPlaylist& _return, const SpotifyCr
 void SpotifyHandler::selectPlaylist(const SpotifyCredential& cred, const std::string& playlist) {
     // Your implementation goes here
     printf("selectPlaylist\n");
-    boost::shared_ptr<SpotifySession> sess = getSession(cred);
+    boost::shared_ptr<SpotifySession> sess = getSession(cred._uuid);
     if(!sess) {
 	return;
     }
@@ -709,7 +701,7 @@ void SpotifyHandler::selectPlaylist(const SpotifyCredential& cred, const std::st
 void SpotifyHandler::selectPlaylistById(const SpotifyCredential& cred, const int32_t plist_id) {
     // Your implementation goes here
     printf("selectPlaylist\n");
-    boost::shared_ptr< SpotifySession > sess = getSession(cred);
+    boost::shared_ptr< SpotifySession > sess = getSession(cred._uuid);
     if(!sess) {
 	return;
     }
@@ -748,10 +740,10 @@ void SpotifyHandler::whats_playing(SpotifyTrack& _return) {
     printf("whats_playing\n");
 }
 
-boost::shared_ptr<SpotifySession> SpotifyHandler::getSession(const SpotifyCredential& cred) {
+boost::shared_ptr<SpotifySession> SpotifyHandler::getSession(const std::string& uuid) {
     SpotifyHandler::session_map::const_iterator it;
     
-    it = m_sessions.find(cred);
+    it = m_sessions.find(uuid);
     if( it == m_sessions.end() )
     {
 	return boost::shared_ptr<SpotifySession>();
@@ -770,7 +762,7 @@ void SpotifyHandler::setActiveSession(boost::shared_ptr<SpotifySession> session)
 //we also need to be able to search by sp_session, that's quite important; callbacks rely very heavily
 //on it.
 sp_playlistcontainer * SpotifyHandler::getPlaylistContainer(SpotifyCredential& cred) {
-    boost::shared_ptr<SpotifySession> sess = getSession(cred);
+    boost::shared_ptr<SpotifySession> sess = getSession(cred._uuid);
     if(!sess) {
 	return NULL;
     }

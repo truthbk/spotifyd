@@ -62,6 +62,12 @@ class SpotifySession {
         int getCurrentTrackIdx(){
             return m_track_idx;
         };
+        bool getLoggedIn(){
+            return m_loggedin;
+        }
+        void setLoggedIn(bool logged){
+            m_loggedin = logged;
+        }
 
         sp_track * setCurrentTrack(int idx);
         sp_playlistcontainer * getPlaylistContainer(void);
@@ -82,6 +88,7 @@ class SpotifySession {
 #define NO_TRACK_IDX -1 //not a valid libspotify index that's why we use it.
         sp_track *m_currenttrack;
         int m_track_idx;
+        bool m_loggedin;
 
 };
 
@@ -156,10 +163,11 @@ class SpotifyHandler
         void whats_playing(SpotifyTrack& _return);
 
         //consider multindex container?
-        typedef std::pair <SpotifyCredential, boost::shared_ptr<SpotifySession> > sess_map_pair; 
+        // Storing <uuid, SpotifySession> : avoid storing credentials.
+        typedef std::pair <std::string, boost::shared_ptr<SpotifySession> > sess_map_pair; 
         typedef std::map <
-            SpotifyCredential, boost::shared_ptr<SpotifySession> >::iterator sess_map_it; 
-        typedef std::map <SpotifyCredential, boost::shared_ptr<SpotifySession> > session_map;
+            std::string, boost::shared_ptr<SpotifySession> >::iterator sess_map_it; 
+        typedef std::map <std::string, boost::shared_ptr<SpotifySession> > session_map;
 
         typedef std::pair <sp_session *, boost::shared_ptr<SpotifySession> > csess_map_pair; 
         typedef std::map <sp_session *, boost::shared_ptr<SpotifySession> > csession_map;
@@ -171,7 +179,7 @@ class SpotifyHandler
         void SpotifyInitHandler(const uint8_t *appkey = g_appkey,
                 const size_t appkey_size = g_appkey_size);
 
-        boost::shared_ptr<SpotifySession> getSession(const SpotifyCredential& cred);
+        boost::shared_ptr<SpotifySession> getSession(const std::string& uuid);
         boost::shared_ptr<SpotifySession> getActiveSession(void);
         void setActiveSession(boost::shared_ptr<SpotifySession> session);
 
