@@ -461,20 +461,31 @@ void SpotifyHandler::playlist_renamed(sp_playlist *pl, void *userdata) {
 void SpotifyHandler::logged_in(sp_session *sess, sp_error error) {
     //get the session from the session list...
     //
-    //Need to store those in the handler, fo sho.
+    csession_map::const_iterator cit;
 
-
-    sp_playlistcontainer *pc = sp_session_playlistcontainer(sess);
-    int i;
-
-    if (SP_ERROR_OK != error) 
-    {
-	fprintf(stderr, "jukebox: Login failed: %s\n",
-		sp_error_message(error));
-	exit(2);
+    //TODO: check out what we got in sp_error error.
+    if(error != SP_ERROR_OK) {
+        sp_error_message(error);
+        return;
     }
 
-    printf("jukebox: Looking at %d playlists\n", sp_playlistcontainer_num_playlists(pc));
+    cit = m_csessions.find(sess);
+    if(cit == m_csessions.cend()) {
+        //something's gone a lil wrong...
+        return;
+    }
+    
+    boost::shared_ptr<SpotifySession> spSess = cit->second;
+
+    spSess->setLoggedIn(true);
+
+    //What else??
+
+
+#if 0
+    //Need to store those in the handler, fo sho.
+    sp_playlistcontainer *pc = sp_session_playlistcontainer(sess);
+    int i;
 
     for (i = 0; i < sp_playlistcontainer_num_playlists(pc); ++i)
     {
@@ -483,6 +494,7 @@ void SpotifyHandler::logged_in(sp_session *sess, sp_error error) {
 	sp_playlist_add_callbacks(pl, &pl_callbacks, NULL);
 
     }
+#endif
 
 }
 
