@@ -188,7 +188,12 @@ class SpotifyHandler
 
         typedef std::pair <sp_session *, boost::shared_ptr<SpotifySession> > csess_map_pair; 
         typedef std::map <sp_session *, boost::shared_ptr<SpotifySession> > csession_map;
-        
+
+
+    protected:
+        //implementing runnable
+        void run();
+    private:
         struct sess_map_entry {
             std::string _uuid;
             std::uintptr_t _sessintptr;
@@ -210,7 +215,6 @@ class SpotifyHandler
             {
             }
         };
-
         typedef boost::multi_index_container<
             boost::shared_ptr<SpotifySession>,
             boost::multi_index::indexed_by<
@@ -219,10 +223,6 @@ class SpotifyHandler
                     > > sess_map;
 
 
-    protected:
-        //implementing runnable
-        void run();
-    private:
         void SpotifyInitHandler(const uint8_t *appkey = g_appkey,
                 const size_t appkey_size = g_appkey_size);
 
