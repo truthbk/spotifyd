@@ -58,6 +58,7 @@ SpotifySession::SpotifySession()
     ,m_remove_tracks(0)
     ,m_currenttrack(0)
     ,m_track_idx(-1)
+    ,m_uuid("")
     ,m_loggedin(false)
 {
         //assign ssession later.

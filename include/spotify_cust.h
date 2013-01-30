@@ -3,6 +3,11 @@
 
 #include <set>
 
+#include <boost/multi_index_container.hpp>
+#include <boost/multi_index/member.hpp>
+#include <boost/multi_index/mem_fun.hpp>
+#include <boost/multi_index/hashed_index.hpp>
+
 #include "lockable.h"
 #include "runnable.h"
 
@@ -68,6 +73,16 @@ class SpotifySession {
         void setLoggedIn(bool logged){
             m_loggedin = logged;
         }
+        std::string getUuid() const {
+            return m_uuid;
+        }
+       void setUuid(std::string uuid) {
+           m_uuid = uuid;
+        }
+       std::uintptr_t get_spsession_ptr() const {
+           return reinterpret_cast<std::uintptr_t>(m_sess);
+        }
+
 
         sp_track * setCurrentTrack(int idx);
         sp_playlistcontainer * getPlaylistContainer(void);
@@ -88,6 +103,8 @@ class SpotifySession {
 #define NO_TRACK_IDX -1 //not a valid libspotify index that's why we use it.
         sp_track *m_currenttrack;
         int m_track_idx;
+        
+        std::string m_uuid;
         bool m_loggedin;
 
 };
@@ -171,6 +188,36 @@ class SpotifyHandler
 
         typedef std::pair <sp_session *, boost::shared_ptr<SpotifySession> > csess_map_pair; 
         typedef std::map <sp_session *, boost::shared_ptr<SpotifySession> > csession_map;
+        
+        struct sess_map_entry {
+            std::string _uuid;
+            std::uintptr_t _sessintptr;
+
+            boost::shared_ptr<SpotifySession> session;
+
+            sess_map_entry( std::string &uuid, uintptr_t sintptr
+                    , boost::shared_ptr<SpotifySession> sess ) 
+                : _uuid(uuid)
+                , _sessintptr(sintptr)
+                , session(sess)
+            {
+            }
+            sess_map_entry( std::string &uuid, sp_session * sp
+                    , boost::shared_ptr<SpotifySession> sess ) 
+                : _uuid(uuid)
+                , _sessintptr(reinterpret_cast<std::uintptr_t>(sp))
+                , session(sess)
+            {
+            }
+        };
+
+        typedef boost::multi_index_container<
+            boost::shared_ptr<SpotifySession>,
+            boost::multi_index::indexed_by<
+                boost::multi_index::hashed_unique< boost::multi_index::member< sess_map_entry, std::string, &sess_map_entry::_uuid > >,
+                boost::multi_index::hashed_unique< boost::multi_index::member< sess_map_entry, std::uintptr_t, &sess_map_entry::_sessintptr > >
+                    > > sess_map;
+
 
     protected:
         //implementing runnable
