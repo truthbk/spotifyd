@@ -200,14 +200,14 @@ class SpotifyHandler
 
             boost::shared_ptr<SpotifySession> session;
 
-            sess_map_entry( std::string &uuid, uintptr_t sintptr
+            sess_map_entry( const std::string &uuid, uintptr_t sintptr
                     , boost::shared_ptr<SpotifySession> sess ) 
                 : _uuid(uuid)
                 , _sessintptr(sintptr)
                 , session(sess)
             {
             }
-            sess_map_entry( std::string &uuid, sp_session * sp
+            sess_map_entry( const std::string &uuid, const sp_session * sp
                     , boost::shared_ptr<SpotifySession> sess ) 
                 : _uuid(uuid)
                 , _sessintptr(reinterpret_cast<std::uintptr_t>(sp))
@@ -216,17 +216,23 @@ class SpotifyHandler
             }
         };
         typedef boost::multi_index_container<
-            boost::shared_ptr<SpotifySession>,
+            sess_map_entry,
             boost::multi_index::indexed_by<
                 boost::multi_index::hashed_unique< boost::multi_index::member< sess_map_entry, std::string, &sess_map_entry::_uuid > >,
                 boost::multi_index::hashed_unique< boost::multi_index::member< sess_map_entry, std::uintptr_t, &sess_map_entry::_sessintptr > >
                     > > sess_map;
+
+        typedef sess_map::nth_index<0>::type sess_map_by_uuid;
+        typedef sess_map::nth_index<1>::type sess_map_by_sessptr;
+
+        sess_map session_cache;
 
 
         void SpotifyInitHandler(const uint8_t *appkey = g_appkey,
                 const size_t appkey_size = g_appkey_size);
 
         boost::shared_ptr<SpotifySession> getSession(const std::string& uuid);
+        boost::shared_ptr<SpotifySession> getSession(const sp_session * sps);
         boost::shared_ptr<SpotifySession> getActiveSession(void);
         void setActiveSession(boost::shared_ptr<SpotifySession> session);
 
