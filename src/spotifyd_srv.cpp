@@ -813,8 +813,6 @@ sp_session_config * SpotifyHandler::app_config() {
 }
 
 
-//Global pointer to Spotify Handler. Used by callbacks.
-static SpotifyHandler * g_handler = NULL;
 
 /* --------------------------  PLAYLIST CALLBACKS  ------------------------- */
 #if 0 //PENDING
