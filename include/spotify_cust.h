@@ -2,10 +2,12 @@
 #define _SPOTIFY_CUST_H
 
 #include <set>
+#include <cstdint>
 
 #include <boost/multi_index_container.hpp>
 #include <boost/multi_index/member.hpp>
 #include <boost/multi_index/mem_fun.hpp>
+#include <boost/multi_index/ordered_index.hpp>
 #include <boost/multi_index/hashed_index.hpp>
 
 #include "lockable.h"
@@ -197,6 +199,7 @@ class SpotifyHandler
         struct sess_map_entry {
             std::string _uuid;
             std::uintptr_t _sessintptr;
+            int _ptrlow32;
 
             boost::shared_ptr<SpotifySession> session;
 
@@ -204,8 +207,11 @@ class SpotifyHandler
                     , boost::shared_ptr<SpotifySession> sess ) 
                 : _uuid(uuid)
                 , _sessintptr(sintptr)
+                  //lower 32 bits for greater entropy.
+                , _ptrlow32( static_cast<int>(_sessintptr))
                 , session(sess)
             {
+                return;
             }
             sess_map_entry( const std::string &uuid, const sp_session * sp
                     , boost::shared_ptr<SpotifySession> sess ) 
@@ -215,12 +221,17 @@ class SpotifyHandler
             {
             }
         };
+
+        //maybe tagging would make code more readable, but I'm not a fan. Leaving out for now.
+
         typedef boost::multi_index_container<
             sess_map_entry,
             boost::multi_index::indexed_by<
-                boost::multi_index::hashed_unique< boost::multi_index::member< sess_map_entry, std::string, &sess_map_entry::_uuid > >,
-                boost::multi_index::hashed_unique< boost::multi_index::member< sess_map_entry, std::uintptr_t, &sess_map_entry::_sessintptr > >
-                    > > sess_map;
+                boost::multi_index::hashed_unique< 
+                    BOOST_MULTI_INDEX_MEMBER(sess_map_entry, std::string, _uuid) >,
+                boost::multi_index::hashed_unique< 
+                    BOOST_MULTI_INDEX_MEMBER(sess_map_entry, std::uintptr_t, _sessintptr) >
+            > > sess_map;
 
         typedef sess_map::nth_index<0>::type sess_map_by_uuid;
         typedef sess_map::nth_index<1>::type sess_map_by_sessptr;

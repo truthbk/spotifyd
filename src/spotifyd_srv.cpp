@@ -275,7 +275,7 @@ void SpotifyHandler::loginSession(SpotifyCredential& _return, const SpotifyCrede
             m_csessions.insert( 
                     SpotifyHandler::csess_map_pair(sess->getSession(), sess));
             
-            session_cache.insert(sess_map_entry( uuid_str, 
+            session_cache.get<1>().insert(sess_map_entry( uuid_str, 
                         const_cast<const sp_session *>(sess->getSession()), sess ));
 
             _return = cred;
@@ -758,43 +758,27 @@ void SpotifyHandler::whats_playing(SpotifyTrack& _return) {
 
 boost::shared_ptr<SpotifySession> SpotifyHandler::getSession(const std::string& uuid) {
 
-    SpotifyHandler::session_map::const_iterator it;
-    
-    it = m_sessions.find(uuid);
-    if( it == m_sessions.end() )
-    {
-	return boost::shared_ptr<SpotifySession>();
-    }
+    sess_map_by_uuid& sessByUuid = session_cache.get<0>();
 
-#if 0 //untested
-    sess_map_by_uuid sessByUuid = session_cache.get<0>();
-
-    sess_map_by_uuid::iterator sit = sessByUuid(uuid);
+    sess_map_by_uuid::iterator sit = sessByUuid.find(uuid);
     if( sit == session_cache.end() ) {
-	return boost::shared_ptr<SpotifySession>();
+        return boost::shared_ptr<SpotifySession>();
     }
 
     return sit->session;
-#endif
-
-    return it->second;
-
 }
 
-#if 0
 boost::shared_ptr<SpotifySession> SpotifyHandler::getSession(const sp_session * sps) {
 
     sess_map_by_sessptr& sessByPtr = session_cache.get<1>();
 
-    sess_map_by_uuid::iterator sit = sessByPtr.find(reinterpret_cast<uintptr_t>(sps));
-    if( sit == session_cache.end() ) {
-	return boost::shared_ptr<SpotifySession>();
+    sess_map_by_sessptr::iterator sit = sessByPtr.find(reinterpret_cast<uintptr_t>(sps));
+    if( sit == session_cache.get<1>().end() ) {
+        return boost::shared_ptr<SpotifySession>();
     }
 
     return sit->session;
-
 }
-#endif
 
 boost::shared_ptr<SpotifySession> SpotifyHandler::getActiveSession(void) {
     return m_active_session;
