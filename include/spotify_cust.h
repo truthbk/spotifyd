@@ -7,6 +7,7 @@
 #include <boost/multi_index_container.hpp>
 #include <boost/multi_index/member.hpp>
 #include <boost/multi_index/mem_fun.hpp>
+#include <boost/multi_index/sequenced_index.hpp>
 #include <boost/multi_index/ordered_index.hpp>
 #include <boost/multi_index/hashed_index.hpp>
 
@@ -181,16 +182,6 @@ class SpotifyHandler
 			const SpotifyTrack& track);
         void whats_playing(SpotifyTrack& _return);
 
-        //consider multindex container?
-        // Storing <uuid, SpotifySession> : avoid storing credentials.
-        typedef std::pair <std::string, boost::shared_ptr<SpotifySession> > sess_map_pair; 
-        typedef std::map <
-            std::string, boost::shared_ptr<SpotifySession> >::iterator sess_map_it; 
-        typedef std::map <std::string, boost::shared_ptr<SpotifySession> > session_map;
-
-        typedef std::pair <sp_session *, boost::shared_ptr<SpotifySession> > csess_map_pair; 
-        typedef std::map <sp_session *, boost::shared_ptr<SpotifySession> > csession_map;
-
 
     protected:
         //implementing runnable
@@ -227,16 +218,18 @@ class SpotifyHandler
         typedef boost::multi_index_container<
             sess_map_entry,
             boost::multi_index::indexed_by<
+                boost::multi_index::sequenced<>,
                 boost::multi_index::hashed_unique< 
                     BOOST_MULTI_INDEX_MEMBER(sess_map_entry, std::string, _uuid) >,
                 boost::multi_index::hashed_unique< 
                     BOOST_MULTI_INDEX_MEMBER(sess_map_entry, std::uintptr_t, _sessintptr) >
             > > sess_map;
 
-        typedef sess_map::nth_index<0>::type sess_map_by_uuid;
-        typedef sess_map::nth_index<1>::type sess_map_by_sessptr;
+        typedef sess_map::nth_index<0>::type sess_map_sequenced;
+        typedef sess_map::nth_index<1>::type sess_map_by_uuid;
+        typedef sess_map::nth_index<2>::type sess_map_by_sessptr;
 
-        sess_map session_cache;
+        sess_map m_session_cache;
 
 
         void SpotifyInitHandler(const uint8_t *appkey = g_appkey,
@@ -278,7 +271,6 @@ class SpotifyHandler
         //we also need to be able to search by sp_session, that's quite important; callbacks rely very heavily
         //on it.
         sp_playlistcontainer *                  getPlaylistContainer(SpotifyCredential& cred);
-        session_map&                            sessions();
         audio_fifo_t *                          audio_fifo();
         sp_session_config *                     app_config();
 
@@ -287,10 +279,8 @@ class SpotifyHandler
         audio_fifo_t                            m_audiofifo;
 
         //proper members
-        session_map                             m_sessions;
-        csession_map                            m_csessions;
-        session_map::iterator                   m_sess_it;
-        csession_map::iterator                  m_csess_it;
+        sess_map_sequenced::iterator            m_sess_it;
+
         boost::shared_ptr<SpotifySession>       m_active_session;
         std::set<sp_session *>                  m_event_spsessions;
 
