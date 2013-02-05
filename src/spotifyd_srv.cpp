@@ -281,7 +281,9 @@ void SpotifyHandler::loginSession(SpotifyCredential& _return, const SpotifyCrede
 }
 
 bool SpotifyHandler::isLoggedIn(const SpotifyCredential& cred) {
-    boost::shared_ptr< SpotifySession > sess = getSession(cred._uuid);
+
+    boost::shared_ptr< SpotifySession > 
+        sess = getSession(cred._uuid);
 
     if(!sess)
         return false;
@@ -295,13 +297,12 @@ void SpotifyHandler::logoutSession(const SpotifyCredential& cred) {
     sp_error err;
     bool fix_iter = false;
 
-    printf("logoutSession\n");
     boost::shared_ptr<SpotifySession> sess = getSession(cred._uuid);
     if(!sess) {
         return;
     }
 
-    //remove the currently active session
+    lock();
     if(sess == m_active_session) 
     {
         //stop track move onto next session.
@@ -321,6 +322,7 @@ void SpotifyHandler::logoutSession(const SpotifyCredential& cred) {
             m_sess_it++;
         }
     }
+    unlock();
 
     return;
 }
@@ -368,6 +370,8 @@ void SpotifyHandler::switchSession() {
     }
 
     m_active_session = m_sess_it->session;
+    //should load track...
+    //sp_session_player_load(m_active_session->getSession(), sometrack );
 
     return;
 }
