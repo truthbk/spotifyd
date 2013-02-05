@@ -293,12 +293,15 @@ bool SpotifyHandler::isLoggedIn(const SpotifyCredential& cred) {
 void SpotifyHandler::logoutSession(const SpotifyCredential& cred) {
 
     sp_error err;
+    bool fix_iter = false;
 
     printf("logoutSession\n");
     boost::shared_ptr<SpotifySession> sess = getSession(cred._uuid);
     if(!sess) {
         return;
     }
+
+    //remove the currently active session
     if(sess == m_active_session) 
     {
         //stop track move onto next session.
@@ -311,6 +314,12 @@ void SpotifyHandler::logoutSession(const SpotifyCredential& cred) {
     {
         sess_map_by_uuid& sessByUuid = m_session_cache.get<1>();
         sessByUuid.erase(cred._uuid);
+
+        //fix the invalidated iterator.
+        m_sess_it = m_session_cache.get<0>().begin();
+        while (m_sess_it->session != m_active_session) {
+            m_sess_it++;
+        }
     }
 
     return;
