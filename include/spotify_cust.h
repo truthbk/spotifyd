@@ -94,8 +94,6 @@ class SpotifySession {
 #if 0
         void selectPlaylist(const SpotifyCredential& cred, const std::string& playlist);
 #endif
-    protected:
-        void run();
     private:
         sp_session *m_sess;
         int m_notify_do;
@@ -122,6 +120,7 @@ struct lthelper
     }
 }
 #endif
+
 
 
 
