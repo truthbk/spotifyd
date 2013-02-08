@@ -53,11 +53,12 @@ bool SpotifyCredential::operator < (const SpotifyCredential & other) const
 
 SpotifySession::SpotifySession() 
     :m_sess(NULL)
+    ,m_jukeboxlist(NULL)
+    ,m_currenttrack(NULL)
+    ,m_handler(NULL)
     ,m_notify_do(0)
     ,m_playback_done(1)
-    ,m_jukeboxlist(NULL)
     ,m_remove_tracks(0)
-    ,m_currenttrack(0)
     ,m_track_idx(-1)
     ,m_uuid("")
     ,m_loggedin(false)
@@ -77,9 +78,12 @@ boost::shared_ptr< SpotifySession > SpotifySession::create()
 }
 
 
-int SpotifySession::initSession(
+int SpotifySession::initSession(SpotifyHandler * const h, 
         const uint8_t * appkey, size_t appkey_size) {
+
     sp_error err;
+
+    m_handler = h;
 
     m_spconfig.api_version = SPOTIFY_API_VERSION;
     m_spconfig.cache_location = "tmp";
@@ -266,7 +270,7 @@ void SpotifyHandler::loginSession(SpotifyCredential& _return, const SpotifyCrede
     boost::shared_ptr< SpotifySession > sess = getSession(cred._uuid);
     if(!sess) {
         sess = SpotifySession::create();
-        sess->initSession( g_appkey, g_appkey_size );
+        sess->initSession( this, g_appkey, g_appkey_size );
 
         sess->login(cred._username, cred._passwd);
 

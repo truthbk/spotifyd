@@ -48,6 +48,8 @@ const uint8_t g_appkey[] = {
 
 const size_t g_appkey_size = sizeof(g_appkey);
 
+//forward declaration
+class SpotifyHandler;
 
 //nice per session wrapper class
 class SpotifySession : 
@@ -61,7 +63,8 @@ class SpotifySession :
         sp_session * getSession(void){
             return m_sess;
         };
-        int initSession(const uint8_t * appkey, size_t appkey_size);
+        int initSession(SpotifyHandler * const h, 
+                const uint8_t * appkey, size_t appkey_size);
 
         int getPlaybackDone(void){
             return m_playback_done;
@@ -145,6 +148,9 @@ class SpotifySession :
         sp_playlist *           m_jukeboxlist;
         sp_track *              m_currenttrack;
         sp_session_config       m_spconfig;
+
+        //pointer to notify handler of stuff
+        SpotifyHandler const *  m_handler;
 
         std::string             m_uuid;
         bool                    m_loggedin;
