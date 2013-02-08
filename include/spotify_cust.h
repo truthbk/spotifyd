@@ -4,6 +4,9 @@
 #include <set>
 #include <cstdint>
 
+#include <boost/shared_ptr.hpp>
+#include <boost/enable_shared_from_this.hpp>
+
 #include <boost/multi_index_container.hpp>
 #include <boost/multi_index/member.hpp>
 #include <boost/multi_index/mem_fun.hpp>
@@ -47,14 +50,19 @@ const size_t g_appkey_size = sizeof(g_appkey);
 
 
 //nice per session wrapper class
-class SpotifySession {
+class SpotifySession : 
+    public boost::enable_shared_from_this<SpotifySession> {
+
     public:
-        SpotifySession();
         ~SpotifySession();
+
+        static boost::shared_ptr< SpotifySession > create();
+
         sp_session * getSession(void){
             return m_sess;
         };
-        int initSession(const sp_session_config *cfg);
+        int initSession(const uint8_t * appkey, size_t appkey_size);
+
         int getPlaybackDone(void){
             return m_playback_done;
         };
@@ -87,6 +95,11 @@ class SpotifySession {
         }
 
 
+       void login( const std::string& username
+                 , const std::string& passwd
+                 , bool remember=false );
+
+
         sp_track * setCurrentTrack(int idx);
         sp_playlistcontainer * getPlaylistContainer(void);
         void setActivePlaylist(sp_playlist * pl);
@@ -94,19 +107,54 @@ class SpotifySession {
 #if 0
         void selectPlaylist(const SpotifyCredential& cred, const std::string& playlist);
 #endif
+    protected:
+        SpotifySession();
     private:
-        sp_session *m_sess;
-        int m_notify_do;
-        int m_playback_done;
-        sp_playlist *m_jukeboxlist;
-        int m_remove_tracks;
+
+        //Callbacks...
+        static void SP_CALLCONV cb_logged_in(sp_session *session, sp_error error);
+        static void SP_CALLCONV cb_logged_out(sp_session *session);
+        static void SP_CALLCONV cb_metadata_updated(sp_session *session);
+        static void SP_CALLCONV cb_connection_error(sp_session *session, sp_error error);
+        static void SP_CALLCONV cb_streaming_error(sp_session *session, sp_error error);
+        static void SP_CALLCONV cb_msg_to_user(sp_session *session, const char *message);
+        static void SP_CALLCONV cb_log_msg(sp_session *session, const char *data);
+
+        /**
+         * This callback is called from an internal libspotify thread to ask us to
+         * reiterate the main loop.
+         *
+         * We notify the main thread using a condition variable and a protected variable.
+         *
+         * @sa sp_session_callbacks#notify_main_thread
+         */
+        static void SP_CALLCONV cb_notify_main_thread(sp_session *session);
+        static int  SP_CALLCONV cb_music_delivery(sp_session *session, 
+                const sp_audioformat *format, const void *frames, int num_frames);
+        static void SP_CALLCONV cb_play_token_lost(sp_session *session);
+        static void SP_CALLCONV cb_end_of_track(sp_session *session);
+        static void SP_CALLCONV cb_userinfo_updated(sp_session *session);
+        static void SP_CALLCONV cb_start_playback(sp_session *session);
+        static void SP_CALLCONV cb_stop_playback(sp_session *session);
+        static void SP_CALLCONV cb_get_audio_buffer_stats(sp_session *session,
+                sp_audio_buffer_stats *stats);
+
+
+        sp_session *            m_sess;
+        sp_session_callbacks    session_callbacks;
+        sp_playlist *           m_jukeboxlist;
+        sp_track *              m_currenttrack;
+        sp_session_config       m_spconfig;
+
+        std::string             m_uuid;
+        bool                    m_loggedin;
+        int                     m_notify_do;
+        int                     m_playback_done;
+        int                     m_remove_tracks;
 #define NO_TRACK NULL
 #define NO_TRACK_IDX -1 //not a valid libspotify index that's why we use it.
-        sp_track *m_currenttrack;
-        int m_track_idx;
+        int                     m_track_idx;
         
-        std::string m_uuid;
-        bool m_loggedin;
 
 };
 
@@ -120,6 +168,7 @@ struct lthelper
     }
 }
 #endif
+
 
 
 
@@ -213,7 +262,6 @@ class SpotifyHandler
         };
 
         //maybe tagging would make code more readable, but I'm not a fan. Leaving out for now.
-
         typedef boost::multi_index_container<
             sess_map_entry,
             boost::multi_index::indexed_by<
@@ -231,50 +279,18 @@ class SpotifyHandler
         sess_map m_session_cache;
 
 
-        void SpotifyInitHandler(const uint8_t *appkey = g_appkey,
-                const size_t appkey_size = g_appkey_size);
-
         boost::shared_ptr<SpotifySession> getSession(const std::string& uuid);
         boost::shared_ptr<SpotifySession> getSession(const sp_session * sps);
         boost::shared_ptr<SpotifySession> getActiveSession(void);
         void setActiveSession(boost::shared_ptr<SpotifySession> session);
 
-        //Callbacks...
-        static void SP_CALLCONV cb_logged_in(sp_session *session, sp_error error);
-        static void SP_CALLCONV cb_logged_out(sp_session *session);
-        static void SP_CALLCONV cb_metadata_updated(sp_session *session);
-        static void SP_CALLCONV cb_connection_error(sp_session *session, sp_error error);
-        static void SP_CALLCONV cb_streaming_error(sp_session *session, sp_error error);
-        static void SP_CALLCONV cb_msg_to_user(sp_session *session, const char *message);
-        static void SP_CALLCONV cb_log_msg(sp_session *session, const char *data);
-
-        /**
-         * This callback is called from an internal libspotify thread to ask us to
-         * reiterate the main loop.
-         *
-         * We notify the main thread using a condition variable and a protected variable.
-         *
-         * @sa sp_session_callbacks#notify_main_thread
-         */
-        static void SP_CALLCONV cb_notify_main_thread(sp_session *session);
-        static int  SP_CALLCONV cb_music_delivery(sp_session *session, 
-                const sp_audioformat *format, const void *frames, int num_frames);
-        static void SP_CALLCONV cb_play_token_lost(sp_session *session);
-        static void SP_CALLCONV cb_end_of_track(sp_session *session);
-        static void SP_CALLCONV cb_userinfo_updated(sp_session *session);
-        static void SP_CALLCONV cb_start_playback(sp_session *session);
-        static void SP_CALLCONV cb_stop_playback(sp_session *session);
-        static void SP_CALLCONV cb_get_audio_buffer_stats(sp_session *session,
-                sp_audio_buffer_stats *stats);
 
         //we also need to be able to search by sp_session, that's quite important; callbacks rely very heavily
         //on it.
         sp_playlistcontainer *                  getPlaylistContainer(SpotifyCredential& cred);
         audio_fifo_t *                          audio_fifo();
-        sp_session_config *                     app_config();
 
         //libspotify wrapped
-        sp_session_config                       m_spconfig;
         audio_fifo_t                            m_audiofifo;
 
         //proper members
@@ -287,6 +303,5 @@ class SpotifyHandler
         int                                     m_notify_events;
 
         sp_playlist_callbacks                   pl_callbacks;
-        sp_session_callbacks                    session_callbacks;
 };
 #endif
