@@ -77,6 +77,13 @@ boost::shared_ptr< SpotifySession > SpotifySession::create()
     return boost::shared_ptr< SpotifySession >( new SpotifySession() );
 }
 
+SpotifySession * SpotifySession::getSessionFromUData(sp_session * sp) {
+    SpotifySession * s = 
+        reinterpret_cast<SpotifySession *>(sp_session_userdata(sp));
+
+    return s;
+}
+
 
 int SpotifySession::initSession(SpotifyHandler * const h, 
         const uint8_t * appkey, size_t appkey_size) {
@@ -474,7 +481,7 @@ void SpotifyHandler::playlist_renamed(sp_playlist *pl, void *userdata) {
     }
 }
 
-void SpotifyHandler::logged_in(sp_session *sess, sp_error error) {
+void SpotifySession::logged_in(sp_session *sess, sp_error error) {
     //get the session from the session list...
 
     //TODO: check out what we got in sp_error error.
@@ -483,11 +490,7 @@ void SpotifyHandler::logged_in(sp_session *sess, sp_error error) {
         return;
     }
 
-    boost::shared_ptr<SpotifySession> s(getSession(sess));
-    if(!s) {
-        return;
-    }
-    s->setLoggedIn(true);
+    m_loggedin = true;
 
     //What else??
 
@@ -508,17 +511,20 @@ void SpotifyHandler::logged_in(sp_session *sess, sp_error error) {
 
 }
 
-void SpotifyHandler::end_of_track(sp_session *sess) {
+void SpotifySession::end_of_track(sp_session *sess) {
+#if 0
     lock();
     m_playback_done = 1;
     //h->setPlaybackState(DONE);
     switchSession();
     cond_signal();
     unlock();
+#endif
 }
 
-void SpotifyHandler::play_token_lost(sp_session *sess)
+void SpotifySession::play_token_lost(sp_session *sess)
 {
+#if 0
     audio_fifo_flush(&m_audiofifo);
 
     //Find the session and stop it.
@@ -531,11 +537,13 @@ void SpotifyHandler::play_token_lost(sp_session *sess)
 	spsession->setCurrentTrack(NO_TRACK_IDX);
     }
     switchSession();
+#endif
 }
 
-int SpotifyHandler::music_delivery(sp_session *sess, const sp_audioformat *format,
+int SpotifySession::music_delivery(sp_session *sess, const sp_audioformat *format,
 	const void *frames, int num_frames)
 {
+#if 0
     size_t s;
     audio_fifo_data_t *afd;
 
@@ -570,16 +578,19 @@ int SpotifyHandler::music_delivery(sp_session *sess, const sp_audioformat *forma
     pthread_mutex_unlock(&m_audiofifo.mutex);
 
     return num_frames;
+#endif
 }
 
-void SpotifyHandler::notify_main_thread(sp_session *sess)
+void SpotifySession::notify_main_thread(sp_session *sess)
 {
+#if 0
     lock();
 
     m_event_spsessions.insert(sess);
     m_notify_events = 1;
 
     unlock();
+#endif
 }
 
 
@@ -868,9 +879,9 @@ void SP_CALLCONV SpotifySession::cb_playlist_renamed(
 void SP_CALLCONV SpotifySession::cb_logged_in(
         sp_session *sess, sp_error error) {
 
-    SpotifyHandler * handler = getHandlerFromUserData(sess);
+    SpotifySession * s = SpotifySession::getSessionFromUData(sess);
 
-    handler->logged_in(sess, error);
+    s->logged_in(sess, error);
     return;
 }
 
@@ -882,38 +893,43 @@ void SP_CALLCONV SpotifySession::cb_logged_out(sp_session *sess) {
 void SP_CALLCONV SpotifySession::cb_metadata_updated(sp_session *sess) {
 
     //TODO
+    SpotifySession * s = SpotifySession::getSessionFromUData(sess);
 }
 
 void SP_CALLCONV SpotifySession::cb_connection_error(
         sp_session *sess, sp_error error) {
 
     //TODO
+    SpotifySession * s = SpotifySession::getSessionFromUData(sess);
 }
 
 void SP_CALLCONV SpotifySession::cb_streaming_error(
         sp_session *sess, sp_error error) {
 
     //TODO
+    SpotifySession * s = SpotifySession::getSessionFromUData(sess);
 }
 
 void SP_CALLCONV SpotifySession::cb_msg_to_user(
         sp_session *sess, const char * message) {
 
     //TODO
+    SpotifySession * s = SpotifySession::getSessionFromUData(sess);
 }
 
 void SP_CALLCONV SpotifySession::cb_log_msg(
         sp_session *sess, const char * data) {
 
     //TODO
+    SpotifySession * s = SpotifySession::getSessionFromUData(sess);
 }
 
 void SP_CALLCONV SpotifySession::cb_notify_main_thread(sp_session *sess)
 {
 
-    SpotifyHandler * handler = getHandlerFromUserData(sess);
+    SpotifySession * s = SpotifySession::getSessionFromUData(sess);
 
-    handler->notify_main_thread(sess);
+    s->notify_main_thread(sess);
     return;
 }
 
@@ -922,44 +938,48 @@ int SP_CALLCONV SpotifySession::cb_music_delivery(
         const void *frames, int num_frames)
 {
 
-    SpotifyHandler * handler = getHandlerFromUserData(sess);
+    SpotifySession * s = SpotifySession::getSessionFromUData(sess);
 
-    handler->music_delivery(sess, format, frames, num_frames);
+    s->music_delivery(sess, format, frames, num_frames);
     return 0; //or whatever...
 }
 
 void SP_CALLCONV SpotifySession::cb_play_token_lost(sp_session *sess) {
 
-    SpotifyHandler * handler = getHandlerFromUserData(sess);
+    SpotifySession * s = SpotifySession::getSessionFromUData(sess);
 
-    handler->play_token_lost(sess);
+    s->play_token_lost(sess);
     return;
 }
 
 void SP_CALLCONV SpotifySession::cb_end_of_track(sp_session * sess) {
 
-    SpotifyHandler * handler = getHandlerFromUserData(sess);
+    SpotifySession * s = SpotifySession::getSessionFromUData(sess);
 
-    handler->end_of_track(sess);
+    s->end_of_track(sess);
     return;
 
 }
 
-void SP_CALLCONV SpotifySession::cb_userinfo_updated(sp_session *session) {
+void SP_CALLCONV SpotifySession::cb_userinfo_updated(sp_session * sp) {
     //TODO
+    SpotifySession * s = SpotifySession::getSessionFromUData(sp);
     return;
 }
-void SP_CALLCONV SpotifySession::cb_start_playback(sp_session *session) {
+void SP_CALLCONV SpotifySession::cb_start_playback(sp_session * sp) {
     //TODO
+    SpotifySession * s = SpotifySession::getSessionFromUData(sp);
     return;
 }
-void SP_CALLCONV SpotifySession::cb_stop_playback(sp_session *session) {
+void SP_CALLCONV SpotifySession::cb_stop_playback(sp_session * sp) {
     //TODO
+    SpotifySession * s = SpotifySession::getSessionFromUData(sp);
     return;
 }
-void SP_CALLCONV SpotifySession::cb_get_audio_buffer_stats(sp_session *session,
+void SP_CALLCONV SpotifySession::cb_get_audio_buffer_stats(sp_session * sp,
         sp_audio_buffer_stats *stats) {
     //TODO
+    SpotifySession * s = SpotifySession::getSessionFromUData(sp);
     return;
 }
 

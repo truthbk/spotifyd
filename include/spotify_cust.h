@@ -107,14 +107,24 @@ class SpotifySession :
         sp_playlistcontainer * getPlaylistContainer(void);
         void setActivePlaylist(sp_playlist * pl);
         std::string getPlaylistName(void);
+
+        static SpotifySession * getSessionFromUData(sp_session * sp);
+
 #if 0
         void selectPlaylist(const SpotifyCredential& cred, const std::string& playlist);
 #endif
     protected:
         SpotifySession();
+
+        void logged_in(sp_session *sess, sp_error error);
+        void end_of_track(sp_session *sess);
+        void play_token_lost(sp_session *sess);
+        int music_delivery(sp_session *sess, const sp_audioformat *format,
+                const void *frames, int num_frames);
+        void notify_main_thread(sp_session * sess);
     private:
 
-        //Callbacks...
+        // C Callbacks...
         static void SP_CALLCONV cb_logged_in(sp_session *session, sp_error error);
         static void SP_CALLCONV cb_logged_out(sp_session *session);
         static void SP_CALLCONV cb_metadata_updated(sp_session *session);
@@ -215,12 +225,7 @@ class SpotifyHandler
         void tracks_moved(sp_playlist *pl, const int *tracks,
                 int num_tracks, int new_position, void *userdata);
         void playlist_renamed(sp_playlist *pl, void *userdata);
-        void logged_in(sp_session *sess, sp_error error);
-        void end_of_track(sp_session *sess);
-        void play_token_lost(sp_session *sess);
-        int music_delivery(sp_session *sess, const sp_audioformat *format,
-                const void *frames, int num_frames);
-        void notify_main_thread(sp_session * sess);
+
         void search(SpotifyPlaylist& _return, const SpotifyCredential& cred,
 			const SpotifySearch& criteria);
         void getPlaylists(SpotifyPlaylistList& _return, const SpotifyCredential& cred);
