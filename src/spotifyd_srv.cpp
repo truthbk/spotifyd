@@ -63,6 +63,21 @@ SpotifySession::SpotifySession()
     ,m_uuid("")
     ,m_loggedin(false)
 {
+    //EMPTY
+}
+
+SpotifySession::SpotifySession(SpotifyHandler * h) 
+    :m_sess(NULL)
+    ,m_jukeboxlist(NULL)
+    ,m_currenttrack(NULL)
+    ,m_handler(h)
+    ,m_notify_do(0)
+    ,m_playback_done(1)
+    ,m_remove_tracks(0)
+    ,m_track_idx(-1)
+    ,m_uuid("")
+    ,m_loggedin(false)
+{
         //assign ssession later.
 
 }
@@ -72,9 +87,13 @@ SpotifySession::~SpotifySession()
     //empty
 }
 
-boost::shared_ptr< SpotifySession > SpotifySession::create()
+boost::shared_ptr< SpotifySession > SpotifySession::create(SpotifyHandler * h)
 {
-    return boost::shared_ptr< SpotifySession >( new SpotifySession() );
+    if(!h) {
+            return boost::shared_ptr< SpotifySession >( new SpotifySession() );
+    }
+    
+    return boost::shared_ptr< SpotifySession >( new SpotifySession(h) );
 }
 
 SpotifySession * SpotifySession::getSessionFromUData(sp_session * sp) {
@@ -85,12 +104,9 @@ SpotifySession * SpotifySession::getSessionFromUData(sp_session * sp) {
 }
 
 
-int SpotifySession::initSession(SpotifyHandler * const h, 
-        const uint8_t * appkey, size_t appkey_size) {
+int SpotifySession::initSession(const uint8_t * appkey, size_t appkey_size) {
 
     sp_error err;
-
-    m_handler = h;
 
     m_spconfig.api_version = SPOTIFY_API_VERSION;
     m_spconfig.cache_location = "tmp";
@@ -276,8 +292,8 @@ void SpotifyHandler::loginSession(SpotifyCredential& _return, const SpotifyCrede
 
     boost::shared_ptr< SpotifySession > sess = getSession(cred._uuid);
     if(!sess) {
-        sess = SpotifySession::create();
-        sess->initSession( this, g_appkey, g_appkey_size );
+        sess = SpotifySession::create(this);
+        sess->initSession(g_appkey, g_appkey_size );
 
         sess->login(cred._username, cred._passwd);
 
@@ -543,42 +559,11 @@ void SpotifySession::play_token_lost(sp_session *sess)
 int SpotifySession::music_delivery(sp_session *sess, const sp_audioformat *format,
 	const void *frames, int num_frames)
 {
-#if 0
-    size_t s;
-    audio_fifo_data_t *afd;
 
-    if (num_frames == 0)
-    {
-	return 0; // Audio discontinuity, do nothing
-    }
+    int n_frames;
 
-    pthread_mutex_lock(&m_audiofifo.mutex);
-
-    /* Buffer one second of audio */
-    if (m_audiofifo.qlen > format->sample_rate)
-    {
-	pthread_mutex_unlock(&m_audiofifo.mutex);
-	return 0;
-    }
-
-    s = num_frames * sizeof(int16_t) * format->channels;
-
-    //dont want to malloc, change this to new....
-    afd = (audio_fifo_data_t *) malloc(sizeof(audio_fifo_data_t) + s);
-    memcpy(afd->samples, frames, s);
-
-    afd->nsamples = num_frames;
-    afd->rate = format->sample_rate;
-    afd->channels = format->channels;
-
-    TAILQ_INSERT_TAIL(&m_audiofifo.q, afd, link);
-    m_audiofifo.qlen += num_frames;
-
-    pthread_cond_signal(&m_audiofifo.cond);
-    pthread_mutex_unlock(&m_audiofifo.mutex);
-
-    return num_frames;
-#endif
+    n_frames = m_handler->music_playback(format, frames, num_frames);
+    return n_frames;
 }
 
 void SpotifySession::notify_main_thread(sp_session *sess)
@@ -815,14 +800,57 @@ sp_playlistcontainer * SpotifyHandler::getPlaylistContainer(SpotifyCredential& c
     return sp_session_playlistcontainer(sess->getSession());
 }
 
-#if 0
-SpotifyHandler::session_map& SpotifyHandler::get_sessions() {
-    return m_sessions;
-}
-#endif
 
 audio_fifo_t * SpotifyHandler::audio_fifo() {
     return &m_audiofifo;
+}
+
+void SpotifyHandler::notify_main_thread(void)
+{
+    lock();
+
+    m_notify_events = 1;
+
+    unlock();
+}
+
+int SpotifyHandler::music_playback(const sp_audioformat *format,
+	const void *frames, int num_frames)
+{
+    size_t s;
+    audio_fifo_data_t *afd;
+
+    if (num_frames == 0)
+    {
+	return 0; // Audio discontinuity, do nothing
+    }
+
+    pthread_mutex_lock(&m_audiofifo.mutex);
+
+    /* Buffer one second of audio */
+    if (m_audiofifo.qlen > format->sample_rate)
+    {
+	pthread_mutex_unlock(&m_audiofifo.mutex);
+	return 0;
+    }
+
+    s = num_frames * sizeof(int16_t) * format->channels;
+
+    //dont want to malloc, change this to new....
+    afd = (audio_fifo_data_t *) malloc(sizeof(audio_fifo_data_t) + s);
+    memcpy(afd->samples, frames, s);
+
+    afd->nsamples = num_frames;
+    afd->rate = format->sample_rate;
+    afd->channels = format->channels;
+
+    TAILQ_INSERT_TAIL(&m_audiofifo.q, afd, link);
+    m_audiofifo.qlen += num_frames;
+
+    pthread_cond_signal(&m_audiofifo.cond);
+    pthread_mutex_unlock(&m_audiofifo.mutex);
+
+    return num_frames;
 }
 
 

@@ -58,13 +58,12 @@ class SpotifySession :
     public:
         ~SpotifySession();
 
-        static boost::shared_ptr< SpotifySession > create();
+        static boost::shared_ptr< SpotifySession > create(SpotifyHandler * h = NULL );
 
         sp_session * getSession(void){
             return m_sess;
         };
-        int initSession(SpotifyHandler * const h, 
-                const uint8_t * appkey, size_t appkey_size);
+        int initSession(const uint8_t * appkey, size_t appkey_size);
 
         int getPlaybackDone(void){
             return m_playback_done;
@@ -115,6 +114,7 @@ class SpotifySession :
 #endif
     protected:
         SpotifySession();
+        SpotifySession(SpotifyHandler * h);
 
         void logged_in(sp_session *sess, sp_error error);
         void end_of_track(sp_session *sess);
@@ -160,7 +160,7 @@ class SpotifySession :
         sp_session_config       m_spconfig;
 
         //pointer to notify handler of stuff
-        SpotifyHandler const *  m_handler;
+        SpotifyHandler * const  m_handler;
 
         std::string             m_uuid;
         bool                    m_loggedin;
@@ -240,6 +240,10 @@ class SpotifyHandler
         bool add2playlist(const SpotifyCredential& cred, const std::string& pl,
 			const SpotifyTrack& track);
         void whats_playing(SpotifyTrack& _return);
+
+        void notify_main_thread(void);
+        int  music_playback(const sp_audioformat * format, 
+                const void * frames, int num_frames);
 
 
     protected:
