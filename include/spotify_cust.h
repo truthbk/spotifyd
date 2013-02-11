@@ -117,11 +117,15 @@ class SpotifySession :
         SpotifySession(SpotifyHandler * h);
 
         void logged_in(sp_session *sess, sp_error error);
-        void end_of_track(sp_session *sess);
-        void play_token_lost(sp_session *sess);
-        int music_delivery(sp_session *sess, const sp_audioformat *format,
-                const void *frames, int num_frames);
+        void play_token_lost();
+        void start_playback();
+        void stop_playback();
+        void userinfo_updated();
+        void end_of_track();
         void notify_main_thread(sp_session * sess);
+        int  music_delivery(sp_session *sess, const sp_audioformat *format,
+                const void *frames, int num_frames);
+
     private:
 
         // C Callbacks...
@@ -312,7 +316,6 @@ class SpotifyHandler
         sess_map_sequenced::iterator            m_sess_it;
 
         boost::shared_ptr<SpotifySession>       m_active_session;
-        std::set<sp_session *>                  m_event_spsessions;
 
         int                                     m_playback_done;
         int                                     m_notify_events;
