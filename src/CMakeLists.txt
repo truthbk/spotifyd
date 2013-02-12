@@ -14,6 +14,7 @@ set(ThriftPyGen_SRCS
 
 set(Spotifyd_SRCS
 	spotifyd_srv.cpp
+	xplodify_sess.cpp
 	)
 
 #if this doesn't work add it to the top-level

@@ -64,7 +64,7 @@ enum audio_arch {
 #endif
 };
 
-audio_init_ptr audio_init;
+extern audio_init_ptr audio_init;
 #ifdef _LINUX
 #ifdef _ALSA
 void alsa_audio_init(audio_fifo_t *af);

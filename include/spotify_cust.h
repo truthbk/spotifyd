@@ -1,7 +1,6 @@
-#ifndef _SPOTIFY_CUST_H
-#define _SPOTIFY_CUST_H
+#ifndef _SPOTIFY_CUST_HH
+#define _SPOTIFY_CUST_HH
 
-#include <set>
 #include <cstdint>
 
 #include <boost/shared_ptr.hpp>
@@ -48,156 +47,16 @@ const uint8_t g_appkey[] = {
 
 const size_t g_appkey_size = sizeof(g_appkey);
 
-//forward declaration
-class SpotifyHandler;
 
-//nice per session wrapper class
-class SpotifySession : 
-    public boost::enable_shared_from_this<SpotifySession> {
-
-    public:
-        ~SpotifySession();
-
-        static boost::shared_ptr< SpotifySession > create(SpotifyHandler * h = NULL );
-
-        sp_session * getSession(void){
-            return m_sess;
-        };
-        int initSession(const uint8_t * appkey, size_t appkey_size);
-
-        int getPlaybackDone(void){
-            return m_playback_done;
-        };
-        void setPlaybackDone(int done){
-            m_playback_done = done;
-        };
-        sp_playlist * getActivePlaylist(void){
-            return m_jukeboxlist;
-        };
-        sp_track * getCurrentTrack(){
-            return m_currenttrack;
-        };
-        int getCurrentTrackIdx(){
-            return m_track_idx;
-        };
-        bool getLoggedIn(){
-            return m_loggedin;
-        }
-        void setLoggedIn(bool logged){
-            m_loggedin = logged;
-        }
-        std::string getUuid() const {
-            return m_uuid;
-        }
-       void setUuid(std::string uuid) {
-           m_uuid = uuid;
-        }
-       std::uintptr_t get_spsession_ptr() const {
-           return reinterpret_cast<std::uintptr_t>(m_sess);
-        }
+//Forward declaration
+class XplodifySession;
 
 
-       void login( const std::string& username
-                 , const std::string& passwd
-                 , bool remember=false );
-
-
-        sp_track * setCurrentTrack(int idx);
-        sp_playlistcontainer * getPlaylistContainer(void);
-        void setActivePlaylist(sp_playlist * pl);
-        std::string getPlaylistName(void);
-
-        static SpotifySession * getSessionFromUData(sp_session * sp);
-
-#if 0
-        void selectPlaylist(const SpotifyCredential& cred, const std::string& playlist);
-#endif
-    protected:
-        SpotifySession();
-        SpotifySession(SpotifyHandler * h);
-
-        void logged_in(sp_session *sess, sp_error error);
-        void play_token_lost();
-        void start_playback();
-        void stop_playback();
-        void userinfo_updated();
-        void end_of_track();
-        void notify_main_thread(sp_session * sess);
-        int  music_delivery(sp_session *sess, const sp_audioformat *format,
-                const void *frames, int num_frames);
-
-    private:
-
-        // C Callbacks...
-        static void SP_CALLCONV cb_logged_in(sp_session *session, sp_error error);
-        static void SP_CALLCONV cb_logged_out(sp_session *session);
-        static void SP_CALLCONV cb_metadata_updated(sp_session *session);
-        static void SP_CALLCONV cb_connection_error(sp_session *session, sp_error error);
-        static void SP_CALLCONV cb_streaming_error(sp_session *session, sp_error error);
-        static void SP_CALLCONV cb_msg_to_user(sp_session *session, const char *message);
-        static void SP_CALLCONV cb_log_msg(sp_session *session, const char *data);
-
-        /**
-         * This callback is called from an internal libspotify thread to ask us to
-         * reiterate the main loop.
-         *
-         * We notify the main thread using a condition variable and a protected variable.
-         *
-         * @sa sp_session_callbacks#notify_main_thread
-         */
-        static void SP_CALLCONV cb_notify_main_thread(sp_session *session);
-        static int  SP_CALLCONV cb_music_delivery(sp_session *session, 
-                const sp_audioformat *format, const void *frames, int num_frames);
-        static void SP_CALLCONV cb_play_token_lost(sp_session *session);
-        static void SP_CALLCONV cb_end_of_track(sp_session *session);
-        static void SP_CALLCONV cb_userinfo_updated(sp_session *session);
-        static void SP_CALLCONV cb_start_playback(sp_session *session);
-        static void SP_CALLCONV cb_stop_playback(sp_session *session);
-        static void SP_CALLCONV cb_get_audio_buffer_stats(sp_session *session,
-                sp_audio_buffer_stats *stats);
-
-
-        sp_session *            m_sess;
-        sp_session_callbacks    session_callbacks;
-        sp_playlist *           m_jukeboxlist;
-        sp_track *              m_currenttrack;
-        sp_session_config       m_spconfig;
-
-        //pointer to notify handler of stuff
-        SpotifyHandler * const  m_handler;
-
-        std::string             m_uuid;
-        bool                    m_loggedin;
-        int                     m_notify_do;
-        int                     m_playback_done;
-        int                     m_remove_tracks;
-#define NO_TRACK NULL
-#define NO_TRACK_IDX -1 //not a valid libspotify index that's why we use it.
-        int                     m_track_idx;
-        
-
-};
-
-#if 0
-template <typename T>
-struct lthelper
-{
-    bool operator()(const T * t1, const T * t2)
-    {
-        return ((t1-t2) < 0);
-    }
-}
-#endif
-
-
-
-
-
-// This baby here, the SpotifyHandler, was originally conceived as a singleton. The 
+// This baby here, the XplodifyHandler, was originally conceived as a singleton. The 
 // main idea behind that decision was the fact that we are only supposed to have a 
 // single audio queue. Although perhaps fundamentally correct, because singleton's are
 // very often a bad decision which may bring nast consequences eventually, I rather leave 
-// that decision to the coder - if he decides to to implement several  SpotifyHandler, 
+// that decision to the coder - if he decides to to implement several  XplodifyHandler, 
 // instances.... then he will be responsible for his actions ;)
 //
 // The Handler manages incoming thrift requests and most of the logic.
@@ -205,18 +64,18 @@ struct lthelper
 // randomly play music from each of their 'selected' playlists. 
 //
 // For example: if Joe is listening to his Hip Hop playist, and Jane is listening
-// to her oldies playlists. We *do not* want several instances of the SpotifyHandler
+// to her oldies playlists. We *do not* want several instances of the XplodifyHandler
 // created. We don't need them either. The Handler will randomly select tracks from
 // each of the users registered. The Audio Queue must be a singleton, and so we 
 // can make the entire handler singleton. One instance is enough to handler all
 // incoming requests.
 //
-class SpotifyHandler 
+class XplodifyHandler 
         : virtual public SpotifyIf
         , public Runnable
         , private Lockable {
     public:
-        SpotifyHandler();
+        XplodifyHandler();
         void loginSession(SpotifyCredential& _return, const SpotifyCredential& cred);
         bool isLoggedIn(const SpotifyCredential& cred);
         void logoutSession(const SpotifyCredential& cred);
@@ -259,10 +118,10 @@ class SpotifyHandler
             std::uintptr_t _sessintptr;
             int _ptrlow32;
 
-            boost::shared_ptr<SpotifySession> session;
+            boost::shared_ptr<XplodifySession> session;
 
             sess_map_entry( const std::string &uuid, uintptr_t sintptr
-                    , boost::shared_ptr<SpotifySession> sess ) 
+                    , boost::shared_ptr<XplodifySession> sess ) 
                 : _uuid(uuid)
                 , _sessintptr(sintptr)
                   //lower 32 bits for greater entropy.
@@ -272,7 +131,7 @@ class SpotifyHandler
                 return;
             }
             sess_map_entry( const std::string &uuid, const sp_session * sp
-                    , boost::shared_ptr<SpotifySession> sess ) 
+                    , boost::shared_ptr<XplodifySession> sess ) 
                 : _uuid(uuid)
                 , _sessintptr(reinterpret_cast<std::uintptr_t>(sp))
                 , session(sess)
@@ -298,10 +157,10 @@ class SpotifyHandler
         sess_map m_session_cache;
 
 
-        boost::shared_ptr<SpotifySession> getSession(const std::string& uuid);
-        boost::shared_ptr<SpotifySession> getSession(const sp_session * sps);
-        boost::shared_ptr<SpotifySession> getActiveSession(void);
-        void setActiveSession(boost::shared_ptr<SpotifySession> session);
+        boost::shared_ptr<XplodifySession> getSession(const std::string& uuid);
+        boost::shared_ptr<XplodifySession> getSession(const sp_session * sps);
+        boost::shared_ptr<XplodifySession> getActiveSession(void);
+        void setActiveSession(boost::shared_ptr<XplodifySession> session);
 
 
         //we also need to be able to search by sp_session, that's quite important; callbacks rely very heavily
@@ -315,7 +174,7 @@ class SpotifyHandler
         //proper members
         sess_map_sequenced::iterator            m_sess_it;
 
-        boost::shared_ptr<SpotifySession>       m_active_session;
+        boost::shared_ptr<XplodifySession>       m_active_session;
 
         int                                     m_playback_done;
         int                                     m_notify_events;
