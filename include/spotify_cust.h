@@ -163,8 +163,9 @@ class XplodifyHandler
         void setActiveSession(boost::shared_ptr<XplodifySession> session);
 
 
-        //we also need to be able to search by sp_session, that's quite important; callbacks rely very heavily
-        //on it.
+        //we also need to be able to search by sp_session, that's quite important; 
+        //callbacks rely very heavily on it.
+
         sp_playlistcontainer *                  getPlaylistContainer(SpotifyCredential& cred);
         audio_fifo_t *                          audio_fifo();
 
