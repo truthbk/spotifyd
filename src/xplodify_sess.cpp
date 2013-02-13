@@ -262,6 +262,9 @@ void SP_CALLCONV XplodifySession::cb_logged_in(
         sp_session *sess, sp_error error) {
 
     XplodifySession * s = XplodifySession::getSessionFromUData(sess);
+    if(!s) {
+        return;
+    }
 
     s->logged_in(sess, error);
     return;
@@ -276,6 +279,9 @@ void SP_CALLCONV XplodifySession::cb_metadata_updated(sp_session *sess) {
 
     //TODO
     XplodifySession * s = XplodifySession::getSessionFromUData(sess);
+    if(!s) {
+        return;
+    }
 }
 
 void SP_CALLCONV XplodifySession::cb_connection_error(
@@ -283,6 +289,9 @@ void SP_CALLCONV XplodifySession::cb_connection_error(
 
     //TODO
     XplodifySession * s = XplodifySession::getSessionFromUData(sess);
+    if(!s) {
+        return;
+    }
 }
 
 void SP_CALLCONV XplodifySession::cb_streaming_error(
@@ -290,6 +299,9 @@ void SP_CALLCONV XplodifySession::cb_streaming_error(
 
     //TODO
     XplodifySession * s = XplodifySession::getSessionFromUData(sess);
+    if(!s) {
+        return;
+    }
 }
 
 void SP_CALLCONV XplodifySession::cb_msg_to_user(
@@ -297,6 +309,9 @@ void SP_CALLCONV XplodifySession::cb_msg_to_user(
 
     //TODO
     XplodifySession * s = XplodifySession::getSessionFromUData(sess);
+    if(!s) {
+        return;
+    }
 }
 
 void SP_CALLCONV XplodifySession::cb_log_msg(
@@ -304,12 +319,18 @@ void SP_CALLCONV XplodifySession::cb_log_msg(
 
     //TODO
     XplodifySession * s = XplodifySession::getSessionFromUData(sess);
+    if(!s) {
+        return;
+    }
 }
 
 void SP_CALLCONV XplodifySession::cb_notify_main_thread(sp_session *sess)
 {
 
     XplodifySession * s = XplodifySession::getSessionFromUData(sess);
+    if(!s) {
+        return;
+    }
 
     s->notify_main_thread(sess);
     return;
@@ -321,6 +342,9 @@ int SP_CALLCONV XplodifySession::cb_music_delivery(
 {
 
     XplodifySession * s = XplodifySession::getSessionFromUData(sess);
+    if(!s) {
+        return;
+    }
 
     s->music_delivery(sess, format, frames, num_frames);
     return 0; //or whatever...
@@ -329,6 +353,9 @@ int SP_CALLCONV XplodifySession::cb_music_delivery(
 void SP_CALLCONV XplodifySession::cb_play_token_lost(sp_session *sess) {
 
     XplodifySession * s = XplodifySession::getSessionFromUData(sess);
+    if(!s) {
+        return;
+    }
 
     s->play_token_lost();
     return;
@@ -337,6 +364,9 @@ void SP_CALLCONV XplodifySession::cb_play_token_lost(sp_session *sess) {
 void SP_CALLCONV XplodifySession::cb_end_of_track(sp_session * sess) {
 
     XplodifySession * s = XplodifySession::getSessionFromUData(sess);
+    if(!s) {
+        return;
+    }
 
     s->end_of_track();
     return;
@@ -346,18 +376,27 @@ void SP_CALLCONV XplodifySession::cb_end_of_track(sp_session * sess) {
 void SP_CALLCONV XplodifySession::cb_userinfo_updated(sp_session * sp) {
     //TODO
     XplodifySession * s = XplodifySession::getSessionFromUData(sp);
+    if(!s) {
+        return;
+    }
     s->userinfo_updated();
     return;
 }
 void SP_CALLCONV XplodifySession::cb_start_playback(sp_session * sp) {
     //TODO
     XplodifySession * s = XplodifySession::getSessionFromUData(sp);
+    if(!s) {
+        return;
+    }
     s->start_playback();
     return;
 }
 void SP_CALLCONV XplodifySession::cb_stop_playback(sp_session * sp) {
     //TODO
     XplodifySession * s = XplodifySession::getSessionFromUData(sp);
+    if(!s) {
+        return;
+    }
     s->stop_playback();
     return;
 }
@@ -365,6 +404,9 @@ void SP_CALLCONV XplodifySession::cb_get_audio_buffer_stats(sp_session * sp,
         sp_audio_buffer_stats *stats) {
     //TODO
     XplodifySession * s = XplodifySession::getSessionFromUData(sp);
+    if(!s) {
+        return;
+    }
     return;
 }
 
