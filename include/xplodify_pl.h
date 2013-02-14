@@ -31,6 +31,10 @@ class XplodifyPlaylist :
         XplodifyPlaylist(boost::shared_ptr<XplodifySession> sess);
         ~XplodifyPlaylist();
 
+        bool load(sp_playlist * pl);
+        bool unload(sp_playlist * pl);
+        bool loadTracks();
+
         static XplodifyPlaylist * getPlaylistFromUData(void * userdata);
 
     protected:

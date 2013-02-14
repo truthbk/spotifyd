@@ -20,7 +20,7 @@ const sp_playlist_callbacks XplodifyPlaylist::cbs = {
     cb_playlist_renamed,
     cb_playlist_state_changed,
     cb_playlist_update_in_progress,
-    cb_playlist_metada_updated,
+    cb_playlist_metadata_updated,
     cb_track_created_changed,
     cb_track_seen_changed,
     cb_description_changed,
@@ -42,13 +42,33 @@ bool XplodifyPlaylist::load(sp_playlist * pl) {
     }
 
     m_playlist = pl;
-    sp_playlist_add_callbacks(plc, &cbs);
+    sp_playlist_add_callbacks(pl, &cbs);
 
-    m_loading = true;
+    if(!sp_playlist_loaded(pl))
+    {    m_loading = true;
+    } else {
+        //load tracks
+    }
 
-    return m_loading;
+    return true;
 }
-bool XplodifyPlaylistContainer::unload() {
+
+bool XplodifyPlaylist::loadTracks() {
+    int n;
+
+    if(m_loading) {
+        return false;
+    }
+
+    n = sp_playlist_num_track(m_playlist);
+    for(int i=0 ; i<n ; i++) {
+        sp_track * t = sp_playlist_track(m_playlist, i);
+        //create track PENDING
+    }
+    return true;
+}
+
+bool XplodifyPlaylist::unload() {
 
     if(!m_plcontainer){
         return true;
