@@ -2,7 +2,7 @@
 #include <cstring>
 #include <string>
 
-//boost
+    //boost
 #include <boost/shared_ptr.hpp>
 
 #include "Spotify.h"
@@ -10,16 +10,56 @@
 #include "xplodify_sess.h"
 
 extern "C" {
-	#include <libspotify/api.h>
+#include <libspotify/api.h>
+}
+
+const sp_playlist_callbacks XplodifyPlaylist::cbs = {
+    cb_tracks_added,
+    cb_tracks_removed,
+    cb_tracks_moved,
+    cb_playlist_renamed,
+    cb_playlist_state_changed,
+    cb_playlist_update_in_progress,
+    cb_playlist_metada_updated,
+    cb_track_created_changed,
+    cb_track_seen_changed,
+    cb_description_changed,
+    cb_image_changed,
+    cb_track_message_changed,
+    cb_subscribers_changed
 }
 
 XplodifyPlaylist::XplodifyPlaylist(boost::shared_ptr<XplodifySession> sess) 
     : m_session(sess)
     , m_playlist(NULL)
-    , m_playlistcontainer(NULL)
 {
     //EMPTY
 };
+
+bool XplodifyPlaylist::load(sp_playlist * pl) {
+    if(!pl) {
+        return false;
+    }
+
+    m_playlist = pl;
+    sp_playlist_add_callbacks(plc, &cbs);
+
+    m_loading = true;
+
+    return m_loading;
+}
+bool XplodifyPlaylistContainer::unload() {
+
+    if(!m_plcontainer){
+        return true;
+    }
+
+    sp_playlistcontainer_remove_callbacks(pl, &cbs);
+    m_pl_cache.get<0>().clear();
+    m_playlist(NULL);
+
+    return true;
+}
 
 XplodifyPlaylist * XplodifyPlaylist::getPlaylistFromUData(
         sp_playlist * pl, void * userdata) {
@@ -165,6 +205,55 @@ void SP_CALLCONV XplodifyPlaylist::cb_subscribers_changed(
 }
 
 
+const sp_playlistcontainer_callbacks XplodifyPlaylistContainer::cbs = {
+    cb_playlist_added,
+    cb_playlist_removed,
+    cb_playlist_moved,
+    cb_container_loadad
+}
+
+XplodifyPlaylistContainer::XplodifyPlaylistContainer(
+        boost::shared_ptr<XplodifySession> sess)
+    : m_session(sess)
+    , m_plcontainer(NULL)
+    , loading(false) 
+{
+}
+
+bool XplodifyPlaylistContainer::load(sp_playlistcontainer * plc) {
+    if(!plc) {
+        return false;
+    }
+
+    m_plcontainer = plc;
+    sp_playlistcontainer_add_callbacks(plc, &cbs);
+
+    m_loading = true;
+
+    return m_loading;
+}
+bool XplodifyPlaylistContainer::unload() {
+
+    if(!m_plcontainer){
+        return true;
+    }
+
+    sp_playlistcontainer_remove_callbacks(plc, &cbs);
+    m_plcontainer(NULL);
+
+    return true;
+}
+
+void XplodifyPlaylistContainer::playlist_added(sp_playlist *pl, int pos){
+}
+void XplodifyPlaylistContainer::playlist_removed(sp_playlist *pl, int pos){
+}
+void XplodifyPlaylistContainer::playlist_moved(sp_playlist *pl, int pos, int newpos){
+}
+void XplodifyPlaylistContainer::container_loaded(){
+}
+
+
 XplodifyPlaylistContainer * XplodifyPlaylistContainer::getPlaylistContainerFromUData(
         sp_playlistcontainer * plc, void * userdata) {
     XplodifyPlaylist * plcptr = 
@@ -175,4 +264,53 @@ XplodifyPlaylistContainer * XplodifyPlaylistContainer::getPlaylistContainerFromU
     }
 
     return plc;
+}
+
+
+void SP_CALLCONV XplodifyPlaylistContainer::cb_playlist_added(
+        sp_playlistcontainer *pc, sp_playlist *pl, int pos, void *userdata) {
+
+    XplodifyPlaylistiContainer * xplc = 
+        XplodifyPlaylistContainer::getPlaylistContainerFromUData(pc, userdata);
+    if(!xplc) {
+        return;
+    }
+
+    xplc->playlist_added(pl, pos);
+}
+
+void SP_CALLCONV XplodifyPlaylistContainer::cb_playlist_removed(
+        sp_playlistcontainer *pc, sp_playlist *pl, int pos, void *userdata) {
+
+    XplodifyPlaylistiContainer * xplc = 
+        XplodifyPlaylistContainer::getPlaylistContainerFromUData(pc, userdata);
+    if(!xplc) {
+        return;
+    }
+
+    xplc->playlist_removed(pl, pos);
+}
+
+void SP_CALLCONV XplodifyPlaylistContainer::cb_playlist_moved(
+        sp_playlistcontainer *pc, sp_playlist *pl, int pos, int newpos, void *userdata){
+
+    XplodifyPlaylistiContainer * xplc = 
+        XplodifyPlaylistContainer::getPlaylistContainerFromUData(pc, userdata);
+    if(!xplc) {
+        return;
+    }
+
+    xplc->playlist_moved(pl, posi, newpos);
+}
+
+void SP_CALLCONV XplodifyPlaylistContainer::cb_container_loaded(
+        sp_playlistcontainer * pc, void *userdata){
+
+    XplodifyPlaylistiContainer * xplc = 
+        XplodifyPlaylistContainer::getPlaylistContainerFromUData(pc, userdata);
+    if(!xplc) {
+        return;
+    }
+
+    xplc->container_loaded();
 }

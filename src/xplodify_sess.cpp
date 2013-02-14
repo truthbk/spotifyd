@@ -343,7 +343,7 @@ int SP_CALLCONV XplodifySession::cb_music_delivery(
 
     XplodifySession * s = XplodifySession::getSessionFromUData(sess);
     if(!s) {
-        return;
+        return 0;
     }
 
     s->music_delivery(sess, format, frames, num_frames);

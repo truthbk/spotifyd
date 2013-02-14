@@ -180,6 +180,5 @@ class XplodifyHandler
         int                                     m_playback_done;
         int                                     m_notify_events;
 
-        sp_playlist_callbacks                   pl_callbacks;
 };
 #endif
