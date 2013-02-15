@@ -34,6 +34,7 @@ class XplodifyPlaylist :
         bool load(sp_playlist * pl);
         bool unload(sp_playlist * pl);
         bool loadTracks();
+        std::string getName();
 
         static XplodifyPlaylist * getPlaylistFromUData(void * userdata);
 
@@ -84,8 +85,35 @@ class XplodifyPlaylist :
         static void SP_CALLCONV cb_subscribers_changed(
                 sp_playlist *pl, void *userdata);
 
+        struct track_entry {
+            std::string _trackname;
+
+            boost::shared_ptr<XplodifyTrack> track;
+
+            pl_entry( const std::string &trackname, boost::shared_ptr<XplodifyTrack> track ) 
+                : _trackname(trackname)
+                , track(pl)
+            {
+                return;
+            }
+        };
+
+        //maybe tagging would make code more readable, but I'm not a fan. Leaving out for now.
+        typedef boost::multi_index_container<
+            track_entry,
+            boost::multi_index::indexed_by<
+                boost::multi_index::sequenced<>,
+                boost::multi_index::hashed_unique< 
+                    BOOST_MULTI_INDEX_MEMBER(track_entry, std::string, _trackname) >
+            > > track_cache;
+
+        typedef track_cache::nth_index<0>::type track_cache_sequenced;
+        typedef track_cache::nth_index<1>::type track_cache_by_name;
 
         static const sp_playlist_callbacks  cbs;
+
+        track_cache                         m_track_cache;
+
         boost::shared_ptr<XplodifySession>  m_session;
         sp_playlist *                       m_playlist;
         bool                                m_loading;
@@ -102,6 +130,7 @@ class XplodifyPlaylistContainer :
 
         bool load(sp_playlistcontainer * plc);
         bool unload(sp_playlistcontainer * plc);
+        void addPlaylist(boost::shared_ptr<XplodifyPlaylist> pl);
 
         static XplodifyPlaylistContainer * getPlaylistContainerFromUData(void * userdata);
     protected:
@@ -125,11 +154,11 @@ class XplodifyPlaylistContainer :
         struct pl_entry {
             std::string _plname;
 
-            boost::shared_ptr<XplodifyPlaylist> playlist;
+            boost::shared_ptr<XplodifyPlaylist> _playlist;
 
             pl_entry( const std::string &plname, boost::shared_ptr<XplodifyPlaylist> pl ) 
                 : _plname(plname)
-                , playlist(pl)
+                , _playlist(pl)
             {
                 return;
             }
@@ -144,8 +173,8 @@ class XplodifyPlaylistContainer :
                     BOOST_MULTI_INDEX_MEMBER(pl_entry, std::string, _plname) >
             > > pl_cache;
 
-        typedef pl_cache::nth_index<0>::type pl_map_sequenced;
-        typedef pl_cache::nth_index<1>::type pl_map_by_name;
+        typedef pl_cache::nth_index<0>::type pl_cache_sequenced;
+        typedef pl_cache::nth_index<1>::type pl_cache_by_name;
 
         static const sp_playlistcontainer_callbacks cbs;
 

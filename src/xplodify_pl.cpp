@@ -74,11 +74,21 @@ bool XplodifyPlaylist::unload() {
         return true;
     }
 
-    sp_playlistcontainer_remove_callbacks(pl, &cbs);
-    m_pl_cache.get<0>().clear();
+    sp_playlist_remove_callbacks(pl, &cbs);
+    m_track_cache.get<0>().clear();
+    m_loading(false);
     m_playlist(NULL);
 
     return true;
+}
+
+//when we put in Exceptions this will be a lot cleaner.
+std::string XplodifyPlaylist::getName() {
+    if(!m_playlist) {
+        return std::string("");
+    }
+
+    return std::string(sp_playlist_name(m_playlist));
 }
 
 XplodifyPlaylist * XplodifyPlaylist::getPlaylistFromUData(
@@ -259,18 +269,75 @@ bool XplodifyPlaylistContainer::unload() {
     }
 
     sp_playlistcontainer_remove_callbacks(plc, &cbs);
+    m_pl_cache.get<0>().clear();
     m_plcontainer(NULL);
 
     return true;
 }
 
+void addPlaylist(boost::shared_ptr<XplodifyPlaylist> pl) {
+    if(!pl) {
+        return;
+    }
+
+    //do this with exceptions once this is rolling.
+    std::string name(pl->getName());
+    if(!name.empty()) {
+            m_pl_cache.get<0>().insert(pl_entry(, pl));
+    }
+}
+
 void XplodifyPlaylistContainer::playlist_added(sp_playlist *pl, int pos){
+    //log this.
+    return;
 }
+
 void XplodifyPlaylistContainer::playlist_removed(sp_playlist *pl, int pos){
+
+    //we use hashed index, as opposed to sequenced one: faster.
+    pl_cache_by_name& c = m_pl_cache.get<1>();
+    c.erase(std::string(sp_playlist_name(pl)));
+
 }
+
+//might have to lock().
 void XplodifyPlaylistContainer::playlist_moved(sp_playlist *pl, int pos, int newpos){
+
+    //put in the right place in the sequenced index...
+    pl_cache_by_sequenced& c_s = m_pl_cache.get<0>();
+    pl_cache_by_name& c_n = m_pl_cache.get<1>();
+
+    pl_cache_by_name::iterator it = c_n.find(sp_playlist_name(pl));
+
+    //shouldn't happen
+    if(it == m_pl_cache.get<1>().end() ) {
+        return;
+    }
+
+    boost::shared_ptr<XplodifyPlaylist> xpl(it->_playlist);
+    //remove it from the list
+    c_n.erase(it);
+
+    //add it in the new position.
+    pl_cache_by_sequenced::iterator sit = c_s.begin();
+    for(int i=0 ; i<newpos ; sit++ ) {
+        //nothing
+    }
+    c_s.insert(sit, pl_entry(xpl->getName(), xpl));
+    return;
 }
+
 void XplodifyPlaylistContainer::container_loaded(){
+    int n;
+
+    n = sp_playlistcontainer_num_playlists(m_plcontainer);
+    for(int i=0 ; i<n ; i++ ) {
+        sp_playlist * p = sp_playlistcontainer_playlist( m_plcontainer, i);
+        boost::shared_ptr<XplodifyPlaylist> npl(new XplodifyPlaylist(m_session));
+        npl->load(p);
+
+        addPlaylist(npl);
+    }
 }
 
 
