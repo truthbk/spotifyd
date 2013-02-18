@@ -15,6 +15,8 @@
 #include <boost/multi_index/ordered_index.hpp>
 #include <boost/multi_index/hashed_index.hpp>
 
+#include "xplodify_track.h"
+
 extern "C" {
 	#include <libspotify/api.h>
 }
@@ -90,9 +92,9 @@ class XplodifyPlaylist :
 
             boost::shared_ptr<XplodifyTrack> track;
 
-            pl_entry( const std::string &trackname, boost::shared_ptr<XplodifyTrack> track ) 
+            track_entry( const std::string &trackname, boost::shared_ptr<XplodifyTrack> tr ) 
                 : _trackname(trackname)
-                , track(pl)
+                , track(tr)
             {
                 return;
             }

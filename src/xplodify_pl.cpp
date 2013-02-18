@@ -2,7 +2,7 @@
 #include <cstring>
 #include <string>
 
-    //boost
+//boost
 #include <boost/shared_ptr.hpp>
 
 #include "Spotify.h"
