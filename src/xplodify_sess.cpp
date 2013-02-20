@@ -149,6 +149,10 @@ std::string XplodifySession::getPlaylistName(void) {
     return std::string(sp_playlist_name(m_jukeboxlist));
 }
 
+sp_session * XplodifySession::get_sp_session() {
+    return m_sess;
+}
+
 sp_track * XplodifySession::setCurrentTrack(int idx) {
     if( idx < 0 ) {
         m_track_idx = NO_TRACK_IDX;

@@ -8,17 +8,17 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/enable_shared_from_this.hpp>
 
+#include "xplodify_sess.h"
+
 extern "C" {
 	#include <libspotify/api.h>
 }
 
-//forward declaration
-class XplodifySession;
 
 class XplodifyTrack
 {
     public:
-        XplodifyTrack();
+        XplodifyTrack(boost::shared_ptr<XplodifySession> sess);
         ~XplodifyTrack();
 
         bool          load(sp_track * track);

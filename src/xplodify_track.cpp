@@ -61,14 +61,14 @@ std::string XplodifyTrack::getArtist(int idx){
     if(!m_track) {
         return std::string();
     }
-    return std::string(sp_track_artist(idx);
+    return std::string(sp_artist_name(sp_track_artist(m_track, idx)));
 }
 
 bool XplodifyTrack::is_starred(){
     if(!m_track) {
         return false;
     }
-    return sp_track_is_starred(m_sess->getSession(), m_track);
+    return sp_track_is_starred(m_sess->get_sp_session(), m_track);
 }
 
 int XplodifyTrack::get_disc(){
@@ -85,7 +85,7 @@ int XplodifyTrack::get_popularity(){
 }
 void XplodifyTrack::set_starred(bool star){
     if(!m_track) {
-        return false;
+        return;
     }
-    sp_track_set_starred(m_sess->getSession(), m_track, 1, star);
+    sp_track_set_starred(m_sess->get_sp_session(), &m_track, 1, star);
 }

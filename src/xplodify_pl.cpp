@@ -27,14 +27,16 @@ const sp_playlist_callbacks XplodifyPlaylist::cbs = {
     cb_image_changed,
     cb_track_message_changed,
     cb_subscribers_changed
-}
+};
 
 XplodifyPlaylist::XplodifyPlaylist(boost::shared_ptr<XplodifySession> sess) 
     : m_session(sess)
-    , m_playlist(NULL)
-{
+    , m_playlist(NULL){
     //EMPTY
-};
+}
+XplodifyPlaylist::~XplodifyPlaylist() {
+    //EMPTY
+}
 
 bool XplodifyPlaylist::load(sp_playlist * pl) {
     if(!pl) {
@@ -42,9 +44,9 @@ bool XplodifyPlaylist::load(sp_playlist * pl) {
     }
 
     m_playlist = pl;
-    sp_playlist_add_callbacks(pl, &cbs);
+    sp_playlist_add_callbacks(pl, const_cast<sp_playlist_callbacks *>(&cbs), this);
 
-    if(!sp_playlist_loaded(pl))
+    if(!sp_playlist_is_loaded(pl))
     {    m_loading = true;
     } else {
         //load tracks
@@ -60,7 +62,7 @@ bool XplodifyPlaylist::loadTracks() {
         return false;
     }
 
-    n = sp_playlist_num_track(m_playlist);
+    n = sp_playlist_num_tracks(m_playlist);
     for(int i=0 ; i<n ; i++) {
         sp_track * t = sp_playlist_track(m_playlist, i);
         //create track PENDING
@@ -74,10 +76,10 @@ bool XplodifyPlaylist::unload() {
         return true;
     }
 
-    sp_playlist_remove_callbacks(pl, &cbs);
+    sp_playlist_remove_callbacks(m_playlist, const_cast<sp_playlist_callbacks *>(&cbs), this);
     m_track_cache.get<0>().clear();
-    m_loading(false);
-    m_playlist(NULL);
+    m_loading = false;
+    m_playlist = NULL;
 
     return true;
 }
@@ -101,6 +103,61 @@ XplodifyPlaylist * XplodifyPlaylist::getPlaylistFromUData(
     }
 
     return plptr;
+}
+
+void XplodifyPlaylist::tracks_added(
+        sp_track *const *tracks, int num_tracks, 
+        int position) {
+    //TODO
+    return;
+}
+void XplodifyPlaylist::tracks_removed(const int *tracks, int num_tracks) {
+    //TODO
+    return;
+}
+void XplodifyPlaylist::tracks_moved(const int *tracks, int num_tracks, int new_position) {
+    //TODO
+    return;
+}
+void XplodifyPlaylist::playlist_renamed() {
+    //TODO
+    return;
+}
+void XplodifyPlaylist::playlist_state_changed(){
+    //TODO
+    return;
+}
+void XplodifyPlaylist::playlist_update_in_progress(bool done){
+    //TODO
+    return;
+}
+void XplodifyPlaylist::playlist_metadata_updated(){
+    //TODO
+    return;
+}
+void XplodifyPlaylist::track_created_changed(int position, sp_user *user, int when){
+    //TODO
+    return;
+}
+void XplodifyPlaylist::track_seen_changed(int position, bool seen){
+    //TODO
+    return;
+}
+void XplodifyPlaylist::description_changed(const char *desc){
+    //TODO
+    return;
+}
+void XplodifyPlaylist::image_changed(const byte *image){
+    //TODO
+    return;
+}
+void XplodifyPlaylist::track_message_changed(int position, const char *message){
+    //TODO
+    return;
+}
+void XplodifyPlaylist::subscribers_changed(){
+    //TODO
+    return;
 }
 
 
@@ -239,14 +296,14 @@ const sp_playlistcontainer_callbacks XplodifyPlaylistContainer::cbs = {
     cb_playlist_added,
     cb_playlist_removed,
     cb_playlist_moved,
-    cb_container_loadad
-}
+    cb_container_loaded
+};
 
 XplodifyPlaylistContainer::XplodifyPlaylistContainer(
         boost::shared_ptr<XplodifySession> sess)
     : m_session(sess)
     , m_plcontainer(NULL)
-    , loading(false) 
+    , m_loading(false) 
 {
 }
 
@@ -256,7 +313,8 @@ bool XplodifyPlaylistContainer::load(sp_playlistcontainer * plc) {
     }
 
     m_plcontainer = plc;
-    sp_playlistcontainer_add_callbacks(plc, &cbs);
+    sp_playlistcontainer_add_callbacks(plc, 
+            const_cast<sp_playlistcontainer_callbacks *>(&cbs), this);
 
     m_loading = true;
 
@@ -268,14 +326,15 @@ bool XplodifyPlaylistContainer::unload() {
         return true;
     }
 
-    sp_playlistcontainer_remove_callbacks(plc, &cbs);
+    sp_playlistcontainer_remove_callbacks(
+            m_plcontainer, const_cast<sp_playlistcontainer_callbacks *>(&cbs), this);
     m_pl_cache.get<0>().clear();
-    m_plcontainer(NULL);
+    m_plcontainer = NULL;
 
     return true;
 }
 
-void addPlaylist(boost::shared_ptr<XplodifyPlaylist> pl) {
+void XplodifyPlaylistContainer::addPlaylist(boost::shared_ptr<XplodifyPlaylist> pl) {
     if(!pl) {
         return;
     }
@@ -283,7 +342,7 @@ void addPlaylist(boost::shared_ptr<XplodifyPlaylist> pl) {
     //do this with exceptions once this is rolling.
     std::string name(pl->getName());
     if(!name.empty()) {
-            m_pl_cache.get<0>().insert(pl_entry(, pl));
+            m_pl_cache.get<1>().insert(pl_entry(name, pl));
     }
 }
 
@@ -304,7 +363,7 @@ void XplodifyPlaylistContainer::playlist_removed(sp_playlist *pl, int pos){
 void XplodifyPlaylistContainer::playlist_moved(sp_playlist *pl, int pos, int newpos){
 
     //put in the right place in the sequenced index...
-    pl_cache_by_sequenced& c_s = m_pl_cache.get<0>();
+    pl_cache_by_sequence& c_s = m_pl_cache.get<0>();
     pl_cache_by_name& c_n = m_pl_cache.get<1>();
 
     pl_cache_by_name::iterator it = c_n.find(sp_playlist_name(pl));
@@ -319,7 +378,7 @@ void XplodifyPlaylistContainer::playlist_moved(sp_playlist *pl, int pos, int new
     c_n.erase(it);
 
     //add it in the new position.
-    pl_cache_by_sequenced::iterator sit = c_s.begin();
+    pl_cache_by_sequence::iterator sit = c_s.begin();
     for(int i=0 ; i<newpos ; sit++ ) {
         //nothing
     }
@@ -343,21 +402,21 @@ void XplodifyPlaylistContainer::container_loaded(){
 
 XplodifyPlaylistContainer * XplodifyPlaylistContainer::getPlaylistContainerFromUData(
         sp_playlistcontainer * plc, void * userdata) {
-    XplodifyPlaylist * plcptr = 
+    XplodifyPlaylistContainer * plcptr = 
         reinterpret_cast<XplodifyPlaylistContainer *>(userdata);
 
-    if(plcptr->m_playlistcontainer != plc) {
+    if(plcptr->m_plcontainer != plc) {
         return NULL;
     }
 
-    return plc;
+    return plcptr;
 }
 
 
 void SP_CALLCONV XplodifyPlaylistContainer::cb_playlist_added(
         sp_playlistcontainer *pc, sp_playlist *pl, int pos, void *userdata) {
 
-    XplodifyPlaylistiContainer * xplc = 
+    XplodifyPlaylistContainer * xplc = 
         XplodifyPlaylistContainer::getPlaylistContainerFromUData(pc, userdata);
     if(!xplc) {
         return;
@@ -369,7 +428,7 @@ void SP_CALLCONV XplodifyPlaylistContainer::cb_playlist_added(
 void SP_CALLCONV XplodifyPlaylistContainer::cb_playlist_removed(
         sp_playlistcontainer *pc, sp_playlist *pl, int pos, void *userdata) {
 
-    XplodifyPlaylistiContainer * xplc = 
+    XplodifyPlaylistContainer * xplc = 
         XplodifyPlaylistContainer::getPlaylistContainerFromUData(pc, userdata);
     if(!xplc) {
         return;
@@ -381,19 +440,19 @@ void SP_CALLCONV XplodifyPlaylistContainer::cb_playlist_removed(
 void SP_CALLCONV XplodifyPlaylistContainer::cb_playlist_moved(
         sp_playlistcontainer *pc, sp_playlist *pl, int pos, int newpos, void *userdata){
 
-    XplodifyPlaylistiContainer * xplc = 
+    XplodifyPlaylistContainer * xplc = 
         XplodifyPlaylistContainer::getPlaylistContainerFromUData(pc, userdata);
     if(!xplc) {
         return;
     }
 
-    xplc->playlist_moved(pl, posi, newpos);
+    xplc->playlist_moved(pl, pos, newpos);
 }
 
 void SP_CALLCONV XplodifyPlaylistContainer::cb_container_loaded(
         sp_playlistcontainer * pc, void *userdata){
 
-    XplodifyPlaylistiContainer * xplc = 
+    XplodifyPlaylistContainer * xplc = 
         XplodifyPlaylistContainer::getPlaylistContainerFromUData(pc, userdata);
     if(!xplc) {
         return;

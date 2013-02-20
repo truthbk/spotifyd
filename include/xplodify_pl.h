@@ -34,11 +34,12 @@ class XplodifyPlaylist :
         ~XplodifyPlaylist();
 
         bool load(sp_playlist * pl);
-        bool unload(sp_playlist * pl);
+        bool unload();
         bool loadTracks();
         std::string getName();
 
-        static XplodifyPlaylist * getPlaylistFromUData(void * userdata);
+        static XplodifyPlaylist * getPlaylistFromUData(
+                sp_playlist * pl, void * userdata);
 
     protected:
         void tracks_added(
@@ -109,16 +110,17 @@ class XplodifyPlaylist :
                     BOOST_MULTI_INDEX_MEMBER(track_entry, std::string, _trackname) >
             > > track_cache;
 
-        typedef track_cache::nth_index<0>::type track_cache_sequenced;
+        typedef track_cache::nth_index<0>::type track_cache_by_sequence;
         typedef track_cache::nth_index<1>::type track_cache_by_name;
 
-        static const sp_playlist_callbacks  cbs;
+        static const sp_playlist_callbacks             cbs;
 
-        track_cache                         m_track_cache;
+        track_cache                                    m_track_cache;
 
-        boost::shared_ptr<XplodifySession>  m_session;
-        sp_playlist *                       m_playlist;
-        bool                                m_loading;
+        boost::shared_ptr<XplodifySession>             m_session;
+        boost::shared_ptr<XplodifyPlaylistContainer>   m_plcontainer;
+        sp_playlist *                                  m_playlist;
+        bool                                           m_loading;
 
 };
 
@@ -131,10 +133,11 @@ class XplodifyPlaylistContainer :
         ~XplodifyPlaylistContainer();
 
         bool load(sp_playlistcontainer * plc);
-        bool unload(sp_playlistcontainer * plc);
+        bool unload();
         void addPlaylist(boost::shared_ptr<XplodifyPlaylist> pl);
 
-        static XplodifyPlaylistContainer * getPlaylistContainerFromUData(void * userdata);
+        static XplodifyPlaylistContainer * getPlaylistContainerFromUData(
+                sp_playlistcontainer * plc, void * userdata);
     protected:
         void playlist_added(sp_playlist *pl, int pos);
         void playlist_removed(sp_playlist *pl, int pos);
@@ -175,7 +178,7 @@ class XplodifyPlaylistContainer :
                     BOOST_MULTI_INDEX_MEMBER(pl_entry, std::string, _plname) >
             > > pl_cache;
 
-        typedef pl_cache::nth_index<0>::type pl_cache_sequenced;
+        typedef pl_cache::nth_index<0>::type pl_cache_by_sequence;
         typedef pl_cache::nth_index<1>::type pl_cache_by_name;
 
         static const sp_playlistcontainer_callbacks cbs;

@@ -64,6 +64,7 @@ class XplodifySession :
                  , bool remember=false );
 
 
+        sp_session * get_sp_session();
         sp_track * setCurrentTrack(int idx);
         sp_playlistcontainer * getPlaylistContainer(void);
         void setActivePlaylist(sp_playlist * pl);
