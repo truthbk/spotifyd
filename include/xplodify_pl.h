@@ -36,7 +36,7 @@ class XplodifyPlaylist :
         bool load(sp_playlist * pl);
         bool unload();
         bool loadTracks();
-        std::string getName();
+        std::string get_name();
 
         static XplodifyPlaylist * getPlaylistFromUData(
                 sp_playlist * pl, void * userdata);

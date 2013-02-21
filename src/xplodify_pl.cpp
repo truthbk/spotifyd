@@ -116,7 +116,7 @@ bool XplodifyPlaylist::unload() {
 }
 
 //when we put in Exceptions this will be a lot cleaner.
-std::string XplodifyPlaylist::getName() {
+std::string XplodifyPlaylist::get_name() {
     if(!m_playlist) {
         return std::string("");
     }
@@ -395,7 +395,7 @@ void XplodifyPlaylistContainer::addPlaylist(boost::shared_ptr<XplodifyPlaylist> 
     }
 
     //do this with exceptions once this is rolling.
-    std::string name(pl->getName());
+    std::string name(pl->get_name());
     if(!name.empty()) {
             m_pl_cache.get<1>().insert(pl_entry(name, pl));
     }
@@ -437,7 +437,7 @@ void XplodifyPlaylistContainer::playlist_moved(sp_playlist *pl, int pos, int new
     for(int i=0 ; i<newpos ; sit++ ) {
         //nothing
     }
-    c_s.insert(sit, pl_entry(xpl->getName(), xpl));
+    c_s.insert(sit, pl_entry(xpl->get_name(), xpl));
     return;
 }
 
