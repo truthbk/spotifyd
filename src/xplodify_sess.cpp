@@ -11,6 +11,7 @@
 
 #include "Spotify.h"
 #include "spotify_cust.h"
+#include "xplodify_pl.h"
 #include "xplodify_sess.h"
 
 
@@ -20,22 +21,24 @@ extern "C" {
 
 
 XplodifySession::XplodifySession() 
-    :m_sess(NULL)
+    :m_session(NULL)
+    ,m_plcontainer()
+    ,m_playlist()
     ,m_jukeboxlist(NULL)
     ,m_currenttrack(NULL)
     ,m_handler(NULL)
+    ,m_uuid("")
+    ,m_loggedin(false)
     ,m_notify_do(0)
     ,m_playback_done(1)
     ,m_remove_tracks(0)
     ,m_track_idx(-1)
-    ,m_uuid("")
-    ,m_loggedin(false)
 {
     //EMPTY
 }
 
 XplodifySession::XplodifySession(XplodifyHandler * h) 
-    :m_sess(NULL)
+    :m_session(NULL)
     ,m_jukeboxlist(NULL)
     ,m_currenttrack(NULL)
     ,m_handler(h)
@@ -86,7 +89,7 @@ int XplodifySession::initSession(const uint8_t * appkey, size_t appkey_size) {
     m_spconfig.callbacks = &session_callbacks;
     m_spconfig.userdata = this; //we'll use this in callbacks
 
-    err = sp_session_create( &m_spconfig, &m_sess );
+    err = sp_session_create( &m_spconfig, &m_session );
     if( err != SP_ERROR_OK) {
         return -1;
     }
@@ -124,33 +127,30 @@ void XplodifySession::login( const std::string& username
 
     //gotta add blob support (see libspotify api).
     sp_session_login( 
-            m_sess, 
+            m_session, 
             username.c_str(), 
             passwd.c_str(), remember, NULL);
 
 }
 
-sp_playlistcontainer * XplodifySession::getPlaylistContainer(void) {
-    if(!m_sess) {
-        return NULL;
-    }
-    return sp_session_playlistcontainer(m_sess);
+boost::shared_ptr<XplodifyPlaylistContainer> XplodifySession::get_pl_container(void) {
+    return m_pl_container;
 }
 void XplodifySession::setActivePlaylist(sp_playlist * pl) {
     if(pl) {
         m_jukeboxlist = pl;
     }
 }
-std::string XplodifySession::getPlaylistName(void) {
-    if(m_jukeboxlist) {
+std::string XplodifySession::get_playlist_name(void) {
+    if(!m_playlist) {
         return std::string("");
     }
 
-    return std::string(sp_playlist_name(m_jukeboxlist));
+    return m_playlist->get_name();
 }
 
 sp_session * XplodifySession::get_sp_session() {
-    return m_sess;
+    return m_session;
 }
 
 sp_track * XplodifySession::setCurrentTrack(int idx) {

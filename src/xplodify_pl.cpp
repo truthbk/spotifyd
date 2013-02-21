@@ -356,8 +356,8 @@ const sp_playlistcontainer_callbacks XplodifyPlaylistContainer::cbs = {
 
 XplodifyPlaylistContainer::XplodifyPlaylistContainer(
         boost::shared_ptr<XplodifySession> sess)
-    : m_session(sess)
-    , m_plcontainer(NULL)
+    : m_plcontainer(NULL)
+    , m_session(sess)
     , m_loading(false) 
 {
 }

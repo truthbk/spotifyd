@@ -12,6 +12,9 @@ extern "C" {
 
 //forward declaration
 class XplodifyHandler;
+class XplodifyPlaylistContainer;
+class XplodifyPlaylist;
+class XplodifyTrack;
 
 //nice per session wrapper class
 class XplodifySession : 
@@ -23,7 +26,7 @@ class XplodifySession :
         static boost::shared_ptr< XplodifySession > create(XplodifyHandler * h = NULL );
 
         sp_session * getSession(void){
-            return m_sess;
+            return m_session;
         };
         int initSession(const uint8_t * appkey, size_t appkey_size);
 
@@ -55,7 +58,7 @@ class XplodifySession :
            m_uuid = uuid;
         }
        std::uintptr_t get_spsession_ptr() const {
-           return reinterpret_cast<std::uintptr_t>(m_sess);
+           return reinterpret_cast<std::uintptr_t>(m_session);
         }
 
 
@@ -66,9 +69,9 @@ class XplodifySession :
 
         sp_session * get_sp_session();
         sp_track * setCurrentTrack(int idx);
-        sp_playlistcontainer * getPlaylistContainer(void);
+        boost::shared_ptr<XplodifyPlaylistContainer> get_pl_container(void);
         void setActivePlaylist(sp_playlist * pl);
-        std::string getPlaylistName(void);
+        std::string get_playlist_name(void);
 
         static XplodifySession * getSessionFromUData(sp_session * sp);
 
@@ -120,7 +123,9 @@ class XplodifySession :
                 sp_audio_buffer_stats *stats);
 
 
-        sp_session *            m_sess;
+        sp_session *                                  m_session;
+        boost::shared_ptr<XplodifyPlaylistContainer>  m_plcontainer;
+        boost::shared_ptr<XplodifyPlaylist>           m_playlist;
         sp_session_callbacks    session_callbacks;
         sp_playlist *           m_jukeboxlist;
         sp_track *              m_currenttrack;
