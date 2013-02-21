@@ -38,6 +38,31 @@ XplodifyPlaylist::~XplodifyPlaylist() {
     //EMPTY
 }
 
+boost::shared_ptr<XplodifyTrack> 
+XplodifyPlaylist::remove_track_from_cache(int idx) {
+
+    track_cache_by_sequence& tr_cache_seqd = m_track_cache.get<0>();
+    track_cache_by_sequence::const_iterator cit = tr_cache_seqd.begin();
+
+    for(int i=0 ; i<idx ; i++) {
+        cit++;
+    }
+    track_cache_by_sequence::iterator it = tr_cache_seqd.erase(cit);
+    return it->track;
+}
+
+boost::shared_ptr<XplodifyTrack> 
+XplodifyPlaylist::remove_track_from_cache(std::string& name){
+    track_cache_by_name& tr_cache_name = m_track_cache.get<1>();
+    track_cache_by_name::iterator it = tr_cache_name.find(name);
+    if(it == tr_cache_name.end()) {
+        return boost::shared_ptr<XplodifyTrack>();
+    }
+
+    tr_cache_name.erase(name);
+    return it->track;
+}
+
 bool XplodifyPlaylist::load(sp_playlist * pl) {
     if(!pl) {
         return false;
@@ -65,7 +90,13 @@ bool XplodifyPlaylist::loadTracks() {
     n = sp_playlist_num_tracks(m_playlist);
     for(int i=0 ; i<n ; i++) {
         sp_track * t = sp_playlist_track(m_playlist, i);
-        //create track PENDING
+
+        track_cache_by_sequence& tr_cache_seqd = m_track_cache.get<0>();
+
+        boost::shared_ptr<XplodifyTrack> tr(new XplodifyTrack(m_session));
+        if(tr->load(t)){
+            tr_cache_seqd.push_back(track_entry(tr->get_name(), tr));
+        }
     }
     return true;
 }
@@ -108,11 +139,35 @@ XplodifyPlaylist * XplodifyPlaylist::getPlaylistFromUData(
 void XplodifyPlaylist::tracks_added(
         sp_track *const *tracks, int num_tracks, 
         int position) {
-    //TODO
+    if(m_session) {
+        return;
+    }
+
+    track_cache_by_sequence& tr_cache_seqd = m_track_cache.get<0>();
+    track_cache_by_sequence::const_iterator cit = tr_cache_seqd.begin();
+
+    //Fast forward
+    for(int i=0 ; i<position ; i++) {
+        cit++;
+    }
+
+    for(int i=0 ; i<num_tracks ; i++) {
+        boost::shared_ptr<XplodifyTrack> tr(new XplodifyTrack(m_session));
+        if(tr->load(tracks[i])){
+            tr_cache_seqd.insert(cit, track_entry(tr->get_name(), tr));
+            cit++;
+        }
+    }
+
     return;
 }
 void XplodifyPlaylist::tracks_removed(const int *tracks, int num_tracks) {
-    //TODO
+
+    //Assuming *tracks is ordered : CHECK THIS!
+    for(int i=0 ; i<num_tracks ; i++) {
+        remove_track_from_cache(tracks[num_tracks-i-1]);
+    }
+
     return;
 }
 void XplodifyPlaylist::tracks_moved(const int *tracks, int num_tracks, int new_position) {

@@ -59,6 +59,9 @@ class XplodifyPlaylist :
         void subscribers_changed();
 
     private:
+        boost::shared_ptr<XplodifyTrack> remove_track_from_cache(int idx);
+        boost::shared_ptr<XplodifyTrack> remove_track_from_cache(std::string& name);
+
         static void SP_CALLCONV cb_tracks_added(
                 sp_playlist *pl, sp_track *const *tracks, int num_tracks, 
                 int position, void *userdata);
