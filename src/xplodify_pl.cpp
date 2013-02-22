@@ -124,6 +124,12 @@ std::string XplodifyPlaylist::get_name() {
     return std::string(sp_playlist_name(m_playlist));
 }
 
+size_t XplodifyPlaylist::get_num_tracks(){
+    track_cache_by_sequence& t_s = m_track_cache.get<0>();
+
+    return t_s.size();
+}
+
 XplodifyPlaylist * XplodifyPlaylist::getPlaylistFromUData(
         sp_playlist * pl, void * userdata) {
     XplodifyPlaylist * plptr = 
@@ -399,6 +405,28 @@ void XplodifyPlaylistContainer::addPlaylist(boost::shared_ptr<XplodifyPlaylist> 
     if(!name.empty()) {
             m_pl_cache.get<1>().insert(pl_entry(name, pl));
     }
+}
+
+size_t XplodifyPlaylistContainer::get_num_playlists() {
+    pl_cache_by_sequence& c_s = m_pl_cache.get<0>();
+
+    return c_s.size();
+}
+
+//Currently this sucks: O(n)... add random access index to plc.
+boost::shared_ptr<XplodifyPlaylist> 
+XplodifyPlaylistContainer::get_playlist_at(size_t idx) {
+
+    if(idx >  get_num_playlists()-1) {
+        return boost::shared_ptr<XplodifyPlaylist>();
+    }
+    pl_cache_by_sequence& c_s = m_pl_cache.get<0>();
+    pl_cache_by_sequence::const_iterator cit = c_s.begin();
+    for(int i=0 ; i<idx ; i++) {
+        cit++;
+    }
+
+    return cit->_playlist;
 }
 
 void XplodifyPlaylistContainer::playlist_added(sp_playlist *pl, int pos){

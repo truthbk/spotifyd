@@ -134,7 +134,7 @@ void XplodifySession::login( const std::string& username
 }
 
 boost::shared_ptr<XplodifyPlaylistContainer> XplodifySession::get_pl_container(void) {
-    return m_pl_container;
+    return m_plcontainer;
 }
 void XplodifySession::setActivePlaylist(sp_playlist * pl) {
     if(pl) {
