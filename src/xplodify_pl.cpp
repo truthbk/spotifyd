@@ -41,26 +41,29 @@ XplodifyPlaylist::~XplodifyPlaylist() {
 boost::shared_ptr<XplodifyTrack> 
 XplodifyPlaylist::remove_track_from_cache(int idx) {
 
-    track_cache_by_sequence& tr_cache_seqd = m_track_cache.get<0>();
-    track_cache_by_sequence::const_iterator cit = tr_cache_seqd.begin();
+    track_cache_by_rand& tr_cache_rand = m_track_cache.get<0>();
+    track_cache_by_rand::const_iterator cit = tr_cache_rand.begin();
 
-    for(int i=0 ; i<idx ; i++) {
-        cit++;
-    }
-    track_cache_by_sequence::iterator it = tr_cache_seqd.erase(cit);
-    return it->track;
+    cit = cit+idx-1;
+    boost::shared_ptr<XplodifyTrack> ret_track(cit->track);
+
+    tr_cache_rand.erase(cit);
+    return ret_track;
 }
 
 boost::shared_ptr<XplodifyTrack> 
 XplodifyPlaylist::remove_track_from_cache(std::string& name){
     track_cache_by_name& tr_cache_name = m_track_cache.get<1>();
     track_cache_by_name::iterator it = tr_cache_name.find(name);
+
+
     if(it == tr_cache_name.end()) {
         return boost::shared_ptr<XplodifyTrack>();
     }
+    boost::shared_ptr<XplodifyTrack> ret_track(it->track);
 
     tr_cache_name.erase(name);
-    return it->track;
+    return ret_track;
 }
 
 bool XplodifyPlaylist::load(sp_playlist * pl) {
@@ -91,11 +94,11 @@ bool XplodifyPlaylist::loadTracks() {
     for(int i=0 ; i<n ; i++) {
         sp_track * t = sp_playlist_track(m_playlist, i);
 
-        track_cache_by_sequence& tr_cache_seqd = m_track_cache.get<0>();
+        track_cache_by_rand& tr_cache_rand = m_track_cache.get<0>();
 
         boost::shared_ptr<XplodifyTrack> tr(new XplodifyTrack(m_session));
         if(tr->load(t)){
-            tr_cache_seqd.push_back(track_entry(tr->get_name(), tr));
+            tr_cache_rand.push_back(track_entry(tr->get_name(), tr));
         }
     }
     return true;
@@ -125,9 +128,9 @@ std::string XplodifyPlaylist::get_name() {
 }
 
 size_t XplodifyPlaylist::get_num_tracks(){
-    track_cache_by_sequence& t_s = m_track_cache.get<0>();
+    track_cache_by_rand& t_r = m_track_cache.get<0>();
 
-    return t_s.size();
+    return t_r.size();
 }
 
 XplodifyPlaylist * XplodifyPlaylist::getPlaylistFromUData(
@@ -149,18 +152,16 @@ void XplodifyPlaylist::tracks_added(
         return;
     }
 
-    track_cache_by_sequence& tr_cache_seqd = m_track_cache.get<0>();
-    track_cache_by_sequence::const_iterator cit = tr_cache_seqd.begin();
+    track_cache_by_rand& tr_cache_rand = m_track_cache.get<0>();
+    track_cache_by_rand::const_iterator cit = tr_cache_rand.begin();
 
     //Fast forward
-    for(int i=0 ; i<position ; i++) {
-        cit++;
-    }
+    cit = cit+position-1;
 
     for(int i=0 ; i<num_tracks ; i++) {
         boost::shared_ptr<XplodifyTrack> tr(new XplodifyTrack(m_session));
         if(tr->load(tracks[i])){
-            tr_cache_seqd.insert(cit, track_entry(tr->get_name(), tr));
+            tr_cache_rand.insert(cit, track_entry(tr->get_name(), tr));
             cit++;
         }
     }
@@ -408,9 +409,9 @@ void XplodifyPlaylistContainer::addPlaylist(boost::shared_ptr<XplodifyPlaylist> 
 }
 
 size_t XplodifyPlaylistContainer::get_num_playlists() {
-    pl_cache_by_sequence& c_s = m_pl_cache.get<0>();
+    pl_cache_by_rand& c_r = m_pl_cache.get<0>();
 
-    return c_s.size();
+    return c_r.size();
 }
 
 //Currently this sucks: O(n)... add random access index to plc.
@@ -420,13 +421,9 @@ XplodifyPlaylistContainer::get_playlist_at(size_t idx) {
     if(idx >  get_num_playlists()-1) {
         return boost::shared_ptr<XplodifyPlaylist>();
     }
-    pl_cache_by_sequence& c_s = m_pl_cache.get<0>();
-    pl_cache_by_sequence::const_iterator cit = c_s.begin();
-    for(int i=0 ; i<idx ; i++) {
-        cit++;
-    }
+    pl_cache_by_rand& c_r = m_pl_cache.get<0>();
 
-    return cit->_playlist;
+    return c_r[idx]._playlist;
 }
 
 void XplodifyPlaylistContainer::playlist_added(sp_playlist *pl, int pos){
@@ -436,7 +433,6 @@ void XplodifyPlaylistContainer::playlist_added(sp_playlist *pl, int pos){
 
 void XplodifyPlaylistContainer::playlist_removed(sp_playlist *pl, int pos){
 
-    //we use hashed index, as opposed to sequenced one: faster.
     pl_cache_by_name& c = m_pl_cache.get<1>();
     c.erase(std::string(sp_playlist_name(pl)));
 
@@ -445,8 +441,8 @@ void XplodifyPlaylistContainer::playlist_removed(sp_playlist *pl, int pos){
 //might have to lock().
 void XplodifyPlaylistContainer::playlist_moved(sp_playlist *pl, int pos, int newpos){
 
-    //put in the right place in the sequenced index...
-    pl_cache_by_sequence& c_s = m_pl_cache.get<0>();
+    //put in the right place in the rand index...
+    pl_cache_by_rand& c_r = m_pl_cache.get<0>();
     pl_cache_by_name& c_n = m_pl_cache.get<1>();
 
     pl_cache_by_name::iterator it = c_n.find(sp_playlist_name(pl));
@@ -461,11 +457,9 @@ void XplodifyPlaylistContainer::playlist_moved(sp_playlist *pl, int pos, int new
     c_n.erase(it);
 
     //add it in the new position.
-    pl_cache_by_sequence::iterator sit = c_s.begin();
-    for(int i=0 ; i<newpos ; sit++ ) {
-        //nothing
-    }
-    c_s.insert(sit, pl_entry(xpl->get_name(), xpl));
+    pl_cache_by_rand::iterator sit = c_r.begin();
+    sit = sit+newpos-1;
+    c_r.insert(sit, pl_entry(xpl->get_name(), xpl));
     return;
 }
 

@@ -11,7 +11,7 @@
 #include <boost/multi_index_container.hpp>
 #include <boost/multi_index/member.hpp>
 #include <boost/multi_index/mem_fun.hpp>
-#include <boost/multi_index/sequenced_index.hpp>
+#include <boost/multi_index/random_access_index.hpp>
 #include <boost/multi_index/ordered_index.hpp>
 #include <boost/multi_index/hashed_index.hpp>
 
@@ -110,12 +110,12 @@ class XplodifyPlaylist :
         typedef boost::multi_index_container<
             track_entry,
             boost::multi_index::indexed_by<
-                boost::multi_index::sequenced<>,
+                boost::multi_index::random_access<>,
                 boost::multi_index::hashed_unique< 
                     BOOST_MULTI_INDEX_MEMBER(track_entry, std::string, _trackname) >
             > > track_cache;
 
-        typedef track_cache::nth_index<0>::type track_cache_by_sequence;
+        typedef track_cache::nth_index<0>::type track_cache_by_rand;
         typedef track_cache::nth_index<1>::type track_cache_by_name;
 
         static const sp_playlist_callbacks             cbs;
@@ -180,12 +180,12 @@ class XplodifyPlaylistContainer :
         typedef boost::multi_index_container<
             pl_entry,
             boost::multi_index::indexed_by<
-                boost::multi_index::sequenced<>,
+                boost::multi_index::random_access<>,
                 boost::multi_index::hashed_unique< 
                     BOOST_MULTI_INDEX_MEMBER(pl_entry, std::string, _plname) >
             > > pl_cache;
 
-        typedef pl_cache::nth_index<0>::type pl_cache_by_sequence;
+        typedef pl_cache::nth_index<0>::type pl_cache_by_rand;
         typedef pl_cache::nth_index<1>::type pl_cache_by_name;
 
         static const sp_playlistcontainer_callbacks cbs;
