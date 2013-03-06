@@ -67,7 +67,7 @@ boost::shared_ptr< XplodifySession > XplodifySession::create(XplodifyHandler * h
     return boost::shared_ptr< XplodifySession >( new XplodifySession(h) );
 }
 
-XplodifySession * XplodifySession::getSessionFromUData(sp_session * sp) {
+XplodifySession * XplodifySession::get_session_from_udata(sp_session * sp) {
     XplodifySession * s = 
         reinterpret_cast<XplodifySession *>(sp_session_userdata(sp));
 
@@ -259,7 +259,7 @@ void XplodifySession::notify_main_thread(sp_session *sess)
 void SP_CALLCONV XplodifySession::cb_logged_in(
         sp_session *sess, sp_error error) {
 
-    XplodifySession * s = XplodifySession::getSessionFromUData(sess);
+    XplodifySession * s = XplodifySession::get_session_from_udata(sess);
     if(!s) {
         return;
     }
@@ -276,7 +276,7 @@ void SP_CALLCONV XplodifySession::cb_logged_out(sp_session *sess) {
 void SP_CALLCONV XplodifySession::cb_metadata_updated(sp_session *sess) {
 
     //TODO
-    XplodifySession * s = XplodifySession::getSessionFromUData(sess);
+    XplodifySession * s = XplodifySession::get_session_from_udata(sess);
     if(!s) {
         return;
     }
@@ -286,7 +286,7 @@ void SP_CALLCONV XplodifySession::cb_connection_error(
         sp_session *sess, sp_error error) {
 
     //TODO
-    XplodifySession * s = XplodifySession::getSessionFromUData(sess);
+    XplodifySession * s = XplodifySession::get_session_from_udata(sess);
     if(!s) {
         return;
     }
@@ -296,7 +296,7 @@ void SP_CALLCONV XplodifySession::cb_streaming_error(
         sp_session *sess, sp_error error) {
 
     //TODO
-    XplodifySession * s = XplodifySession::getSessionFromUData(sess);
+    XplodifySession * s = XplodifySession::get_session_from_udata(sess);
     if(!s) {
         return;
     }
@@ -306,7 +306,7 @@ void SP_CALLCONV XplodifySession::cb_msg_to_user(
         sp_session *sess, const char * message) {
 
     //TODO
-    XplodifySession * s = XplodifySession::getSessionFromUData(sess);
+    XplodifySession * s = XplodifySession::get_session_from_udata(sess);
     if(!s) {
         return;
     }
@@ -316,7 +316,7 @@ void SP_CALLCONV XplodifySession::cb_log_msg(
         sp_session *sess, const char * data) {
 
     //TODO
-    XplodifySession * s = XplodifySession::getSessionFromUData(sess);
+    XplodifySession * s = XplodifySession::get_session_from_udata(sess);
     if(!s) {
         return;
     }
@@ -325,7 +325,7 @@ void SP_CALLCONV XplodifySession::cb_log_msg(
 void SP_CALLCONV XplodifySession::cb_notify_main_thread(sp_session *sess)
 {
 
-    XplodifySession * s = XplodifySession::getSessionFromUData(sess);
+    XplodifySession * s = XplodifySession::get_session_from_udata(sess);
     if(!s) {
         return;
     }
@@ -339,7 +339,7 @@ int SP_CALLCONV XplodifySession::cb_music_delivery(
         const void *frames, int num_frames)
 {
 
-    XplodifySession * s = XplodifySession::getSessionFromUData(sess);
+    XplodifySession * s = XplodifySession::get_session_from_udata(sess);
     if(!s) {
         return 0;
     }
@@ -350,7 +350,7 @@ int SP_CALLCONV XplodifySession::cb_music_delivery(
 
 void SP_CALLCONV XplodifySession::cb_play_token_lost(sp_session *sess) {
 
-    XplodifySession * s = XplodifySession::getSessionFromUData(sess);
+    XplodifySession * s = XplodifySession::get_session_from_udata(sess);
     if(!s) {
         return;
     }
@@ -361,7 +361,7 @@ void SP_CALLCONV XplodifySession::cb_play_token_lost(sp_session *sess) {
 
 void SP_CALLCONV XplodifySession::cb_end_of_track(sp_session * sess) {
 
-    XplodifySession * s = XplodifySession::getSessionFromUData(sess);
+    XplodifySession * s = XplodifySession::get_session_from_udata(sess);
     if(!s) {
         return;
     }
@@ -373,7 +373,7 @@ void SP_CALLCONV XplodifySession::cb_end_of_track(sp_session * sess) {
 
 void SP_CALLCONV XplodifySession::cb_userinfo_updated(sp_session * sp) {
     //TODO
-    XplodifySession * s = XplodifySession::getSessionFromUData(sp);
+    XplodifySession * s = XplodifySession::get_session_from_udata(sp);
     if(!s) {
         return;
     }
@@ -382,7 +382,7 @@ void SP_CALLCONV XplodifySession::cb_userinfo_updated(sp_session * sp) {
 }
 void SP_CALLCONV XplodifySession::cb_start_playback(sp_session * sp) {
     //TODO
-    XplodifySession * s = XplodifySession::getSessionFromUData(sp);
+    XplodifySession * s = XplodifySession::get_session_from_udata(sp);
     if(!s) {
         return;
     }
@@ -391,7 +391,7 @@ void SP_CALLCONV XplodifySession::cb_start_playback(sp_session * sp) {
 }
 void SP_CALLCONV XplodifySession::cb_stop_playback(sp_session * sp) {
     //TODO
-    XplodifySession * s = XplodifySession::getSessionFromUData(sp);
+    XplodifySession * s = XplodifySession::get_session_from_udata(sp);
     if(!s) {
         return;
     }
@@ -401,7 +401,7 @@ void SP_CALLCONV XplodifySession::cb_stop_playback(sp_session * sp) {
 void SP_CALLCONV XplodifySession::cb_get_audio_buffer_stats(sp_session * sp,
         sp_audio_buffer_stats *stats) {
     //TODO
-    XplodifySession * s = XplodifySession::getSessionFromUData(sp);
+    XplodifySession * s = XplodifySession::get_session_from_udata(sp);
     if(!s) {
         return;
     }

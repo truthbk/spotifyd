@@ -30,10 +30,10 @@ class XplodifySession :
         };
         int initSession(const uint8_t * appkey, size_t appkey_size);
 
-        int getPlaybackDone(void){
+        int get_playback_done(void){
             return m_playback_done;
         };
-        void setPlaybackDone(int done){
+        void set_playback_done(int done){
             m_playback_done = done;
         };
         boost::shared_ptr<XplodifyPlaylist> get_active_playlist(void){
@@ -45,16 +45,16 @@ class XplodifySession :
         int getCurrentTrackIdx(){
             return m_track_idx;
         };
-        bool getLoggedIn(){
+        bool get_logged_in(){
             return m_loggedin;
         }
-        void setLoggedIn(bool logged){
+        void set_logged_in(bool logged){
             m_loggedin = logged;
         }
-        std::string getUuid() const {
+        std::string get_uuid() const {
             return m_uuid;
         }
-       void setUuid(std::string uuid) {
+       void set_uuid(std::string uuid) {
            m_uuid = uuid;
         }
        std::uintptr_t get_spsession_ptr() const {
@@ -73,7 +73,7 @@ class XplodifySession :
         void set_active_playlist(int idx);
         std::string get_playlist_name(void);
 
-        static XplodifySession * getSessionFromUData(sp_session * sp);
+        static XplodifySession * get_session_from_udata(sp_session * sp);
 
 #if 0
         void selectPlaylist(const SpotifyCredential& cred, const std::string& playlist);

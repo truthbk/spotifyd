@@ -138,7 +138,7 @@ bool XplodifyHandler::isLoggedIn(const SpotifyCredential& cred) {
     if(!sess)
         return false;
 
-    return sess->getLoggedIn();
+    return sess->get_logged_in();
 }
 
 
