@@ -35,12 +35,12 @@ class XplodifyPlaylist :
 
         bool load(sp_playlist * pl);
         bool unload();
-        bool loadTracks();
+        bool load_tracks();
         std::string get_name();
         size_t get_num_tracks();
         boost::shared_ptr<XplodifyTrack> get_track_at(size_t idx);
 
-        static XplodifyPlaylist * getPlaylistFromUData(
+        static XplodifyPlaylist * get_playlist_from_udata(
                 sp_playlist * pl, void * userdata);
 
     protected:
