@@ -23,11 +23,11 @@ class XplodifyTrack
 
         bool          load(sp_track * track);
         void          unload();
-        bool          isLoading();
+        bool          is_loading();
         std::string   get_name();
         int           get_duration();
         int           get_num_artists();
-        std::string   getArtist(int idx);
+        std::string   get_artist(int idx);
         bool          is_starred();
         int           get_disc();
         int           get_popularity();

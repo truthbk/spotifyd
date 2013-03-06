@@ -32,7 +32,7 @@ void XplodifyTrack::unload(){
     sp_track_release(m_track);
     m_track = NULL;
 }
-bool XplodifyTrack::isLoading(){
+bool XplodifyTrack::is_loading(){
     if(!m_track) {
         return false;
     }
@@ -57,7 +57,7 @@ int XplodifyTrack::get_num_artists(){
     }
     return sp_track_num_artists(m_track);
 }
-std::string XplodifyTrack::getArtist(int idx){
+std::string XplodifyTrack::get_artist(int idx){
     if(!m_track) {
         return std::string();
     }
