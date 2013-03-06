@@ -81,13 +81,6 @@ class XplodifyHandler
         void logoutSession(const SpotifyCredential& cred);
         void sendCommand(const SpotifyCredential& cred, const SpotifyCmd::type cmd);
         void switchSession();
-        void tracks_added(sp_playlist *pl, sp_track * const *tracks,
-                int num_tracks, int position, void *userdata);
-        void tracks_removed(sp_playlist *pl, const int *tracks,
-                int num_tracks, void *userdata);
-        void tracks_moved(sp_playlist *pl, const int *tracks,
-                int num_tracks, int new_position, void *userdata);
-        void playlist_renamed(sp_playlist *pl, void *userdata);
 
         void search(SpotifyPlaylist& _return, const SpotifyCredential& cred,
 			const SpotifySearch& criteria);

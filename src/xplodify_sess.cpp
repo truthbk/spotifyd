@@ -24,8 +24,7 @@ XplodifySession::XplodifySession()
     :m_session(NULL)
     ,m_plcontainer()
     ,m_playlist()
-    ,m_jukeboxlist(NULL)
-    ,m_currenttrack(NULL)
+    ,m_track()
     ,m_handler(NULL)
     ,m_uuid("")
     ,m_loggedin(false)
@@ -39,15 +38,16 @@ XplodifySession::XplodifySession()
 
 XplodifySession::XplodifySession(XplodifyHandler * h) 
     :m_session(NULL)
-    ,m_jukeboxlist(NULL)
-    ,m_currenttrack(NULL)
+    ,m_plcontainer()
+    ,m_playlist()
+    ,m_track()
     ,m_handler(h)
+    ,m_uuid("")
+    ,m_loggedin(false)
     ,m_notify_do(0)
     ,m_playback_done(1)
     ,m_remove_tracks(0)
     ,m_track_idx(-1)
-    ,m_uuid("")
-    ,m_loggedin(false)
 {
         //assign ssession later.
 
@@ -136,10 +136,9 @@ void XplodifySession::login( const std::string& username
 boost::shared_ptr<XplodifyPlaylistContainer> XplodifySession::get_pl_container(void) {
     return m_plcontainer;
 }
-void XplodifySession::setActivePlaylist(sp_playlist * pl) {
-    if(pl) {
-        m_jukeboxlist = pl;
-    }
+void XplodifySession::set_active_playlist(int idx) {
+    //TODO
+    return;
 }
 std::string XplodifySession::get_playlist_name(void) {
     if(!m_playlist) {
@@ -153,31 +152,22 @@ sp_session * XplodifySession::get_sp_session() {
     return m_session;
 }
 
-sp_track * XplodifySession::setCurrentTrack(int idx) {
+void XplodifySession::set_track(int idx) {
     if( idx < 0 ) {
         m_track_idx = NO_TRACK_IDX;
-        m_currenttrack = NO_TRACK;
-        return NULL;
+        return;
     }
 
     sp_track * t = NULL;
-    int n_tracks = 0;
 
-    if(!m_jukeboxlist) {
-        return NO_TRACK;
+    if(!m_playlist) {
+        return;
     }
 
-    n_tracks = sp_playlist_num_tracks(m_jukeboxlist);
-    if(!n_tracks || n_tracks < idx) {
-        return NO_TRACK;
+    m_track = m_playlist->get_track_at(idx);
+    if(m_track) {
+            m_track_idx = idx;
     }
-
-    t = sp_playlist_track(m_jukeboxlist, idx);
-    m_currenttrack = t;
-    m_track_idx = idx;
-
-    return t;
-
 }
 
 #if 0
@@ -207,14 +197,18 @@ void XplodifySession::play_token_lost()
     //Find the session and stop it.
     boost::shared_ptr<XplodifySession> spsession = getActiveSession();
 
-    if (spsession->getCurrentTrack() != NULL)
+    if (spsession->gettrack() != NULL)
     {
 	// unload the session that caused the token loss.
 	sp_session_player_unload(sess);
-	spsession->setCurrentTrack(NO_TRACK_IDX);
+	spsession->settrack(NO_TRACK_IDX);
     }
     switchSession();
 #endif
+}
+
+void XplodifySession::logged_in(sp_session *sess, sp_error error) {
+    return;
 }
 
 void XplodifySession::start_playback()
@@ -235,11 +229,11 @@ void XplodifySession::userinfo_updated()
     //Find the session and stop it.
     boost::shared_ptr<XplodifySession> spsession = getActiveSession();
 
-    if (spsession->getCurrentTrack() != NULL)
+    if (spsession->gettrack() != NULL)
     {
 	// unload the session that caused the token loss.
 	sp_session_player_unload(sess);
-	spsession->setCurrentTrack(NO_TRACK_IDX);
+	spsession->settrack(NO_TRACK_IDX);
     }
     switchSession();
 #endif

@@ -36,11 +36,11 @@ class XplodifySession :
         void setPlaybackDone(int done){
             m_playback_done = done;
         };
-        sp_playlist * getActivePlaylist(void){
-            return m_jukeboxlist;
+        boost::shared_ptr<XplodifyPlaylist> get_active_playlist(void){
+            return m_playlist;
         };
-        sp_track * getCurrentTrack(){
-            return m_currenttrack;
+        boost::shared_ptr<XplodifyTrack> get_track(){
+            return m_track;
         };
         int getCurrentTrackIdx(){
             return m_track_idx;
@@ -68,9 +68,9 @@ class XplodifySession :
 
 
         sp_session * get_sp_session();
-        sp_track * setCurrentTrack(int idx);
+        void set_track(int idx);
         boost::shared_ptr<XplodifyPlaylistContainer> get_pl_container(void);
-        void setActivePlaylist(sp_playlist * pl);
+        void set_active_playlist(int idx);
         std::string get_playlist_name(void);
 
         static XplodifySession * getSessionFromUData(sp_session * sp);
@@ -126,9 +126,8 @@ class XplodifySession :
         sp_session *                                  m_session;
         boost::shared_ptr<XplodifyPlaylistContainer>  m_plcontainer;
         boost::shared_ptr<XplodifyPlaylist>           m_playlist;
+        boost::shared_ptr<XplodifyTrack>              m_track;
         sp_session_callbacks    session_callbacks;
-        sp_playlist *           m_jukeboxlist;
-        sp_track *              m_currenttrack;
         sp_session_config       m_spconfig;
 
         //pointer to notify handler of stuff
