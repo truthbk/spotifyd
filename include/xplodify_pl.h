@@ -38,7 +38,7 @@ class XplodifyPlaylist :
         bool loadTracks();
         std::string get_name();
         size_t get_num_tracks();
-        
+        boost::shared_ptr<XplodifyTrack> get_track_at(size_t idx);
 
         static XplodifyPlaylist * getPlaylistFromUData(
                 sp_playlist * pl, void * userdata);
@@ -106,7 +106,7 @@ class XplodifyPlaylist :
             }
         };
 
-        //maybe tagging would make code more readable, but I'm not a fan. Leaving out for now.
+        //maybe tagging would make code more readable, but I'm not a fan.
         typedef boost::multi_index_container<
             track_entry,
             boost::multi_index::indexed_by<

@@ -133,6 +133,16 @@ size_t XplodifyPlaylist::get_num_tracks(){
     return t_r.size();
 }
 
+boost::shared_ptr<XplodifyTrack> XplodifyPlaylist::get_track_at(size_t idx) {
+
+    if(idx >=  get_num_tracks()) {
+        return boost::shared_ptr<XplodifyTrack>();
+    }
+    track_cache_by_rand& c_r = m_track_cache.get<0>();
+
+    return c_r[idx].track;
+}
+
 XplodifyPlaylist * XplodifyPlaylist::getPlaylistFromUData(
         sp_playlist * pl, void * userdata) {
     XplodifyPlaylist * plptr = 
