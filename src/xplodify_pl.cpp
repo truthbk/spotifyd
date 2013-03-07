@@ -424,9 +424,8 @@ size_t XplodifyPlaylistContainer::get_num_playlists() {
     return c_r.size();
 }
 
-//Currently this sucks: O(n)... add random access index to plc.
 boost::shared_ptr<XplodifyPlaylist> 
-XplodifyPlaylistContainer::get_playlist_at(size_t idx) {
+XplodifyPlaylistContainer::get_playlist(size_t idx) {
 
     if(idx >  get_num_playlists()-1) {
         return boost::shared_ptr<XplodifyPlaylist>();
@@ -434,6 +433,21 @@ XplodifyPlaylistContainer::get_playlist_at(size_t idx) {
     pl_cache_by_rand& c_r = m_pl_cache.get<0>();
 
     return c_r[idx]._playlist;
+}
+
+boost::shared_ptr<XplodifyPlaylist> 
+XplodifyPlaylistContainer::get_playlist(std::string name) {
+
+    pl_cache_by_name& c_n = m_pl_cache.get<1>();
+
+    pl_cache_by_name::iterator it = c_n.find(name);
+
+    if(it == m_pl_cache.get<1>().end() ) {
+        return boost::shared_ptr<XplodifyPlaylist>();
+    }
+
+    return boost::shared_ptr<XplodifyPlaylist>(it->_playlist);
+
 }
 
 void XplodifyPlaylistContainer::playlist_added(sp_playlist *pl, int pos){

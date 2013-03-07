@@ -278,7 +278,7 @@ void XplodifyHandler::getPlaylist(SpotifyPlaylist& _return, const SpotifyCredent
 	return;
     }
 
-    boost::shared_ptr<XplodifyPlaylist> pl = pc->get_playlist_at(plist_id);
+    boost::shared_ptr<XplodifyPlaylist> pl = pc->get_playlist(plist_id);
 
     if(!pl) {
 	return;
