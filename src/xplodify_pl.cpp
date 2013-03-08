@@ -502,9 +502,7 @@ void XplodifyPlaylistContainer::playlist_moved(sp_playlist *pl, int pos, int new
     c_n.erase(it);
 
     //add it in the new position.
-    pl_cache_by_rand::iterator sit = c_r.begin();
-    sit = sit+newpos-1;
-    c_r.insert(sit, pl_entry(xpl->get_name(), xpl));
+    add_playlist(xpl, newpos-1);
     return;
 }
 
