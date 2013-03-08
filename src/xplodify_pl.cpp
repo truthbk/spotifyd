@@ -149,6 +149,7 @@ void XplodifyPlaylist::add_track(boost::shared_ptr<XplodifyTrack> tr) {
     }
 
     track_cache_by_rand& t_r = m_track_cache.get<0>();
+    //push_back() delivers better performance than insert.
     t_r.push_back(track_entry(tr->get_name(), tr));
 }
 
@@ -435,7 +436,7 @@ void XplodifyPlaylistContainer::add_playlist(boost::shared_ptr<XplodifyPlaylist>
     //do this with exceptions once this is rolling.
     std::string name(pl->get_name());
     if(!name.empty()) {
-            m_pl_cache.get<1>().insert(pl_entry(name, pl));
+        m_pl_cache.get<0>().push_back(pl_entry(name, pl));
     }
 }
 
