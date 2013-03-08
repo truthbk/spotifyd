@@ -418,6 +418,22 @@ void XplodifyPlaylistContainer::add_playlist(boost::shared_ptr<XplodifyPlaylist>
     }
 }
 
+void XplodifyPlaylistContainer::add_playlist(boost::shared_ptr<XplodifyPlaylist> pl, int pos) {
+    if(!pl) {
+        return;
+    }
+
+    //get iterator...
+    pl_cache_by_rand& c_r = m_pl_cache.get<0>();
+    pl_cache_by_rand::iterator it = c_r.iterator_to(c_r[pos]);
+
+    //do this with exceptions once this is rolling.
+    std::string name(pl->get_name());
+    if(!name.empty()) {
+            c_r.insert(it, pl_entry(name, pl));
+    }
+}
+
 size_t XplodifyPlaylistContainer::get_num_playlists() {
     pl_cache_by_rand& c_r = m_pl_cache.get<0>();
 
@@ -452,6 +468,11 @@ XplodifyPlaylistContainer::get_playlist(std::string name) {
 
 void XplodifyPlaylistContainer::playlist_added(sp_playlist *pl, int pos){
     //log this.
+
+    boost::shared_ptr<XplodifyPlaylist> npl(new XplodifyPlaylist(m_session));
+    npl->load(pl);
+
+    add_playlist(npl, pos);
     return;
 }
 
