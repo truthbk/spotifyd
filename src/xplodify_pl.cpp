@@ -143,6 +143,27 @@ boost::shared_ptr<XplodifyTrack> XplodifyPlaylist::get_track_at(size_t idx) {
     return c_r[idx].track;
 }
 
+void XplodifyPlaylist::add_track(boost::shared_ptr<XplodifyTrack> tr) {
+    if(!tr) {
+        return;
+    }
+
+    track_cache_by_rand& t_r = m_track_cache.get<0>();
+    t_r.push_back(track_entry(tr->get_name(), tr));
+}
+
+void XplodifyPlaylist::add_track(boost::shared_ptr<XplodifyTrack> tr, int pos) {
+    if(!tr) {
+        return;
+    }
+
+    //get iterator...
+    track_cache_by_rand& t_r = m_track_cache.get<0>();
+    track_cache_by_rand::iterator it = t_r.iterator_to(t_r[pos]);
+
+    t_r.insert(it, track_entry(tr->get_name(), tr));
+}
+
 XplodifyPlaylist * XplodifyPlaylist::get_playlist_from_udata(
         sp_playlist * pl, void * userdata) {
     XplodifyPlaylist * plptr = 
