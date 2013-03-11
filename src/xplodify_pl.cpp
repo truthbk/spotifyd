@@ -222,7 +222,7 @@ void XplodifyPlaylist::playlist_renamed() {
 void XplodifyPlaylist::playlist_state_changed(){
 
     //Has the state changed cause we're done loading?
-    if( m_loading && sp_playlist_is_loaded(pl))
+    if( m_loading && sp_playlist_is_loaded(m_playlist))
     {
         m_loading = false;
         load_tracks();
