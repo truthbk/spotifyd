@@ -75,9 +75,11 @@ bool XplodifyPlaylist::load(sp_playlist * pl) {
     sp_playlist_add_callbacks(pl, const_cast<sp_playlist_callbacks *>(&cbs), this);
 
     if(!sp_playlist_is_loaded(pl))
-    {    m_loading = true;
+    {
+        m_loading = true;
     } else {
-        //load tracks
+        m_loading = false; //already loaded.
+        load_tracks();
     }
 
     return true;
@@ -218,7 +220,14 @@ void XplodifyPlaylist::playlist_renamed() {
     return;
 }
 void XplodifyPlaylist::playlist_state_changed(){
-    //TODO
+
+    //Has the state changed cause we're done loading?
+    if( m_loading && sp_playlist_is_loaded(pl))
+    {
+        m_loading = false;
+        load_tracks();
+    }
+
     return;
 }
 void XplodifyPlaylist::playlist_update_in_progress(bool done){
