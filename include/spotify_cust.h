@@ -150,8 +150,8 @@ class XplodifyHandler
         sess_map m_session_cache;
 
 
-        boost::shared_ptr<XplodifySession> getSession(const std::string& uuid);
-        boost::shared_ptr<XplodifySession> getSession(const sp_session * sps);
+        boost::shared_ptr<XplodifySession> get_session(const std::string& uuid);
+        boost::shared_ptr<XplodifySession> get_session(const sp_session * sps);
         boost::shared_ptr<XplodifySession> getActiveSession(void);
         void setActiveSession(boost::shared_ptr<XplodifySession> session);
 

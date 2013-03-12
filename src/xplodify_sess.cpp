@@ -73,7 +73,7 @@ XplodifySession * XplodifySession::get_session_from_udata(sp_session * sp) {
 }
 
 
-int XplodifySession::initSession(const uint8_t * appkey, size_t appkey_size) {
+int XplodifySession::init_session(const uint8_t * appkey, size_t appkey_size) {
 
     sp_error err;
 

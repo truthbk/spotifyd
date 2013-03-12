@@ -25,10 +25,10 @@ class XplodifySession :
 
         static boost::shared_ptr< XplodifySession > create(XplodifyHandler * h = NULL );
 
-        sp_session * getSession(void){
+        sp_session * get_session(void){
             return m_session;
         };
-        int initSession(const uint8_t * appkey, size_t appkey_size);
+        int init_session(const uint8_t * appkey, size_t appkey_size);
 
         int get_playback_done(void){
             return m_playback_done;
