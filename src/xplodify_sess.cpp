@@ -83,14 +83,7 @@ int XplodifySession::init_session(const uint8_t * appkey, size_t appkey_size) {
     m_spconfig.application_key = appkey;
     m_spconfig.application_key_size = appkey_size; // Set in main()
     m_spconfig.user_agent = "spotifyd";
-    m_spconfig.callbacks = &session_callbacks;
-    m_spconfig.callbacks = &session_callbacks;
     m_spconfig.userdata = this; //we'll use this in callbacks
-
-    err = sp_session_create( &m_spconfig, &m_session );
-    if( err != SP_ERROR_OK) {
-        return -1;
-    }
 
     //get callbacks ready
     session_callbacks.connection_error = cb_connection_error;
@@ -114,6 +107,13 @@ int XplodifySession::init_session(const uint8_t * appkey, size_t appkey_size) {
     pl_callbacks.tracks_moved = &tracks_moved;
     pl_callbacks.playlist_renamed = &playlist_renamed;
 #endif
+    m_spconfig.callbacks = &session_callbacks;
+
+    err = sp_session_create( &m_spconfig, &m_session );
+    if( err != SP_ERROR_OK) {
+        return -1;
+    }
+
     //check errors, blah....
     return 0;
 }
