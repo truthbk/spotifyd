@@ -122,6 +122,7 @@ void XplodifyHandler::loginSession(SpotifyCredential& _return, const SpotifyCred
         const boost::uuids::uuid uuid = boost::uuids::random_generator()();
         const std::string uuid_str = boost::lexical_cast<std::string>(uuid);
 
+        sess->set_uuid(uuid_str);
         m_session_cache.get<1>().insert(sess_map_entry( uuid_str, 
                     const_cast<const sp_session *>(sess->get_session()), sess ));
 
@@ -531,8 +532,10 @@ int main(int argc, char **argv) {
 
     TSimpleServer server(processor, serverTransport, transportFactory, protocolFactory);
 
-    server.serve();
     sHandler->start();
+    server.serve();
+
+    //TODO: proper cleanup
 
     return 0;
 }
