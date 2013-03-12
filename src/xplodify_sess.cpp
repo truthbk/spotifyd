@@ -124,7 +124,8 @@ void XplodifySession::login( const std::string& username
 
 
     //gotta add blob support (see libspotify api).
-    sp_session_login( 
+    sp_error err;
+    err = sp_session_login( 
             m_session, 
             username.c_str(), 
             passwd.c_str(), remember, NULL);

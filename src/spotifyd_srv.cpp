@@ -93,7 +93,9 @@ void XplodifyHandler::run()
             lock();
             sess_map_sequenced::iterator sit = m_session_cache.get<0>().begin();
             for( ; sit != m_session_cache.get<0>().end() ; sit++ )
-                sp_session_process_events(sit->session->get_session(), &next_timeout);
+                if(next_timeout == 0) {
+                    sp_session_process_events(sit->session->get_session(), &next_timeout);
+                }
             unlock();
         } while (next_timeout == 0);
 
