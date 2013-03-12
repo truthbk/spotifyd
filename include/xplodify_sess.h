@@ -135,7 +135,6 @@ class XplodifySession :
 
         std::string             m_uuid;
         bool                    m_loggedin;
-        int                     m_notify_do;
         int                     m_playback_done;
         int                     m_remove_tracks;
 #define NO_TRACK NULL

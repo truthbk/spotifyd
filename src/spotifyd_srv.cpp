@@ -61,8 +61,9 @@ void XplodifyHandler::run()
     while(!m_done)
     {
         if (next_timeout == 0) {
-            while(!m_notify_events && !m_playback_done)
+            while(!m_notify_events && !m_playback_done) {
                 cond_wait();
+            }
         } else {
             struct timespec ts;
 
