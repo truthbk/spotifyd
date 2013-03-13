@@ -16,6 +16,7 @@ from thrift.protocol import TBinaryProtocol
 
 import curses
 import signal
+import getpass
 
 SPOTIFYD_PORT = 9090
 
@@ -46,17 +47,20 @@ class spclient(object):
         # Connect!
         self._transport.open()
 
-    def get_param(self, prompt_string):
+    def get_param(self, prompt_string, passwd=False):
         self._screen.clear()
         self._screen.border(0)
         self._screen.addstr(2, 2, prompt_string)
         self._screen.refresh()
-        input = self._screen.getstr(10, 10, 60)
+        if passwd:
+            curses.noecho()
+        input = self._screen.getstr(2, 15, 60)
+        curses.echo()
         return input
 
     def spot_login(self):
         username = self.get_param("username: ")
-        password = self.get_param("password: ")
+        password = self.get_param("password: ", True)
 
         try:
             credentials = SpotifyCredential( username, password )
