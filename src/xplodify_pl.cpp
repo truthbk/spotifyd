@@ -410,6 +410,10 @@ XplodifyPlaylistContainer::XplodifyPlaylistContainer(
 {
 }
 
+XplodifyPlaylistContainer::~XplodifyPlaylistContainer(){
+    //TODO: make sure we cleanup properly.
+}
+
 bool XplodifyPlaylistContainer::load(sp_playlistcontainer * plc) {
     if(!plc) {
         return false;

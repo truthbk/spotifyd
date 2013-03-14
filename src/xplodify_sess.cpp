@@ -133,8 +133,26 @@ void XplodifySession::login( const std::string& username
 }
 
 boost::shared_ptr<XplodifyPlaylistContainer> XplodifySession::get_pl_container(void) {
+    if(!!m_plcontainer) {
+        return m_plcontainer;
+    }
+
+    sp_playlistcontainer* c = sp_session_playlistcontainer( m_session );
+
+    if (NULL == c)
+    {
+        return boost::shared_ptr<XplodifyPlaylistContainer>();
+    }
+
+    m_plcontainer.reset(new XplodifyPlaylistContainer(shared_from_this()));
+
+    if (!m_plcontainer->load(c)) {
+        m_plcontainer.reset();
+    }
+
     return m_plcontainer;
 }
+
 void XplodifySession::set_active_playlist(int idx) {
     //TODO
     return;
@@ -207,6 +225,9 @@ void XplodifySession::play_token_lost()
 }
 
 void XplodifySession::logged_in(sp_session *sess, sp_error error) {
+    //We've logged in succesfully, lets load pl container, and pl's
+    m_plcontainer =get_pl_container(); 
+
     return;
 }
 
