@@ -288,7 +288,6 @@ void XplodifyHandler::getPlaylist(SpotifyPlaylist& _return, const SpotifyCredent
 	boost::shared_ptr<SpotifyTrack> spt(new SpotifyTrack());
 
 	spt->__set__name( tr->get_name() );
-
 	spt->__set__artist( tr->get_artist(0) ); //first artist (this sucks).
 	spt->__set__minutes( duration / 60000 );
 	spt->__set__seconds( (duration / 1000) % 60 );
@@ -317,21 +316,25 @@ void XplodifyHandler::getPlaylistByName(
         return;
     }
 
-    for(int i = 0 ; i < pc->get_num_playlists() ; i++ ) {
-#if 0
-        sp_playlist *pl = sp_playlistcontainer_playlist(pc, i);
-
-        if(!pl) {
-            continue;
-        }
-
-        std::string plname(sp_playlist_name(pl));
-        if(boost::iequals(plname, name)) {
-            getPlaylist(_return, cred, i);
-            break;
-        }
-#endif
+    boost::shared_ptr<XplodifyPlaylist> pl = pc->get_playlist(name);
+    if(!pl) {
+        return;
     }
+
+    for(int j = 0 ; j < pl->get_num_tracks() ; j++ ) {
+        boost::shared_ptr<XplodifyTrack> tr = pl->get_track_at(j);
+	int duration = tr->get_duration(); //millisecs?
+	boost::shared_ptr<SpotifyTrack> spt(new SpotifyTrack());
+
+	spt->__set__name( tr->get_name() );
+	spt->__set__artist( tr->get_artist(0) ); //first artist (this sucks).
+	spt->__set__minutes( duration / 60000 );
+	spt->__set__seconds( (duration / 1000) % 60 );
+	spt->__set__popularity( tr->get_popularity() );
+	spt->__set__starred( tr->is_starred() );
+	_return.insert(*spt);
+    }
+
     return;
 }
 
