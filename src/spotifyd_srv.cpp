@@ -266,8 +266,6 @@ void XplodifyHandler::getPlaylists(SpotifyPlaylistList& _return, const SpotifyCr
 void XplodifyHandler::getPlaylist(SpotifyPlaylist& _return, const SpotifyCredential& cred,
 		const int32_t plist_id) {
     // Your implementation goes here
-    printf("getPlaylist\n");
-
     boost::shared_ptr<XplodifySession> sess = get_session(cred._uuid);
     if(!sess) {
 	return;
@@ -285,21 +283,18 @@ void XplodifyHandler::getPlaylist(SpotifyPlaylist& _return, const SpotifyCredent
     }
 
     for(int j = 0 ; j < pl->get_num_tracks() ; j++ ) {
-#if 0
-	sp_track * t = sp_playlist_track(pl, j);
-	int duration = sp_track_duration(t); //millisecs?
+        boost::shared_ptr<XplodifyTrack> tr = pl->get_track_at(j);
+	int duration = tr->get_duration(); //millisecs?
 	boost::shared_ptr<SpotifyTrack> spt(new SpotifyTrack());
 
-	spt->__set__name( std::string(sp_track_name(t)) );
-        //I guess we'll have to support multiple artists in the future.
-	spt->__set__artist( std::string( sp_artist_name(sp_track_artist(t, 0))));
+	spt->__set__name( tr->get_name() );
+
+	spt->__set__artist( tr->get_artist(0) ); //first artist (this sucks).
 	spt->__set__minutes( duration / 60000 );
 	spt->__set__seconds( (duration / 1000) % 60 );
-	spt->__set__popularity( sp_track_popularity(t) );
-	spt->__set__starred( sp_track_is_starred(sess->get_session(), t) );
-
+	spt->__set__popularity( tr->get_popularity() );
+	spt->__set__starred( tr->is_starred() );
 	_return.insert(*spt);
-#endif
     }
 
     return;
