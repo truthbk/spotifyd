@@ -243,7 +243,6 @@ void XplodifyHandler::search(SpotifyPlaylist& _return, const SpotifyCredential& 
 
 void XplodifyHandler::getPlaylists(SpotifyPlaylistList& _return, const SpotifyCredential& cred) 
 {
-    printf("getPlaylists\n");
     boost::shared_ptr<XplodifySession> sess = get_session(cred._uuid);
     if(!sess) {
         return;
@@ -255,12 +254,9 @@ void XplodifyHandler::getPlaylists(SpotifyPlaylistList& _return, const SpotifyCr
 
     for (int i = 0; i < pc->get_num_playlists(); ++i)
     {
-#if 0
-	sp_playlist *pl = sp_playlistcontainer_playlist(pc, i);
-
-	std::string s_pl(sp_playlist_name(pl));
-	_return.insert(s_pl);
-#endif
+        boost::shared_ptr<XplodifyPlaylist> pl = pc->get_playlist(i);
+        std::string plstr(pl->get_name());
+	_return.insert(plstr);
     }
 
     return;
