@@ -70,8 +70,8 @@ class spclient(object):
         password = self.get_param("password: ", True)
 
         try:
-            self._credentials = SpotifyCredential( username, password )
-            self._client.loginSession(self._credentials)
+            credentials = SpotifyCredential( username, password )
+            self._credentials = self._client.loginSession(credentials)
         except Exception, e:
             self._screen.clear()
             return None
@@ -101,8 +101,8 @@ class spclient(object):
         try:
             self._screen.clear()
             self._screen.border(0)
+            """ pls will be a set with the playlists """
             pls = self._client.getPlaylists(self._credentials)
-            self._screen.addstr(2, 2, pls)
             self._screen.refresh()
 
         except Exception, e:
