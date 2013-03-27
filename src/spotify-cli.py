@@ -27,11 +27,6 @@ def signal_handler(signal, frame):
 class spclient(object):
 
     def __init__(self):
-        # init curses screen
-        self._screen = curses.initscr()
-        self._screen.border(0)
-
-
         # Make socket
         self._transport = TSocket.TSocket('localhost', SPOTIFYD_PORT)
 
@@ -46,6 +41,18 @@ class spclient(object):
 
         # Connect!
         self._transport.open()
+
+        #status
+        self._success = True 
+
+        # Empty credential
+        self._credentials = None
+
+        # init curses screen
+        self._screen = curses.initscr()
+        self._screen.border(0)
+
+
 
     def get_param(self, prompt_string, passwd=False):
         self._screen.clear()
@@ -63,8 +70,8 @@ class spclient(object):
         password = self.get_param("password: ", True)
 
         try:
-            credentials = SpotifyCredential( username, password )
-            self._client.loginSession(credentials)
+            self._credentials = SpotifyCredential( username, password )
+            self._client.loginSession(self._credentials)
         except Exception, e:
             self._screen.clear()
             return None
@@ -83,10 +90,26 @@ class spclient(object):
        try:
             credentials = SpotifyCredential( username )
             ret = self._client.isLoggedIn(credentials)
+
        except Exception, e:
-           self._screen.clear()
+           self._screen.addstr(30, 2, e.__str__())
+           self._success = False
        finally:
            return ret
+
+    def spot_getplaylists(self):
+        try:
+            self._screen.clear()
+            self._screen.border(0)
+            pls = self._client.getPlaylists(self._credentials)
+            self._screen.addstr(2, 2, pls)
+            self._screen.refresh()
+
+        except Exception, e:
+            self._screen.addstr(30, 2, e.__str__())
+            self._success = False
+            return None
+
 
     def spot_selplaylist(self):
         return None
@@ -109,28 +132,31 @@ class spclient(object):
             opt = 0
             funcs = {
                     ord('1'): self.spot_login, 
-                    ord('2'): self.spot_selplaylist,
-                    ord('3'): self.spot_seltrack,
-                    ord('4'): self.spot_playback,
-                    ord('5'): self.spot_getcurrent,
-                    ord('6'): self.spot_logout,
+                    ord('2'): self.spot_getplaylists, 
+                    ord('3'): self.spot_selplaylist,
+                    ord('4'): self.spot_seltrack,
+                    ord('5'): self.spot_playback,
+                    ord('6'): self.spot_getcurrent,
+                    ord('7'): self.spot_logout,
             }
 
-            while opt is not ord('7'):
-                self._screen.clear()
+            while opt is not ord('8'):
+                if(self._success):
+                    self._screen.clear()
                 self._screen.addstr(2, 2, "What d'you wanna do??")
                 self._screen.addstr(4, 4, "1. Login")
-                self._screen.addstr(5, 4, "2. Select Playlist")
-                self._screen.addstr(6, 4, "3. Select Track")
-                self._screen.addstr(7, 4, "4. Control Playback")
-                self._screen.addstr(8, 4, "5. Get current track")
-                self._screen.addstr(9, 4, "6. Logout")
-                self._screen.addstr(9, 4, "7. Exit")
-                self._screen.addstr(12, 4, "Option: ")
+                self._screen.addstr(5, 4, "2. Get Playlists")
+                self._screen.addstr(6, 4, "3. Select Playlist")
+                self._screen.addstr(7, 4, "4. Select Track")
+                self._screen.addstr(8, 4, "5. Control Playback")
+                self._screen.addstr(9, 4, "6. Get current track")
+                self._screen.addstr(10, 4, "7. Logout")
+                self._screen.addstr(11, 4, "8. Exit")
+                self._screen.addstr(13, 4, "Option: ")
 
                 opt = self._screen.getch()
 
-                if opt>ord('0') and opt<ord('7'):
+                if opt>ord('0') and opt<ord('8'):
                     result = funcs[opt]()
 
             self._transport.close()
