@@ -420,11 +420,19 @@ bool XplodifyPlaylistContainer::load(sp_playlistcontainer * plc) {
     }
 
     m_plcontainer = plc;
-    sp_playlistcontainer_add_callbacks(plc, 
-            const_cast<sp_playlistcontainer_callbacks *>(&cbs), this);
+
+    //temporary fixup
+    sp_playlistcontainer_callbacks callbacks;
+    memset( &callbacks, 0, sizeof(callbacks) );
+
+    callbacks.container_loaded = cb_container_loaded;
+    callbacks.playlist_added = cb_playlist_added;
+    callbacks.playlist_moved = cb_playlist_moved;
+    callbacks.playlist_removed = cb_playlist_removed;
+
+    sp_playlistcontainer_add_callbacks(plc, &callbacks, this);
 
     m_loading = true;
-
     return m_loading;
 }
 bool XplodifyPlaylistContainer::unload() {
@@ -542,9 +550,11 @@ void XplodifyPlaylistContainer::playlist_moved(sp_playlist *pl, int pos, int new
 }
 
 void XplodifyPlaylistContainer::container_loaded(){
-    int n;
 
-    n = sp_playlistcontainer_num_playlists(m_plcontainer);
+    //container_loaded callback never being raised....
+    m_loading = false;
+
+    int n = sp_playlistcontainer_num_playlists(m_plcontainer);
     for(int i=0 ; i<n ; i++ ) {
         sp_playlist * p = sp_playlistcontainer_playlist( m_plcontainer, i);
         boost::shared_ptr<XplodifyPlaylist> npl(new XplodifyPlaylist(m_session));
@@ -552,6 +562,7 @@ void XplodifyPlaylistContainer::container_loaded(){
 
         add_playlist(npl);
     }
+    return;
 }
 
 

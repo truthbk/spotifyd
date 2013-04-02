@@ -226,7 +226,7 @@ void XplodifySession::play_token_lost()
 
 void XplodifySession::logged_in(sp_session *sess, sp_error error) {
     //We've logged in succesfully, lets load pl container, and pl's
-    m_plcontainer =get_pl_container(); 
+    m_plcontainer = get_pl_container(); 
 
     return;
 }
