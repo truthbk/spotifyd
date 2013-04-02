@@ -420,17 +420,8 @@ bool XplodifyPlaylistContainer::load(sp_playlistcontainer * plc) {
     }
 
     m_plcontainer = plc;
-
-    //temporary fixup
-    sp_playlistcontainer_callbacks callbacks;
-    memset( &callbacks, 0, sizeof(callbacks) );
-
-    callbacks.container_loaded = cb_container_loaded;
-    callbacks.playlist_added = cb_playlist_added;
-    callbacks.playlist_moved = cb_playlist_moved;
-    callbacks.playlist_removed = cb_playlist_removed;
-
-    sp_playlistcontainer_add_callbacks(plc, &callbacks, this);
+    sp_playlistcontainer_add_callbacks(plc, 
+            const_cast<sp_playlistcontainer_callbacks *>(&cbs), this);
 
     m_loading = true;
     return m_loading;
