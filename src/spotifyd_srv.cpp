@@ -92,10 +92,10 @@ void XplodifyHandler::run()
             //protecting iterator
             lock();
             sess_map_sequenced::iterator sit = m_session_cache.get<0>().begin();
-            for( ; sit != m_session_cache.get<0>().end() ; sit++ )
-                if(next_timeout == 0) {
-                    sp_session_process_events(sit->session->get_session(), &next_timeout);
-                }
+            for( ; sit != m_session_cache.get<0>().end() ; sit++ ) {
+                //should we make sure next_timeout is 0?
+                sp_session_process_events(sit->session->get_session(), &next_timeout);
+            }
             unlock();
         } while (next_timeout == 0);
 
