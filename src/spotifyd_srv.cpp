@@ -252,7 +252,8 @@ void XplodifyHandler::getPlaylists(SpotifyPlaylistList& _return, const SpotifyCr
 	return;
     }
 
-    for (int i = 0; i < pc->get_num_playlists(); ++i)
+    int n =  pc->get_num_playlists();
+    for (int i = 0; i<n; ++i)
     {
         boost::shared_ptr<XplodifyPlaylist> pl = pc->get_playlist(i);
         std::string plstr(pl->get_name());

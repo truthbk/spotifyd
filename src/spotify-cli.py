@@ -103,6 +103,12 @@ class spclient(object):
             self._screen.border(0)
             """ pls will be a set with the playlists """
             pls = self._client.getPlaylists(self._credentials)
+            row = 3
+            for p in pls:
+                self._screen.addstr(row, 3, p) 
+                row += 1
+
+            self._screen.getch()
             self._screen.refresh()
 
         except Exception, e:
