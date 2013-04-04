@@ -149,16 +149,18 @@ class spclient(object):
             while opt is not ord('8'):
                 if(self._success):
                     self._screen.clear()
-                self._screen.addstr(2, 2, "What d'you wanna do??")
-                self._screen.addstr(4, 4, "1. Login")
-                self._screen.addstr(5, 4, "2. Get Playlists")
-                self._screen.addstr(6, 4, "3. Select Playlist")
-                self._screen.addstr(7, 4, "4. Select Track")
-                self._screen.addstr(8, 4, "5. Control Playback")
-                self._screen.addstr(9, 4, "6. Get current track")
-                self._screen.addstr(10, 4, "7. Logout")
-                self._screen.addstr(11, 4, "8. Exit")
-                self._screen.addstr(13, 4, "Option: ")
+                if self._credentials:
+                    self._screen.addstr(2, 2, "Logged in as %s" % self._credentials._username )
+                self._screen.addstr(4, 2, "What d'you wanna do??")
+                self._screen.addstr(6, 4, "1. Login")
+                self._screen.addstr(7, 4, "2. Get Playlists")
+                self._screen.addstr(8, 4, "3. Select Playlist")
+                self._screen.addstr(9, 4, "4. Select Track")
+                self._screen.addstr(10, 4, "5. Control Playback")
+                self._screen.addstr(11, 4, "6. Get current track")
+                self._screen.addstr(12, 4, "7. Logout")
+                self._screen.addstr(13, 4, "8. Exit")
+                self._screen.addstr(15, 4, "Option: ")
 
                 opt = self._screen.getch()
 
