@@ -48,6 +48,12 @@ class spclient(object):
         # Empty credential
         self._credentials = None
 
+        # Empty playlist list (set)
+        self._playlists = None
+
+        # Empty selected playlist
+        self._currentplaylist = None
+
         # init curses screen
         self._screen = curses.initscr()
         self._screen.border(0)
@@ -118,13 +124,29 @@ class spclient(object):
 
 
     def spot_selplaylist(self):
-        return None
+        try:
+            self._screen.clear()
+            self._screen.border(0)
+            plname = self.get_param("Playlist to select: ")
+            self._client.getPlaylists(self._credentials, plname )
+
+        except Exception, e:
+            self._screen.addstr(30, 2, e.__str__())
+            self._success = False
+            return None
 
     def spot_seltrack(self):
         return None
 
     def spot_playback(self):
-        return None
+        try:
+            #keeping it real simple for now.
+            self._client.sendCommand(self._credentials, SpotifyCmd.PLAY)
+
+        except Exception, e:
+            self._screen.addstr(30, 2, e.__str__())
+            self._success = False
+            return None
 
     def spot_getcurrent(self):
         return None
