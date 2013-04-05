@@ -48,8 +48,8 @@ class spclient(object):
         # Empty credential
         self._credentials = None
 
-        # Empty playlist list (set)
-        self._playlists = None
+        # Empty playlist array
+        self._playlists = []
 
         # Empty selected playlist
         self._currentplaylist = None
@@ -109,9 +109,11 @@ class spclient(object):
             self._screen.border(0)
             """ pls will be a set with the playlists """
             pls = self._client.getPlaylists(self._credentials)
+
             row = 3
             for p in pls:
-                self._screen.addstr(row, 3, p) 
+                self._playlists.append(p)
+                self._screen.addstr(row, 3, "%d. %s" % (row-2, p)) 
                 row += 1
 
             self._screen.getch()
@@ -127,8 +129,12 @@ class spclient(object):
         try:
             self._screen.clear()
             self._screen.border(0)
-            plname = self.get_param("Playlist to select: ")
-            self._client.getPlaylists(self._credentials, plname )
+            row = 5
+            for p in self._playlists:
+                self._screen.addstr(row, 3, "%d. %s" % (row-2, p)) 
+                row += 1
+            plidx = self.get_param("Playlist to select: ")
+            self._client.selectPlaylist(self._credentials, self._playlists[int(plidx)])
 
         except Exception, e:
             self._screen.addstr(30, 2, e.__str__())
