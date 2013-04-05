@@ -60,20 +60,20 @@ class spclient(object):
 
 
 
-    def get_param(self, prompt_string, passwd=False):
-        self._screen.clear()
+    def get_param(self, prompt_string, passwd=False, row=2, col=2):
         self._screen.border(0)
-        self._screen.addstr(2, 2, prompt_string)
+        self._screen.addstr(row, col, prompt_string)
         self._screen.refresh()
         if passwd:
             curses.noecho()
-        input = self._screen.getstr(2, 15, 60)
+        input = self._screen.getstr(row, col+len(prompt_string)+1, 60)
         curses.echo()
         return input
 
     def spot_login(self):
+        self._screen.clear()
         username = self.get_param("username: ")
-        password = self.get_param("password: ", True)
+        password = self.get_param("password: ", True, 3, 2)
 
         try:
             credentials = SpotifyCredential( username, password )
@@ -131,7 +131,7 @@ class spclient(object):
             self._screen.border(0)
             row = 5
             for p in self._playlists:
-                self._screen.addstr(row, 3, "%d. %s" % (row-2, p)) 
+                self._screen.addstr(row, 3, "%d. %s" % (row-4, p)) 
                 row += 1
             plidx = self.get_param("Playlist to select: ")
             self._client.selectPlaylist(self._credentials, self._playlists[int(plidx)])
