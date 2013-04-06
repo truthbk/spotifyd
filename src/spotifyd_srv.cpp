@@ -340,34 +340,14 @@ void XplodifyHandler::getPlaylistByName(
 }
 
 void XplodifyHandler::selectPlaylist(const SpotifyCredential& cred, const std::string& playlist) {
-    // Your implementation goes here
-    printf("selectPlaylist\n");
+
     boost::shared_ptr<XplodifySession> sess = get_session(cred._uuid);
     if(!sess) {
         return;
     }
 
-    boost::shared_ptr<XplodifyPlaylistContainer> pc = sess->get_pl_container();
-    if(!pc) {
-	return;
-    }
+    sess->set_active_playlist(playlist);
 
-    //O(n) ugly, but this is really the libspotify way of doing it :(
-    for(int i = 0 ; i < pc->get_num_playlists() ; i++ ) {
-#if 0
-	sp_playlist *pl = sp_playlistcontainer_playlist(pc, i);
-
-	if(!pl) {
-	    continue;
-	}
-
-	std::string plname(sp_playlist_name(pl));
-	if(boost::iequals(plname, playlist)) {
-	    sess->setActivePlaylist(pl);
-	    break;
-	}
-#endif
-    }
 }
 void XplodifyHandler::selectPlaylistById(const SpotifyCredential& cred, const int32_t plist_id) {
     // Your implementation goes here

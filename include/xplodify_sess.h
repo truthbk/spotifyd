@@ -71,6 +71,7 @@ class XplodifySession :
         void set_track(int idx);
         boost::shared_ptr<XplodifyPlaylistContainer> get_pl_container(void);
         void set_active_playlist(int idx);
+        void set_active_playlist(std::string plname);
         std::string get_playlist_name(void);
 
         static XplodifySession * get_session_from_udata(sp_session * sp);

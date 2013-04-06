@@ -61,7 +61,7 @@ boost::shared_ptr< XplodifySession > XplodifySession::create(XplodifyHandler * h
     if(!h) {
             return boost::shared_ptr< XplodifySession >( new XplodifySession() );
     }
-    
+
     return boost::shared_ptr< XplodifySession >( new XplodifySession(h) );
 }
 
@@ -154,9 +154,25 @@ boost::shared_ptr<XplodifyPlaylistContainer> XplodifySession::get_pl_container(v
 }
 
 void XplodifySession::set_active_playlist(int idx) {
-    //TODO
-    return;
+    boost::shared_ptr<XplodifyPlaylistContainer> pc = get_pl_container();
+    if(!pc) {
+        return;
+    }
+
+    boost::shared_ptr<XplodifyPlaylist> pl = pc->get_playlist(idx);
+    m_playlist = pl;
 }
+
+void XplodifySession::set_active_playlist(std::string plname) {
+    boost::shared_ptr<XplodifyPlaylistContainer> pc = get_pl_container();
+    if(!pc) {
+        return;
+    }
+
+    boost::shared_ptr<XplodifyPlaylist> pl = pc->get_playlist(plname);
+    m_playlist = pl;
+}
+
 std::string XplodifySession::get_playlist_name(void) {
     if(!m_playlist) {
         return std::string("");
