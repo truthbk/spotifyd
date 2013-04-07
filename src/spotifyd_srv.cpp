@@ -509,7 +509,7 @@ void XplodifyHandler::audio_fifo_stats(sp_audio_buffer_stats *stats)
 
 int main(int argc, char **argv) {
     int port = 9090;
-
+    enum audio_arch arch;
 
     //XplodifyHandler
     boost::shared_ptr<XplodifyHandler> sHandler(new XplodifyHandler());
@@ -521,6 +521,17 @@ int main(int argc, char **argv) {
     boost::shared_ptr<TProtocolFactory> protocolFactory(new TBinaryProtocolFactory());
 
     TSimpleServer server(processor, serverTransport, transportFactory, protocolFactory);
+
+    //configure audio - add optargs to do this as command line arg.
+    //TODO: gotta fix linking, this breaks build! 
+#if 0
+#ifdef _LINUX
+    arch = ALSA;
+#elif _OSX
+    arch = OSX;
+#endif
+    set_audio(arch),
+#endif
 
     sHandler->start();
     server.serve();
