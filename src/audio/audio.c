@@ -80,19 +80,19 @@ int set_audio(enum audio_arch arch)
     {
 #ifdef _LINUX
 	case ALSA:
-#ifdef _ALSA
+#ifdef HAS_ALSA
 	    set_audio_init(alsa_audio_init);
 #else
 	    set_audio_init(dummy_audio_init);
-	    ret =1;
+	    ret = 1;
 #endif
 	    break;
 	case OPENAL:
-#ifdef _OPENAL
+#ifdef HASH_OPENAL
 	    set_audio_init(openal_audio_init);
 #else
 	    set_audio_init(dummy_audio_init);
-	    ret =1;
+	    ret = 1;
 #endif
 	    break;
 	default:

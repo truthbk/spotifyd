@@ -35,6 +35,7 @@
 
 #include "audio.h"
 
+audio_init_ptr audio_init;
 
 static snd_pcm_t *alsa_open(char *dev, int rate, int channels)
 {

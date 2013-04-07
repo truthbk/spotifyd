@@ -40,7 +40,7 @@ endif(APPLE)
 
 add_executable(spotifyd ${Spotifyd_SRCS})
 if(UNIX AND NOT APPLE)
-	target_link_libraries(spotifyd SpotifydThrift spotaudio ${Boost_LIBRARIES} ${Spotify_LIB} ${Thrift_LIBS} ${LibEvent_LIBS})
+	target_link_libraries(spotifyd SpotifydThrift spotaudio ${Boost_LIBRARIES} ${ALSA_LIBRARIES} ${Spotify_LIB} ${Thrift_LIBS} ${LibEvent_LIBS} )
 elseif(APPLE)
 	target_link_libraries(spotifyd SpotifydThrift spotaudio ${Boost_LIBRARIES} ${Spotify_LIB} ${Thrift_LIBS} ${LibEvent_LIBS} ${COREAUDIO} ${AUDIOUNIT} ${AUDIOTOOLBOX} )
 endif()

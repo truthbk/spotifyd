@@ -38,6 +38,8 @@
 
 #define NUM_BUFFERS 3
 
+audio_init_ptr audio_init;
+
 static void error_exit(const char *msg)
 {
     puts(msg);

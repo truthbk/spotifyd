@@ -66,10 +66,10 @@ enum audio_arch {
 
 extern audio_init_ptr audio_init;
 #ifdef _LINUX
-#ifdef _ALSA
+#ifdef HAS_ALSA
 void alsa_audio_init(audio_fifo_t *af);
 #endif
-#ifdef _OPENAL
+#ifdef HAS_OPENAL
 void openal_audio_init(audio_fifo_t *af);
 #endif
 void dummy_audio_init(audio_fifo_t *af);

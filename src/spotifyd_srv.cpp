@@ -523,15 +523,14 @@ int main(int argc, char **argv) {
     TSimpleServer server(processor, serverTransport, transportFactory, protocolFactory);
 
     //configure audio - add optargs to do this as command line arg.
-    //TODO: gotta fix linking, this breaks build! 
-#if 0
-#ifdef _LINUX
+#ifdef HAS_ALSA
     arch = ALSA;
-#elif _OSX
+#elif HAS_OPENAL
+    arch = OPENAL;
+#else
     arch = OSX;
 #endif
     set_audio(arch),
-#endif
 
     sHandler->start();
     server.serve();

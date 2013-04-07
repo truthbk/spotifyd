@@ -28,6 +28,8 @@
 #include <AudioToolbox/AudioQueue.h>
 #include "audio.h"
 
+audio_init_ptr audio_init;
+
 #define BUFFER_COUNT 7
 static struct AQPlayerState {
     AudioStreamBasicDescription   desc;
