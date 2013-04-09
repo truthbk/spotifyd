@@ -493,6 +493,19 @@ int XplodifyHandler::music_playback(const sp_audioformat *format,
     return num_frames;
 }
 
+void XplodifyHandler::audio_fifo_stats(sp_audio_buffer_stats *stats)
+{
+
+    pthread_mutex_lock(&m_audiofifo.mutex);
+
+    stats->samples = m_audiofifo.qlen;
+    stats->stutter = 0; //how do we calculate this?
+
+    pthread_cond_signal(&m_audiofifo.cond);
+    pthread_mutex_unlock(&m_audiofifo.mutex);
+
+}
+
 
 int main(int argc, char **argv) {
     int port = 9090;

@@ -90,6 +90,7 @@ class XplodifySession :
         void userinfo_updated();
         void end_of_track();
         void notify_main_thread(sp_session * sess);
+        void get_audio_buffer_stats(sp_audio_buffer_stats * stats);
         int  music_delivery(sp_session *sess, const sp_audioformat *format,
                 const void *frames, int num_frames);
 

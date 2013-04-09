@@ -249,12 +249,18 @@ void XplodifySession::logged_in(sp_session *sess, sp_error error) {
 
 void XplodifySession::start_playback()
 {
+    sp_session_player_play(m_session, 1);
     return;
 }
 
 void XplodifySession::stop_playback()
 {
+    sp_session_player_play(m_session, 0);
     return;
+}
+
+void XplodifySession::get_audio_buffer_stats(sp_audio_buffer_stats * stats) {
+    m_handler->audio_fifo_stats(stats);
 }
 
 void XplodifySession::userinfo_updated()
@@ -436,11 +442,12 @@ void SP_CALLCONV XplodifySession::cb_stop_playback(sp_session * sp) {
 }
 void SP_CALLCONV XplodifySession::cb_get_audio_buffer_stats(sp_session * sp,
         sp_audio_buffer_stats *stats) {
-    //TODO
+
     XplodifySession * s = XplodifySession::get_session_from_udata(sp);
     if(!s) {
         return;
     }
+    s->get_audio_buffer_stats(stats);
     return;
 }
 
