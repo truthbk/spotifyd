@@ -101,6 +101,7 @@ class XplodifyHandler
         int  music_playback(const sp_audioformat * format, 
                 const void * frames, int num_frames);
         void audio_fifo_stats(sp_audio_buffer_stats *stats);
+        void audio_fifo_flush_now();
 
 
     protected:

@@ -89,3 +89,7 @@ void XplodifyTrack::set_starred(bool star){
     }
     sp_track_set_starred(m_sess->get_sp_session(), &m_track, 1, star);
 }
+
+sp_error XplodifyTrack::get_track_error(){
+    return sp_track_error(m_track);
+}

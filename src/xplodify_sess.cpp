@@ -191,16 +191,27 @@ void XplodifySession::set_track(int idx) {
         return;
     }
 
-    sp_track * t = NULL;
-
     if(!m_playlist) {
         return;
     }
 
-    m_track = m_playlist->get_track_at(idx);
-    if(m_track) {
-            m_track_idx = idx;
+    boost::shared_ptr<XplodifyTrack> track = m_playlist->get_track_at(idx);
+    //track has been changed.
+    if(m_track && track != m_track) {
+        sp_session_player_unload(m_session);
+        m_handler->audio_fifo_flush_now();
+        m_track_idx = NO_TRACK_IDX;
+        m_track = boost::shared_ptr<XplodifyTrack>();
     }
+    if(!track || track->get_track_error() != SP_ERROR_OK ) {
+        return;
+    }
+    if(m_track == track) {
+        return;
+    }
+    m_track = track;
+    m_track_idx = idx;
+    sp_session_player_load(m_session, m_track->m_track);
 }
 
 #if 0

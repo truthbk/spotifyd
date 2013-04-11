@@ -32,7 +32,9 @@ class XplodifyTrack
         int           get_disc();
         int           get_popularity();
         void          set_starred(bool star);
+        sp_error      get_track_error();
     private:
+        friend class XplodifySession;
         sp_track *                            m_track;
         boost::shared_ptr<XplodifySession>    m_sess;
 };

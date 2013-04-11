@@ -506,6 +506,9 @@ void XplodifyHandler::audio_fifo_stats(sp_audio_buffer_stats *stats)
 
 }
 
+void XplodifyHandler::audio_fifo_flush_now() {
+    audio_fifo_flush(audio_fifo());
+}
 
 int main(int argc, char **argv) {
     int port = 9090;
@@ -522,7 +525,7 @@ int main(int argc, char **argv) {
 
     TSimpleServer server(processor, serverTransport, transportFactory, protocolFactory);
 
-    //configure audio - add optargs to do this as command line arg.
+    //configure audio architecture
 #ifdef HAS_ALSA
     arch = ALSA;
 #elif HAS_OPENAL
