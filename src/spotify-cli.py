@@ -15,6 +15,8 @@ from thrift.transport import TTransport
 from thrift.protocol import TBinaryProtocol
 
 import curses
+from curses import panel
+
 import signal
 import getpass
 
@@ -42,6 +44,7 @@ class spclient(object):
         # Connect!
         self._transport.open()
 
+
         #status
         self._success = True 
 
@@ -55,31 +58,38 @@ class spclient(object):
         self._currentplaylist = None
 
         # init curses screen
-        self._screen = curses.initscr()
-        self._screen.border(0)
+        self._screen = curses.initscr() 
+        self._window = self._screen.subwin(0,0)
+        self._menu = panel.new_panel(self._window)
+        #self._menu.window().resize(16, 22);
+        #self._menu.window().border(1)
+
+        self._playlistpanel = panel.new_panel(self._window)
+        self._playlistpanel.hide()
+        panel.update_panels()
 
 
 
-    def get_param(self, prompt_string, passwd=False, row=2, col=2):
-        self._screen.border(0)
-        self._screen.addstr(row, col, prompt_string)
-        self._screen.refresh()
+    def get_param(self, window, prompt_string, passwd=False, row=2, col=2):
+        window.border(0)
+        window.addstr(row, col, prompt_string)
+        window.refresh()
         if passwd:
             curses.noecho()
-        input = self._screen.getstr(row, col+len(prompt_string)+1, 60)
+        input = window.getstr(row, col+len(prompt_string)+1, 60)
         curses.echo()
         return input
 
     def spot_login(self):
-        self._screen.clear()
-        username = self.get_param("username: ")
-        password = self.get_param("password: ", True, 3, 2)
+        self._window.clear()
+        username = self.get_param(self._window, "username: ")
+        password = self.get_param(self._window, "password: ", True, 3, 2)
 
         try:
             credentials = SpotifyCredential( username, password )
             self._credentials = self._client.loginSession(credentials)
         except Exception, e:
-            self._screen.clear()
+            self._window.clear()
             return None
 
         return credentials
@@ -98,46 +108,51 @@ class spclient(object):
             ret = self._client.isLoggedIn(credentials)
 
        except Exception, e:
-           self._screen.addstr(30, 2, e.__str__())
+           self._window.addstr(30, 2, e.__str__())
            self._success = False
        finally:
            return ret
 
     def spot_getplaylists(self):
         try:
-            self._screen.clear()
-            self._screen.border(0)
+            #self._window.clear()
+            #self._window.border(0)
             """ pls will be a set with the playlists """
             pls = self._client.getPlaylists(self._credentials)
 
             row = 3
+            plwindow = self._playlistpanel.window()
             for p in pls:
                 self._playlists.append(p)
-                self._screen.addstr(row, 3, "%d. %s" % (row-2, p)) 
+                plwindow.addstr(row, 3, "%d. %s" % (row-2, p)) 
                 row += 1
 
-            self._screen.getch()
-            self._screen.refresh()
+            plwindow.resize(20, 15)
+            plwindow.move(10, 25)
+            self._playlistpanel.show()
+            panel.update_panels()
+            curses.doupdate()
+            #self._window.refresh()
 
         except Exception, e:
-            self._screen.addstr(30, 2, e.__str__())
+            self._window.addstr(30, 2, e.__str__())
             self._success = False
             return None
 
 
     def spot_selplaylist(self):
         try:
-            self._screen.clear()
-            self._screen.border(0)
+            self._window.clear()
+            self._window.border(0)
             row = 5
             for p in self._playlists:
-                self._screen.addstr(row, 3, "%d. %s" % (row-4, p)) 
+                self._window.addstr(row, 3, "%d. %s" % (row-4, p)) 
                 row += 1
             plidx = self.get_param("Playlist to select: ")
             self._client.selectPlaylist(self._credentials, self._playlists[int(plidx)])
 
         except Exception, e:
-            self._screen.addstr(30, 2, e.__str__())
+            self._window.addstr(30, 2, e.__str__())
             self._success = False
             return None
 
@@ -150,7 +165,7 @@ class spclient(object):
             self._client.sendCommand(self._credentials, SpotifyCmd.PLAY)
 
         except Exception, e:
-            self._screen.addstr(30, 2, e.__str__())
+            self._window.addstr(30, 2, e.__str__())
             self._success = False
             return None
 
@@ -162,6 +177,7 @@ class spclient(object):
 
     def menu(self):
         try:
+            menupanel = self._menu.window()
 
             opt = 0
             funcs = {
@@ -174,31 +190,40 @@ class spclient(object):
                     ord('7'): self.spot_logout,
             }
 
+            menupanel.addstr(4, 2, "What d'you wanna do??")
+            menupanel.addstr(6, 4, "1. Login")
+            menupanel.addstr(7, 4, "2. Get Playlists")
+            menupanel.addstr(8, 4, "3. Select Playlist")
+            menupanel.addstr(9, 4, "4. Select Track")
+            menupanel.addstr(10, 4, "5. Control Playback")
+            menupanel.addstr(11, 4, "6. Get current track")
+            menupanel.addstr(12, 4, "7. Logout")
+            menupanel.addstr(13, 4, "8. Exit")
+            menupanel.addstr(15, 4, "Option: ")
+
+            self._menu.top()
+            self._menu.show()
+            self._window.clear()
+            panel.update_panels()
+            curses.doupdate()
+
             while opt is not ord('8'):
                 if(self._success):
-                    self._screen.clear()
+                    self._window.clear()
                 if self._credentials:
-                    self._screen.addstr(2, 2, "Logged in as %s" % self._credentials._username )
-                self._screen.addstr(4, 2, "What d'you wanna do??")
-                self._screen.addstr(6, 4, "1. Login")
-                self._screen.addstr(7, 4, "2. Get Playlists")
-                self._screen.addstr(8, 4, "3. Select Playlist")
-                self._screen.addstr(9, 4, "4. Select Track")
-                self._screen.addstr(10, 4, "5. Control Playback")
-                self._screen.addstr(11, 4, "6. Get current track")
-                self._screen.addstr(12, 4, "7. Logout")
-                self._screen.addstr(13, 4, "8. Exit")
-                self._screen.addstr(15, 4, "Option: ")
+                    self._window.addstr(2, 2, "Logged in as %s" % self._credentials._username )
 
-                opt = self._screen.getch()
+                opt = menupanel.getch()
 
                 if opt>ord('0') and opt<ord('8'):
                     result = funcs[opt]()
+
 
             self._transport.close()
             curses.endwin()
 
         except Thrift.TException, tx:
+            self._transport.close()
             curses.endwin()
             print "%s" % (tx.message)
 
