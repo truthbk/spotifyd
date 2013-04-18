@@ -46,7 +46,7 @@ class spclient(object):
 
 
         #status
-        self._success = True 
+        self._success = True
 
         # Empty credential
         self._credentials = None
@@ -58,7 +58,7 @@ class spclient(object):
         self._currentplaylist = None
 
         # init curses screen
-        self._screen = curses.initscr() 
+        self._screen = curses.initscr()
         self._window = self._screen.subwin(0,0)
         self._menu = panel.new_panel(self._window)
         #self._menu.window().resize(16, 22);
@@ -95,7 +95,7 @@ class spclient(object):
         return credentials
 
     """"
-    Because libspotify is async we need this to check we logged 
+    Because libspotify is async we need this to check we logged
     in succesfully.
     """
     def spot_isloggedin(self, username=None, uid=None):
@@ -124,7 +124,7 @@ class spclient(object):
             plwindow = self._playlistpanel.window()
             for p in pls:
                 self._playlists.append(p)
-                plwindow.addstr(row, 3, "%d. %s" % (row-2, p)) 
+                plwindow.addstr(row, 3, "%d. %s" % (row-2, p))
                 row += 1
 
             plwindow.resize(20, 15)
@@ -146,7 +146,7 @@ class spclient(object):
             self._window.border(0)
             row = 5
             for p in self._playlists:
-                self._window.addstr(row, 3, "%d. %s" % (row-4, p)) 
+                self._window.addstr(row, 3, "%d. %s" % (row-4, p))
                 row += 1
             plidx = self.get_param("Playlist to select: ")
             self._client.selectPlaylist(self._credentials, self._playlists[int(plidx)])
@@ -175,14 +175,15 @@ class spclient(object):
     def spot_logout(self):
         return None
 
+"""
     def menu(self):
         try:
             menupanel = self._menu.window()
 
             opt = 0
             funcs = {
-                    ord('1'): self.spot_login, 
-                    ord('2'): self.spot_getplaylists, 
+                    ord('1'): self.spot_login,
+                    ord('2'): self.spot_getplaylists,
                     ord('3'): self.spot_selplaylist,
                     ord('4'): self.spot_seltrack,
                     ord('5'): self.spot_playback,
@@ -226,14 +227,95 @@ class spclient(object):
             self._transport.close()
             curses.endwin()
             print "%s" % (tx.message)
+"""
+
+class Menu(object):
+    def __init__(self, items, stdscreen):
+        self.window = stdscreen.subwin(0,0)
+        self.window.keypad(1)
+        self.panel = panel.new_panel(self.window)
+        self.panel.hide()
+        panel.update_panels()
+
+        self.position = 0
+        self.items = items
+        self.items.append(('Exit','Exit'))
+
+    def navigate(self, n):
+        self.position += n
+        if self.position < 0:
+            self.position = 0
+        elif self.position >= len(self.items):
+            self.position = len(self.items)-1
+
+    def display(self):
+        self.panel.top()
+        self.panel.show()
+        self.window.clear()
+
+        while True:
+            self.window.refresh()
+            curses.doupdate()
+            for index, item in enumerate(self.items):
+                if index == self.position:
+                    mode = curses.A_REVERSE
+                else:
+                    mode = curses.A_NORMAL
+
+                msg = '%d. %s' % (index, item[0])
+                self.window.addstr(1+index, 1, msg, mode)
+
+            key = self.window.getch()
+
+            if key in [curses.KEY_ENTER, ord('\n')]:
+                if self.position == len(self.items)-1:
+                    break
+                else:
+                    self.items[self.position][1]()
+
+            elif key == curses.KEY_UP:
+                self.navigate(-1)
+
+            elif key == curses.KEY_DOWN:
+                self.navigate(1)
+
+        self.window.clear()
+        self.panel.hide()
+        panel.update_panels()
+        curses.doupdate()
+
+class MyApp(object):
+
+    def __init__(self, stdscreen):
+        self.screen = stdscreen
+        curses.curs_set(0)
+
+        submenu_items = [
+                ('play', curses.beep),
+                ('pause', curses.flash),
+                ('previous', curses.flash),
+                ('next', curses.flash),
+                ('mode', curses.flash),
+                ]
+        submenu = Menu(submenu_items, self.screen)
+
+        main_menu_items = [
+                ('login', curses.beep),
+                ('Display Playlists', curses.flash),
+                ('Select Playlists', curses.flash),
+                ('Toggle Tracks', curses.flash),
+                ('Select Track', curses.flash),
+                ('Playback', submenu.display),
+                ('Logout', curses.flash),
+                ]
+        main_menu = Menu(main_menu_items, self.screen)
+        main_menu.display()
 
 
 def main():
 
-    spoticlient = spclient()
-    signal.signal(signal.SIGINT, signal_handler)
-
-    spoticlient.menu()
+    curses.wrapper(MyApp)
+    #spoticlient = spclient()
 
     """
     SAMPLE THRIFT CALL CODE
@@ -248,4 +330,5 @@ def main():
 
     """
 
-if  __name__ =='__main__':main()
+if  __name__ =='__main__':
+    main()
