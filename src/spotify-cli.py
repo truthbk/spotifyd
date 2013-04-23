@@ -175,59 +175,6 @@ class spclient(object):
     def spot_logout(self):
         return None
 
-"""
-    def menu(self):
-        try:
-            menupanel = self._menu.window()
-
-            opt = 0
-            funcs = {
-                    ord('1'): self.spot_login,
-                    ord('2'): self.spot_getplaylists,
-                    ord('3'): self.spot_selplaylist,
-                    ord('4'): self.spot_seltrack,
-                    ord('5'): self.spot_playback,
-                    ord('6'): self.spot_getcurrent,
-                    ord('7'): self.spot_logout,
-            }
-
-            menupanel.addstr(4, 2, "What d'you wanna do??")
-            menupanel.addstr(6, 4, "1. Login")
-            menupanel.addstr(7, 4, "2. Get Playlists")
-            menupanel.addstr(8, 4, "3. Select Playlist")
-            menupanel.addstr(9, 4, "4. Select Track")
-            menupanel.addstr(10, 4, "5. Control Playback")
-            menupanel.addstr(11, 4, "6. Get current track")
-            menupanel.addstr(12, 4, "7. Logout")
-            menupanel.addstr(13, 4, "8. Exit")
-            menupanel.addstr(15, 4, "Option: ")
-
-            self._menu.top()
-            self._menu.show()
-            self._window.clear()
-            panel.update_panels()
-            curses.doupdate()
-
-            while opt is not ord('8'):
-                if(self._success):
-                    self._window.clear()
-                if self._credentials:
-                    self._window.addstr(2, 2, "Logged in as %s" % self._credentials._username )
-
-                opt = menupanel.getch()
-
-                if opt>ord('0') and opt<ord('8'):
-                    result = funcs[opt]()
-
-
-            self._transport.close()
-            curses.endwin()
-
-        except Thrift.TException, tx:
-            self._transport.close()
-            curses.endwin()
-            print "%s" % (tx.message)
-"""
 
 class Menu(object):
     def __init__(self, items, stdscreen):
@@ -239,7 +186,7 @@ class Menu(object):
 
         self.position = 0
         self.items = items
-        self.items.append(('Exit','Exit'))
+        self.items.append(('Done', 'Done'))
 
     def navigate(self, n):
         self.position += n
@@ -279,33 +226,109 @@ class Menu(object):
             elif key == curses.KEY_DOWN:
                 self.navigate(1)
 
+
         self.window.clear()
         self.panel.hide()
         panel.update_panels()
         curses.doupdate()
 
-class MyApp(object):
+
+class FieldMenu(Menu):
+
+    def display(self):
+        self.panel.top()
+        self.panel.show()
+        self.window.clear()
+
+        while True:
+            self.window.refresh()
+            curses.doupdate()
+            for index, item in enumerate(self.items):
+                if index == self.position:
+                    mode = curses.A_REVERSE
+                else:
+                    mode = curses.A_NORMAL
+
+                msg =''
+                if index == len(self.items)-1:
+                    msg = '%d. %s' % (index, item[0])
+                else:
+                    if item[2]:
+                        conceal = ''
+                        for c in item[1]:
+                            conceal += '*'
+                        msg = '%s: %s' % (item[0], conceal)
+                    else:
+                        msg = '%s: %s' % (item[0], item[1])
+
+                self.window.addstr(1+index, 1, msg, mode)
+
+            key = self.window.getch()
+
+            if key in [curses.KEY_ENTER, ord('\n')]:
+                if self.position == len(self.items)-1:
+                    break
+
+            elif key == curses.KEY_UP:
+                self.navigate(-1)
+
+            elif key == curses.KEY_DOWN:
+                self.navigate(1)
+
+            #construct new tuple. Tuples are inmutable.
+            elif key == curses.KEY_BACKSPACE or key == 127:
+                new_item = ( 
+                        self.items[self.position][0],
+                        self.items[self.position][1][:-1],
+                        self.items[self.position][2]
+                        )
+                self.items[self.position] = new_item;
+
+            elif key < 256:
+                new_item = ( 
+                        self.items[self.position][0],
+                        self.items[self.position][1]+chr(key),
+                        self.items[self.position][2]
+                        )
+                self.items[self.position] = new_item;
+
+        self.window.clear()
+        self.panel.hide()
+        panel.update_panels()
+        curses.doupdate()
+
+
+
+class XplodifyApp(object):
 
     def __init__(self, stdscreen):
         self.screen = stdscreen
         curses.curs_set(0)
 
-        submenu_items = [
+        #spoticlient = spclient()
+
+        playback_items = [
                 ('play', curses.beep),
                 ('pause', curses.flash),
                 ('previous', curses.flash),
                 ('next', curses.flash),
                 ('mode', curses.flash),
                 ]
-        submenu = Menu(submenu_items, self.screen)
+        playback = Menu(playback_items, self.screen)
+
+        login_items = [
+                ('email', '', False),
+                ('password', '', True)
+                ]
+        login = FieldMenu(login_items, self.screen)
 
         main_menu_items = [
-                ('login', curses.beep),
+                ('login', login.display),
                 ('Display Playlists', curses.flash),
                 ('Select Playlists', curses.flash),
                 ('Toggle Tracks', curses.flash),
                 ('Select Track', curses.flash),
-                ('Playback', submenu.display),
+                ('Playback', playback.display),
                 ('Logout', curses.flash),
                 ]
         main_menu = Menu(main_menu_items, self.screen)
@@ -314,8 +337,7 @@ class MyApp(object):
 
 def main():
 
-    curses.wrapper(MyApp)
-    #spoticlient = spclient()
+    curses.wrapper(XplodifyApp)
 
     """
     SAMPLE THRIFT CALL CODE
