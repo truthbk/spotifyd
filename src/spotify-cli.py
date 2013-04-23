@@ -57,42 +57,16 @@ class spclient(object):
         # Empty selected playlist
         self._currentplaylist = None
 
-        # init curses screen
-        self._screen = curses.initscr()
-        self._window = self._screen.subwin(0,0)
-        self._menu = panel.new_panel(self._window)
-        #self._menu.window().resize(16, 22);
-        #self._menu.window().border(1)
-
-        self._playlistpanel = panel.new_panel(self._window)
-        self._playlistpanel.hide()
-        panel.update_panels()
-
-
-
-    def get_param(self, window, prompt_string, passwd=False, row=2, col=2):
-        window.border(0)
-        window.addstr(row, col, prompt_string)
-        window.refresh()
-        if passwd:
-            curses.noecho()
-        input = window.getstr(row, col+len(prompt_string)+1, 60)
-        curses.echo()
-        return input
-
-    def spot_login(self):
-        self._window.clear()
-        username = self.get_param(self._window, "username: ")
-        password = self.get_param(self._window, "password: ", True, 3, 2)
-
+    def login(self, username, password):
+        success=False
         try:
             credentials = SpotifyCredential( username, password )
             self._credentials = self._client.loginSession(credentials)
+            success=True #refine this.
         except Exception, e:
-            self._window.clear()
-            return None
+            return False
 
-        return credentials
+        return success
 
     """"
     Because libspotify is async we need this to check we logged
@@ -190,10 +164,11 @@ class Menu(object):
 
     def navigate(self, n):
         self.position += n
+        # wraps around
         if self.position < 0:
-            self.position = 0
-        elif self.position >= len(self.items):
             self.position = len(self.items)-1
+        elif self.position >= len(self.items):
+            self.position = 0
 
     def display(self):
         self.panel.top()
@@ -234,6 +209,10 @@ class Menu(object):
 
 
 class FieldMenu(Menu):
+    def __init__(self, items, stdscreen, fn):
+        Menu.__init__(self, items, stdscreen)
+        self.callback = fn
+        self.enabled = True
 
     def display(self):
         self.panel.top()
@@ -292,20 +271,31 @@ class FieldMenu(Menu):
                         )
                 self.items[self.position] = new_item;
 
+        fnargs = {}
+        for item in self.items:
+            fnargs[item[0]] = item[1]
+        if self.enabled and self.fn(**fnargs):
+            self.enabled=False
+
         self.window.clear()
         self.panel.hide()
         panel.update_panels()
         curses.doupdate()
 
+class XplodifyWrap(object):
+    def __init__(self):
+        self.spoticlient = spclient()
 
+    def login(self, **kwargs):
+        return self.spoticlient.login(username, password)
 
 class XplodifyApp(object):
 
     def __init__(self, stdscreen):
+        self.xpwrap = XplodifyWrap()
+
         self.screen = stdscreen
         curses.curs_set(0)
-
-        #spoticlient = spclient()
 
         playback_items = [
                 ('play', curses.beep),
@@ -317,10 +307,10 @@ class XplodifyApp(object):
         playback = Menu(playback_items, self.screen)
 
         login_items = [
-                ('email', '', False),
+                ('username', '', False),
                 ('password', '', True)
                 ]
-        login = FieldMenu(login_items, self.screen)
+        login = FieldMenu(login_items, self.xpwrap.login, self.screen)
 
         main_menu_items = [
                 ('login', login.display),
