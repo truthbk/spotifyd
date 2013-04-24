@@ -274,7 +274,7 @@ class FieldMenu(Menu):
         fnargs = {}
         for item in self.items:
             fnargs[item[0]] = item[1]
-        if self.enabled and self.fn(**fnargs):
+        if self.enabled and self.callback(**fnargs):
             self.enabled=False
 
         self.window.clear()
@@ -286,7 +286,7 @@ class XplodifyWrap(object):
     def __init__(self):
         self.spoticlient = spclient()
 
-    def login(self, **kwargs):
+    def login(self, username, password, **kwargs):
         return self.spoticlient.login(username, password)
 
 class XplodifyApp(object):
@@ -310,7 +310,7 @@ class XplodifyApp(object):
                 ('username', '', False),
                 ('password', '', True)
                 ]
-        login = FieldMenu(login_items, self.xpwrap.login, self.screen)
+        login = FieldMenu(login_items, self.screen, self.xpwrap.login)
 
         main_menu_items = [
                 ('login', login.display),
