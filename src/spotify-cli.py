@@ -88,31 +88,16 @@ class spclient(object):
            return ret
 
     def spot_getplaylists(self):
+        pls = None
         try:
-            #self._window.clear()
-            #self._window.border(0)
             """ pls will be a set with the playlists """
             pls = self._client.getPlaylists(self._credentials)
-
-            row = 3
-            plwindow = self._playlistpanel.window()
-            for p in pls:
-                self._playlists.append(p)
-                plwindow.addstr(row, 3, "%d. %s" % (row-2, p))
-                row += 1
-
-            plwindow.resize(20, 15)
-            plwindow.move(10, 25)
-            self._playlistpanel.show()
-            panel.update_panels()
-            curses.doupdate()
-            #self._window.refresh()
 
         except Exception, e:
             self._window.addstr(30, 2, e.__str__())
             self._success = False
-            return None
 
+        return pls
 
     def spot_selplaylist(self):
         try:
@@ -151,16 +136,40 @@ class spclient(object):
 
 
 class Menu(object):
-    def __init__(self, items, stdscreen):
-        self.window = stdscreen.subwin(0,0)
+    def __init__(self, items, stdscreen, lines=0, cols=0, x=0, y=0, extend=False, exit=True):
+        if lines < len(items):
+            self.nlines = len(items)
+        else:
+            self.nlines = lines
+        self.ncols = cols 
+        if extend:
+            self.window = stdscreen.subwin(x, y)
+        else:
+            self.window = stdscreen.subwin(self.nlines, self.ncols, x, y)
         self.window.keypad(1)
+        self.window.border(1)
         self.panel = panel.new_panel(self.window)
         self.panel.hide()
         panel.update_panels()
 
         self.position = 0
         self.items = items
-        self.items.append(('Done', 'Done'))
+        self.exit = exit
+        if self.exit:
+            self.items.append(('Done', 'Done'))
+
+    def set_items(self, items):
+        self.position = 0
+        self.items = items;
+        if self.exit:
+            self.items.append(('Done', 'Done'))
+
+    def redraw(self):
+        self.window.clear()
+        self.window.refresh()
+        panel.update_panels()
+        curses.doupdate()
+
 
     def navigate(self, n):
         self.position += n
@@ -194,6 +203,9 @@ class Menu(object):
                     break
                 else:
                     self.items[self.position][1]()
+
+            elif key == curses.KEY_STAB:
+                self.panel.top()
 
             elif key == curses.KEY_UP:
                 self.navigate(-1)
@@ -283,19 +295,41 @@ class FieldMenu(Menu):
         curses.doupdate()
 
 class XplodifyWrap(object):
-    def __init__(self):
+    def __init__(self, stdscreen, playlist_panel, track_panel):
         self.spoticlient = spclient()
+        self.screen = stdscreen
+        self.playlist_panel = playlist_panel
+        self.track_panel = track_panel
 
     def login(self, username, password, **kwargs):
-        return self.spoticlient.login(username, password)
+        success = self.spoticlient.login(username, password)
+        if success:
+            #load playlist panel
+            pls = self.spoticlient.spot_getplaylists()
+            items = []
+            for pl in pls:
+                items.append((pl, self.select_pl))
+
+            playlist_panel.set_items(items)
+            playlist_panel.redraw()
+
+
+        return success
+
+    def select_pl(self, idx, playlist, **kwargs):
+        return True
 
 class XplodifyApp(object):
 
     def __init__(self, stdscreen):
-        self.xpwrap = XplodifyWrap()
 
         self.screen = stdscreen
         curses.curs_set(0)
+
+        playlist_panel = Menu([], self.screen, 20, 40, 2, 20, False, False)
+        track_panel = Menu([], self.screen, 20, 40, 20, 20, False, False)
+
+        self.xpwrap = XplodifyWrap(stdscreen, playlist_panel, track_panel)
 
         playback_items = [
                 ('play', curses.beep),
@@ -304,7 +338,7 @@ class XplodifyApp(object):
                 ('next', curses.flash),
                 ('mode', curses.flash),
                 ]
-        playback = Menu(playback_items, self.screen)
+        playback = Menu(playback_items, self.screen, 5, 10, 4, 25, False, False)
 
         login_items = [
                 ('username', '', False),
@@ -321,7 +355,8 @@ class XplodifyApp(object):
                 ('Playback', playback.display),
                 ('Logout', curses.flash),
                 ]
-        main_menu = Menu(main_menu_items, self.screen)
+        main_menu = Menu(main_menu_items, self.screen, 10, 30, 1, 1, False, True)
+
         main_menu.display()
 
 
