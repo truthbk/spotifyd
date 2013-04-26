@@ -136,18 +136,10 @@ class spclient(object):
 
 
 class Menu(object):
-    def __init__(self, items, stdscreen, lines=0, cols=0, x=0, y=0, extend=False, exit=True):
-        if lines < len(items):
-            self.nlines = len(items)
-        else:
-            self.nlines = lines
-        self.ncols = cols 
-        if extend:
-            self.window = stdscreen.subwin(x, y)
-        else:
-            self.window = stdscreen.subwin(self.nlines, self.ncols, x, y)
+    def __init__(self, items, window, exit=True):
+        self.window = window
+        #self.window.border(1)
         self.window.keypad(1)
-        self.window.border(1)
         self.panel = panel.new_panel(self.window)
         self.panel.hide()
         panel.update_panels()
@@ -324,12 +316,19 @@ class XplodifyApp(object):
     def __init__(self, stdscreen):
 
         self.screen = stdscreen
+        self.screen_size = self.screen.getmaxyx()
         curses.curs_set(0)
+        self.track_window = self.screen.subwin(11, 50)
+        self.track_window.border(0)
+        self.pl_window = self.screen.subwin(self.screen_size[0]-11, 40, 11, 4)
+        self.pl_window.border(0)
+        self.menu_window = self.screen.subwin(10, 30, 1, 4)
+        self.menu_window.border(0)
 
-        playlist_panel = Menu([], self.screen, 20, 40, 2, 20, False, False)
-        track_panel = Menu([], self.screen, 20, 40, 20, 20, False, False)
+        playlist_panel = Menu([], self.pl_window, False)
+        track_panel = Menu([], self.pl_window, False)
 
-        self.xpwrap = XplodifyWrap(stdscreen, playlist_panel, track_panel)
+        self.xpwrap = XplodifyWrap(self.menu_window, playlist_panel, track_panel)
 
         playback_items = [
                 ('play', curses.beep),
@@ -338,13 +337,13 @@ class XplodifyApp(object):
                 ('next', curses.flash),
                 ('mode', curses.flash),
                 ]
-        playback = Menu(playback_items, self.screen, 5, 10, 4, 25, False, False)
+        playback = Menu(playback_items, self.menu_window, True)
 
         login_items = [
                 ('username', '', False),
                 ('password', '', True)
                 ]
-        login = FieldMenu(login_items, self.screen, self.xpwrap.login)
+        login = FieldMenu(login_items, self.menu_window, self.xpwrap.login)
 
         main_menu_items = [
                 ('login', login.display),
@@ -352,13 +351,11 @@ class XplodifyApp(object):
                 ('Select Playlists', curses.flash),
                 ('Toggle Tracks', curses.flash),
                 ('Select Track', curses.flash),
-                ('Playback', playback.display),
+                ('Playback', curses.flash),
                 ('Logout', curses.flash),
                 ]
-        main_menu = Menu(main_menu_items, self.screen, 10, 30, 1, 1, False, True)
-
+        main_menu = Menu(main_menu_items, self.menu_window, True)
         main_menu.display()
-
 
 def main():
 
