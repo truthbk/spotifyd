@@ -17,10 +17,13 @@ from thrift.protocol import TBinaryProtocol
 import curses
 from curses import panel
 
+import urwid
+
 import signal
 import getpass
 
 SPOTIFYD_PORT = 9090
+VERSION = "0.1"
 
 def signal_handler(signal, frame):
     curses.endwin()
@@ -311,10 +314,73 @@ class XplodifyWrap(object):
     def select_pl(self, idx, playlist, **kwargs):
         return True
 
+class XplodifyElement(urwid.ListBox):
+    def __init__(self, el_id, el_name):
+        self.el_id = el_id 
+        self.el_name = el_name
+        super(XplodifyElement, self).__init__(u"" + self.el_name)
+
+
+class XplodifyDisplay(urwid.Frame):
+    palette = [
+            ('body','default', 'default'),
+            ('foot','black', 'light gray', 'bold'),
+            ('key','light cyan', 'dark blue', 'underline'),
+            ]
+
+    footer_text = ('foot', [
+        "Xpldofiy Client "+ VERSION +" -     " ,
+        ('key', "F4"), " login   ",
+        ('key', "F5"), " |<   ",
+        ('key', "F7"), " |> / ||   ",
+        ('key', "F8"), " >|   ",
+        ('key', "F9"), " quit ",
+        ])
+
+    def __init__(self):
+        self.playlists = urwid.Pile([])
+        self.tracks = urwid.Pile([])
+        self.footer = urwid.AttrWrap(urwid.Text(self.footer_text), "foot")
+
+        self.widgets = [
+                self.playlists,
+                self.tracks
+                ]
+
+        self.view = urwid.Columns(self.widgets, dividechars=1, focus_column=0)
+        super(XplodifyDisplay, self).__init__(urwid.AttrWrap(self.view, 'body'), footer=self.footer)
+
+        self.loop = urwid.MainLoop(self, self.palette,
+             unhandled_input=self.unhandled_keypress)
+
+    def main(self):
+        self.loop.run()
+
+
+    def unhandled_keypress(self, k):
+
+        if k == "f4":
+            raise urwid.ExitMainLoop()
+        elif k == "f5":
+            raise urwid.ExitMainLoop()
+        elif k == "f6":
+            raise urwid.ExitMainLoop()
+        elif k == "f7":
+            raise urwid.ExitMainLoop()
+        elif k == "f8":
+            raise urwid.ExitMainLoop()
+        elif k == "f9":
+            raise urwid.ExitMainLoop()
+        else:
+            return
+
+        return True
+
+
+"""
 class XplodifyApp(object):
 
     def __init__(self, stdscreen):
-
         self.screen = stdscreen
         self.screen_size = self.screen.getmaxyx()
         curses.curs_set(0)
@@ -356,12 +422,14 @@ class XplodifyApp(object):
                 ]
         main_menu = Menu(main_menu_items, self.menu_window, True)
         main_menu.display()
-
+"""
 def main():
 
-    curses.wrapper(XplodifyApp)
+    XplodifyDisplay().main()
 
     """
+    curses.wrapper(XplodifyApp)
+
     SAMPLE THRIFT CALL CODE
 
     client.ping()
