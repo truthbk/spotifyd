@@ -187,6 +187,7 @@ class XplodifyDisplay(urwid.Frame):
         ])
 
     def __init__(self):
+        self.logged = False
         self.playlists = urwid.Pile([])
         self.tracks = urwid.Pile([])
         self.footer = urwid.AttrWrap(urwid.Text(self.footer_text), "foot")
@@ -205,11 +206,33 @@ class XplodifyDisplay(urwid.Frame):
     def main(self):
         self.loop.run()
 
+    def login_overlay(self):
+        display = None
+        if self.logged:
+            pass
+        else:
+            email = urwid.Edit(u'Email', u"", allow_tab=False, multiline=False)
+            passwd = urwid.Edit(u'Password', u"", allow_tab=False, multiline=False, mask=u"*" )
+            login = urwid.Button(u'Login')
+            urwid.connect_signal(login, 'click', self.login)
+            display = urwid.Filler(urwid.Pile([email, passwd,
+                urwid.AttrMap(login, None, focus_map='reversed')]))
+
+        urwid.Overlay(display, self,
+                align='center', width=('relative', 60),
+                valign='middle', height=('relative', 60),
+                min_width=20, min_height=9)
+
+    def login(self):
+        raise urwid.ExitMainLoop()
+
+    def quit(self):
+        raise urwid.ExitMainLoop()
 
     def unhandled_keypress(self, k):
 
         if k == "f4":
-            raise urwid.ExitMainLoop()
+            self.login_overlay()
         elif k == "f5":
             raise urwid.ExitMainLoop()
         elif k == "f6":
