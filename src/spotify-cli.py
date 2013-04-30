@@ -197,8 +197,19 @@ class XplodifyDisplay(urwid.Frame):
                 self.tracks
                 ]
 
-        self.view = urwid.Columns(self.widgets, dividechars=1, focus_column=0)
-        super(XplodifyDisplay, self).__init__(urwid.AttrWrap(self.view, 'body'), footer=self.footer)
+        email = urwid.Edit(u'Email:  ', u"", allow_tab=False, multiline=False)
+        passwd = urwid.Edit(u'Password:  ', u"", allow_tab=False, multiline=False, mask=u"*" )
+        logbutton = urwid.Button(u'Login')
+        urwid.connect_signal(logbutton, 'click', self.login)
+
+        self.mainview = urwid.Columns(self.widgets, dividechars=1, focus_column=0)
+        self.loginview = urwid.Filler(urwid.Pile([email, passwd,
+                urwid.AttrMap(logbutton, None, focus_map='reversed')]))
+        self.overlay = urwid.Overlay(self.loginview, self.mainview,
+                align='center', width=('relative', 40),
+                valign='middle', height=('relative', 40),
+                min_width=30, min_height=6)
+        super(XplodifyDisplay, self).__init__(urwid.AttrWrap(self.mainview, 'body'), footer=self.footer)
 
         self.loop = urwid.MainLoop(self, self.palette,
              unhandled_input=self.unhandled_keypress)
@@ -211,20 +222,14 @@ class XplodifyDisplay(urwid.Frame):
         if self.logged:
             pass
         else:
-            email = urwid.Edit(u'Email', u"", allow_tab=False, multiline=False)
-            passwd = urwid.Edit(u'Password', u"", allow_tab=False, multiline=False, mask=u"*" )
-            login = urwid.Button(u'Login')
-            urwid.connect_signal(login, 'click', self.login)
-            display = urwid.Filler(urwid.Pile([email, passwd,
-                urwid.AttrMap(login, None, focus_map='reversed')]))
+            self.body = self.overlay
 
-        urwid.Overlay(display, self,
-                align='center', width=('relative', 60),
-                valign='middle', height=('relative', 60),
-                min_width=20, min_height=9)
 
-    def login(self):
-        raise urwid.ExitMainLoop()
+    def login(self, key):
+        email = self.loginview.original_widget.widget_list[0]
+        passwd = self.loginview.original_widget.widget_list[1]
+        self.logged = True
+        self.body = self.mainview
 
     def quit(self):
         raise urwid.ExitMainLoop()
