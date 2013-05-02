@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import sys
+import time
 
 #temporary hack, we'll be moving to virtualenv.
 sys.path.insert(1,'./gen-py')
@@ -70,11 +71,21 @@ class spclient(object):
 
         return success
 
+    def logout(self):
+        try:
+            if self._credentials:
+                self._client.logoutSession(self._credentials)
+                self._credentials = None
+        except Exception, e:
+            return False
+
+        return True
+
     """"
     Because libspotify is async we need this to check we logged
     in succesfully.
     """
-    def spot_isloggedin(self, username=None, uid=None):
+    def loggedin(self, username=None, uid=None):
        ret = False
        if username is None and uid is None:
            return ret
@@ -84,12 +95,11 @@ class spclient(object):
             ret = self._client.isLoggedIn(credentials)
 
        except Exception, e:
-           self._window.addstr(30, 2, e.__str__())
            self._success = False
        finally:
            return ret
 
-    def spot_getplaylists(self):
+    def getplaylists(self):
         pls = None
         try:
             """ pls will be a set with the playlists """
@@ -113,7 +123,6 @@ class spclient(object):
             self._client.selectPlaylist(self._credentials, self._playlists[int(plidx)])
 
         except Exception, e:
-            self._window.addstr(30, 2, e.__str__())
             self._success = False
             return None
 
@@ -126,7 +135,6 @@ class spclient(object):
             self._client.sendCommand(self._credentials, SpotifyCmd.PLAY)
 
         except Exception, e:
-            self._window.addstr(30, 2, e.__str__())
             self._success = False
             return None
 
@@ -137,31 +145,6 @@ class spclient(object):
         return None
 
 
-
-class XplodifyWrap(object):
-    def __init__(self, stdscreen, playlist_panel, track_panel):
-        self.spoticlient = spclient()
-        self.screen = stdscreen
-        self.playlist_panel = playlist_panel
-        self.track_panel = track_panel
-
-    def login(self, username, password, **kwargs):
-        success = self.spoticlient.login(username, password)
-        if success:
-            #load playlist panel
-            pls = self.spoticlient.spot_getplaylists()
-            items = []
-            for pl in pls:
-                items.append((pl, self.select_pl))
-
-            playlist_panel.set_items(items)
-            playlist_panel.redraw()
-
-
-        return success
-
-    def select_pl(self, idx, playlist, **kwargs):
-        return True
 
 class XplodifyElement(urwid.ListBox):
     def __init__(self, el_id, el_name):
@@ -183,11 +166,14 @@ class XplodifyDisplay(urwid.Frame):
         ('key', "F5"), " |<   ",
         ('key', "F7"), " |> / ||   ",
         ('key', "F8"), " >|   ",
-        ('key', "F9"), " quit ",
+        ('key', "F9"), " logout  ",
+        ('key', "F10"), " quit ",
         ])
 
     def __init__(self):
         self.logged = False
+        self.spoticlient = spclient()
+
         self.playlists = urwid.Pile([])
         self.tracks = urwid.Pile([])
         self.footer = urwid.AttrWrap(urwid.Text(self.footer_text), "foot")
@@ -197,7 +183,7 @@ class XplodifyDisplay(urwid.Frame):
                 self.tracks
                 ]
 
-        email = urwid.Edit(u'Email:  ', u"", allow_tab=False, multiline=False)
+        email = urwid.Edit(u'Username:  ', u"", allow_tab=False, multiline=False)
         passwd = urwid.Edit(u'Password:  ', u"", allow_tab=False, multiline=False, mask=u"*" )
         logbutton = urwid.Button(u'Login')
         urwid.connect_signal(logbutton, 'click', self.login)
@@ -206,8 +192,8 @@ class XplodifyDisplay(urwid.Frame):
         self.loginview = urwid.Filler(urwid.Pile([email, passwd,
                 urwid.AttrMap(logbutton, None, focus_map='reversed')]))
         self.overlay = urwid.Overlay(self.loginview, self.mainview,
-                align='center', width=('relative', 40),
-                valign='middle', height=('relative', 40),
+                align='center', width=('relative', 30),
+                valign='middle', height=('relative', 30),
                 min_width=30, min_height=6)
         super(XplodifyDisplay, self).__init__(urwid.AttrWrap(self.mainview, 'body'), footer=self.footer)
 
@@ -224,12 +210,32 @@ class XplodifyDisplay(urwid.Frame):
         else:
             self.body = self.overlay
 
-
     def login(self, key):
-        email = self.loginview.original_widget.widget_list[0]
-        passwd = self.loginview.original_widget.widget_list[1]
-        self.logged = True
+        username = self.loginview.original_widget.widget_list[0].get_edit_text()
+        passwd = self.loginview.original_widget.widget_list[1].get_edit_text()
+        if not self.logged:
+            self.logged = self.spoticlient.login(username, passwd)
+        time.sleep(5)
+        if self.logged:
+            self.get_playlists()
         self.body = self.mainview
+
+    def logout(self):
+        if self.logged:
+            self.spoticlient.logout()
+
+        return
+
+    def get_playlists(self):
+        pl_set = self.spoticlient.getplaylists()
+        pl_widgets = []
+        if pl_set:
+            pid = 1
+            for pl in pl_set:
+                pl_widgets.append(XplodifyElement(pid, pl))
+                pid += 1
+
+        self.playlists.widget_list = pl_widgets
 
     def quit(self):
         raise urwid.ExitMainLoop()
@@ -247,6 +253,8 @@ class XplodifyDisplay(urwid.Frame):
         elif k == "f8":
             raise urwid.ExitMainLoop()
         elif k == "f9":
+            raise urwid.ExitMainLoop()
+        elif k == "f10":
             raise urwid.ExitMainLoop()
         else:
             return

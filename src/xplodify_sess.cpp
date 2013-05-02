@@ -324,6 +324,7 @@ void SP_CALLCONV XplodifySession::cb_logged_in(
 void SP_CALLCONV XplodifySession::cb_logged_out(sp_session *sess) {
 
     //TODO
+    return;
 }
 
 void SP_CALLCONV XplodifySession::cb_metadata_updated(sp_session *sess) {

@@ -105,7 +105,7 @@ void XplodifyHandler::run()
 
 
 void XplodifyHandler::loginSession(SpotifyCredential& _return, const SpotifyCredential& cred) {
-    // Your implementation goes here
+
     sp_error err;
 #ifdef DEBUG
     printf("initiatingSession\n");
