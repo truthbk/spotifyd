@@ -106,7 +106,6 @@ class spclient(object):
             pls = self._client.getPlaylists(self._credentials)
 
         except Exception, e:
-            self._window.addstr(30, 2, e.__str__())
             self._success = False
 
         return pls
@@ -117,7 +116,6 @@ class spclient(object):
             self._window.border(0)
             row = 5
             for p in self._playlists:
-                self._window.addstr(row, 3, "%d. %s" % (row-4, p))
                 row += 1
             plidx = self.get_param("Playlist to select: ")
             self._client.selectPlaylist(self._credentials, self._playlists[int(plidx)])
@@ -146,7 +144,7 @@ class spclient(object):
 
 
 
-class XplodifyElement(urwid.ListBox):
+class XplodifyElement(urwid.Text):
     def __init__(self, el_id, el_name):
         self.el_id = el_id 
         self.el_name = el_name
@@ -174,13 +172,15 @@ class XplodifyDisplay(urwid.Frame):
         self.logged = False
         self.spoticlient = spclient()
 
-        self.playlists = urwid.Pile([])
-        self.tracks = urwid.Pile([])
+        self._playlists = []
+        self._tracks = []
+        self.plpane = urwid.ListBox(urwid.SimpleFocusListWalker([urwid.Text("(empty)")]))
+        self.trackpane = urwid.ListBox(urwid.SimpleFocusListWalker([urwid.Text("(empty)")]))
         self.footer = urwid.AttrWrap(urwid.Text(self.footer_text), "foot")
 
         self.widgets = [
-                self.playlists,
-                self.tracks
+                self.plpane,
+                self.trackpane
                 ]
 
         email = urwid.Edit(u'Username:  ', u"", allow_tab=False, multiline=False)
@@ -215,9 +215,10 @@ class XplodifyDisplay(urwid.Frame):
         passwd = self.loginview.original_widget.widget_list[1].get_edit_text()
         if not self.logged:
             self.logged = self.spoticlient.login(username, passwd)
-        time.sleep(5)
+        time.sleep(1)
         if self.logged:
             self.get_playlists()
+            self.mainview.set_focus_column(0)
         self.body = self.mainview
 
     def logout(self):
@@ -231,11 +232,14 @@ class XplodifyDisplay(urwid.Frame):
         pl_widgets = []
         if pl_set:
             pid = 1
+            self._playlists = []
             for pl in pl_set:
+                self._playlists.append(pl)
                 pl_widgets.append(XplodifyElement(pid, pl))
                 pid += 1
 
-        self.playlists.widget_list = pl_widgets
+        self.plpane = urwid.ListBox(urwid.SimpleFocusListWalker(pl_widgets))
+        self.mainview.contents[0] = (self.plpane, self.mainview.options())
 
     def quit(self):
         raise urwid.ExitMainLoop()
