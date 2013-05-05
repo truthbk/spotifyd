@@ -2,6 +2,8 @@
 
 import sys
 import time
+import getopt
+import os.path
 
 #temporary hack, we'll be moving to virtualenv.
 sys.path.insert(1,'./gen-py')
@@ -25,7 +27,7 @@ import getpass
 
 import logging
 
-SPOTIFYD_PORT = 9090
+XPLODIFYD_PORT = 9090
 VERSION = "0.1"
 
 logging.basicConfig(filename='debug.log',level=logging.DEBUG)
@@ -35,9 +37,9 @@ def signal_handler(signal, frame):
 
 class spclient(object):
 
-    def __init__(self):
+    def __init__(self, host, port):
         # Make socket
-        self._transport = TSocket.TSocket('localhost', SPOTIFYD_PORT)
+        self._transport = TSocket.TSocket(host, port)
 
         # Buffering is critical. Raw sockets are very slow
         self._transport = TTransport.TBufferedTransport(self._transport)
@@ -163,7 +165,7 @@ class XplodifyElement(urwid.Button):
         super(XplodifyElement, self).__init__(u"" + self.el_name, on_press=callback, user_data=userdata)
 
 
-class XplodifyDisplay(urwid.Frame):
+class XplodifyApp(urwid.Frame):
     palette = [
             ('body','default', 'default'),
             ('foot','black', 'light gray', 'bold'),
@@ -182,9 +184,9 @@ class XplodifyDisplay(urwid.Frame):
         ('key', "F10"), " quit ",
         ])
 
-    def __init__(self):
+    def __init__(self, host='localhost', port=XPLODIFYD_PORT):
         self.logged = False
-        self.spoticlient = spclient()
+        self.spoticlient = spclient(host, port)
 
         self._playlists = None
         self._plwalker = urwid.SimpleFocusListWalker([urwid.Button("(empty)")])
@@ -212,7 +214,7 @@ class XplodifyDisplay(urwid.Frame):
                 align='center', width=('relative', 30),
                 valign='middle', height=('relative', 30),
                 min_width=30, min_height=6)
-        super(XplodifyDisplay, self).__init__(urwid.AttrWrap(self.mainview, 'body'), footer=self.footer, header=self.header)
+        super(XplodifyApp, self).__init__(urwid.AttrWrap(self.mainview, 'body'), footer=self.footer, header=self.header)
 
         self.loop = urwid.MainLoop(self, self.palette,
              unhandled_input=self.unhandled_keypress)
@@ -300,71 +302,36 @@ class XplodifyDisplay(urwid.Frame):
 
         return True
 
+def usage():
+    BOLD_START="\033[1m"
+    BOLD_END="\033[0m"
+    print "usage: "+os.path.basename(__file__)+" [OPTIONS]"
+    print "\nOPTIONS:"
+    print "\t"+BOLD_START+"-h"+BOLD_END+"\n\t\tDisplay this help message."
+    print "\t"+BOLD_START+"-s host,--server=host"+BOLD_END+"\n\t\tSpecify service hostname."
+    print "\t"+BOLD_START+"-p PORT,--port=PORT"+BOLD_END+"\n\t\tSpecify service port."
 
-"""
-class XplodifyApp(object):
+def main(argv):
+    server='localhost'
+    port=XPLODIFYD_PORT
 
-    def __init__(self, stdscreen):
-        self.screen = stdscreen
-        self.screen_size = self.screen.getmaxyx()
-        curses.curs_set(0)
-        self.track_window = self.screen.subwin(11, 50)
-        self.track_window.border(0)
-        self.pl_window = self.screen.subwin(self.screen_size[0]-11, 40, 11, 4)
-        self.pl_window.border(0)
-        self.menu_window = self.screen.subwin(10, 30, 1, 4)
-        self.menu_window.border(0)
+    try:
+        opts, args = getopt.getopt(argv,"hs:p:", ["server=","port="])
+    except getopt.GetoptError:
+        usage()
+        sys.exit(2)
 
-        playlist_panel = Menu([], self.pl_window, False)
-        track_panel = Menu([], self.pl_window, False)
+    for opt, arg in opts:
+        if opt == '-h':
+            usage()
+            sys.exit()
+        elif opt in ("-s", "--server"):
+            server = arg
+        elif opt in ("-p", "--port"):
+            port = int(arg)
 
-        self.xpwrap = XplodifyWrap(self.menu_window, playlist_panel, track_panel)
+    XplodifyApp(host=server, port=port).main()
 
-        playback_items = [
-                ('play', curses.beep),
-                ('pause', curses.flash),
-                ('previous', curses.flash),
-                ('next', curses.flash),
-                ('mode', curses.flash),
-                ]
-        playback = Menu(playback_items, self.menu_window, True)
-
-        login_items = [
-                ('username', '', False),
-                ('password', '', True)
-                ]
-        login = FieldMenu(login_items, self.menu_window, self.xpwrap.login)
-
-        main_menu_items = [
-                ('login', login.display),
-                ('Display Playlists', curses.flash),
-                ('Select Playlists', curses.flash),
-                ('Toggle Tracks', curses.flash),
-                ('Select Track', curses.flash),
-                ('Playback', curses.flash),
-                ('Logout', curses.flash),
-                ]
-        main_menu = Menu(main_menu_items, self.menu_window, True)
-        main_menu.display()
-"""
-def main():
-
-    XplodifyDisplay().main()
-
-    """
-    curses.wrapper(XplodifyApp)
-
-    SAMPLE THRIFT CALL CODE
-
-    client.ping()
-    print "ping()"
-
-    msg = client.sayHello()
-    print msg
-    msg = client.sayMsg(HELLO_IN_KOREAN)
-    print msg
-
-    """
 
 if  __name__ =='__main__':
-    main()
+    main(sys.argv[1:])
