@@ -190,7 +190,7 @@ class XplodifyApp(urwid.Frame):
 
         self._playlists = None
         self._plwalker = urwid.SimpleFocusListWalker([urwid.Button("(empty)")])
-        self._tracks = None
+        self._tracks = {}
         self._trwalker = urwid.SimpleFocusListWalker([urwid.Button("(empty)")])
         self.plpane = urwid.ListBox(self._plwalker)
         self.trackpane = urwid.ListBox(self._trwalker)
@@ -250,22 +250,35 @@ class XplodifyApp(urwid.Frame):
             logging.debug("Exception: %s", e)
 
         if self._playlists:
+            #empty the playlist listwalker first...
+            while self._plwalker:
+                self._plwalker.pop()
+
             pid = 1
             for pl in self._playlists:
                 self._plwalker.insert(0, XplodifyElement(pid, pl))
+                self.get_tracks(pl)
                 pid += 1
 
-            self.set_tracks(self._playlists[0])
+            self.set_track_panel(self._playlists[0])
 
-    def set_tracks(self, playlist):
+    def get_tracks(self, playlist):
         try:
-            self._tracks = self.spoticlient.gettracks(playlist)
+            self._tracks[playlist] = self.spoticlient.gettracks(playlist)
         except Exception, e:
-            self._tracks = []
             logging.debug("Exception: %s", e)
-        if self._tracks:
-            tid = 1
-            for track in self._tracks:
+
+    def set_track_panel(self, playlist):
+        if playlist not in self._tracks:
+            self.get_tracks(playlist)
+
+        if self._tracks[playlist]:
+            #empty the track listwalker first...
+            while self._trwalker:
+                self._trwalker.pop()
+
+            tid=1
+            for track in self._tracks[playlist]:
                 logging.debug("Processing track: %s", track._name)
                 self._trwalker.insert(0, XplodifyElement(track._id, track._name))
 
