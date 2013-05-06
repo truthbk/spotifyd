@@ -144,11 +144,11 @@ class spclient(object):
 
 
 
-class XplodifyElement(urwid.Text):
-    def __init__(self, el_id, el_name):
+class XplodifyElement(urwid.Button):
+    def __init__(self, el_id, el_name, callback=None, userdata=None):
         self.el_id = el_id 
         self.el_name = el_name
-        super(XplodifyElement, self).__init__(u"" + self.el_name)
+        super(XplodifyElement, self).__init__(u"" + self.el_name, on_press=callback, user_data=userdata)
 
 
 class XplodifyDisplay(urwid.Frame):
@@ -173,9 +173,11 @@ class XplodifyDisplay(urwid.Frame):
         self.spoticlient = spclient()
 
         self._playlists = []
+        self._plwalker = urwid.SimpleFocusListWalker([urwid.Button("(empty)")])
         self._tracks = []
-        self.plpane = urwid.ListBox(urwid.SimpleFocusListWalker([urwid.Text("(empty)")]))
-        self.trackpane = urwid.ListBox(urwid.SimpleFocusListWalker([urwid.Text("(empty)")]))
+        self._trwalker = urwid.SimpleFocusListWalker([urwid.Button("(empty)")])
+        self.plpane = urwid.ListBox(self._plwalker)
+        self.trackpane = urwid.ListBox(self._trwalker)
         self.footer = urwid.AttrWrap(urwid.Text(self.footer_text), "foot")
 
         self.widgets = [
@@ -235,11 +237,18 @@ class XplodifyDisplay(urwid.Frame):
             self._playlists = []
             for pl in pl_set:
                 self._playlists.append(pl)
-                pl_widgets.append(XplodifyElement(pid, pl))
+#                pl_widgets.append(XplodifyElement(pid, pl))
+#                pl_widgets.append(button)
+#                urwid.connect_signal(button, 'click', self.set_playlist)
+#                pl_widgets.append(urwid.AttrMap(button, None, focus_map='reversed'))
+                self._plwalker.insert(0, XplodifyElement(pid,pl))
                 pid += 1
 
-        self.plpane = urwid.ListBox(urwid.SimpleFocusListWalker(pl_widgets))
-        self.mainview.contents[0] = (self.plpane, self.mainview.options())
+#        self.plpane = urwid.ListBox(urwid.SimpleFocusListWalker(pl_widgets))
+#        self.mainview.contents[0] = (self.plpane, self.mainview.options())
+
+    def set_playlist(self, button, playlist): 
+        return
 
     def quit(self):
         raise urwid.ExitMainLoop()
