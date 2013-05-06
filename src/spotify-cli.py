@@ -110,6 +110,17 @@ class spclient(object):
 
         return pls
 
+    def gettracks(self, playlist):
+        tracks = None
+        try:
+            """ pls will be a set with the playlists """
+            tracks = self._client.getPlaylistByName(self._credentials, playlist)
+
+        except Exception, e:
+            self._success = False
+
+        return tracks
+
     def spot_selplaylist(self):
         try:
             self._window.clear()
@@ -269,6 +280,8 @@ class XplodifyDisplay(urwid.Frame):
             raise urwid.ExitMainLoop()
         elif k == "f10":
             raise urwid.ExitMainLoop()
+        elif k == "tab":
+            self.mainview.focus_position = (self.mainview.focus_position + 1) % 2
         else:
             return
 
