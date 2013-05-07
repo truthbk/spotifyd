@@ -248,15 +248,20 @@ class XplodifyDisplay(urwid.Frame):
             self._playlists = []
             for pl in pl_set:
                 self._playlists.append(pl)
-#                pl_widgets.append(XplodifyElement(pid, pl))
-#                pl_widgets.append(button)
-#                urwid.connect_signal(button, 'click', self.set_playlist)
-#                pl_widgets.append(urwid.AttrMap(button, None, focus_map='reversed'))
                 self._plwalker.insert(0, XplodifyElement(pid,pl))
                 pid += 1
 
-#        self.plpane = urwid.ListBox(urwid.SimpleFocusListWalker(pl_widgets))
-#        self.mainview.contents[0] = (self.plpane, self.mainview.options())
+        self.set_tracks(self._playlists[0])
+
+    def set_tracks(self, playlist):
+        track_set = self.spoticlient.gettracks(self._playlists[0])
+        if track_set:
+            tid = 1
+            self._tracks = []
+            for track in track_set:
+                self._tracks.append(track)
+                self._trwalker.insert(0, XplodifyElement(tid, track))
+                tid += 1
 
     def set_playlist(self, button, playlist): 
         return
