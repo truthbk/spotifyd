@@ -14,6 +14,7 @@
 #include <boost/uuid/uuid_io.hpp>
 #include <boost/lexical_cast.hpp>
 
+#include <iostream>
 #include <cstring>
 #include <string>
 
@@ -303,8 +304,9 @@ void XplodifyHandler::getPlaylist(SpotifyPlaylist& _return, const SpotifyCredent
 void XplodifyHandler::getPlaylistByName(
         SpotifyPlaylist& _return, const SpotifyCredential& cred,
         const std::string& name) {
-    // Your implementation goes here
-    printf("getPlaylistByName\n");
+
+    std::cerr << "getPlaylistByName: " << name << "\n";
+    printf("getPlaylistByName: %s\n ", name.c_str());
 
     boost::shared_ptr<XplodifySession> sess = get_session(cred._uuid);
     if(!sess) {

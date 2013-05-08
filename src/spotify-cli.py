@@ -150,10 +150,6 @@ class spclient(object):
     def spot_getcurrent(self):
         return None
 
-    def spot_logout(self):
-        return None
-
-
 
 class XplodifyElement(urwid.Button):
     def __init__(self, el_id, el_name, callback=None, userdata=None):
@@ -183,9 +179,9 @@ class XplodifyDisplay(urwid.Frame):
         self.logged = False
         self.spoticlient = spclient()
 
-        self._playlists = []
+        self._playlists = None
         self._plwalker = urwid.SimpleFocusListWalker([urwid.Button("(empty)")])
-        self._tracks = []
+        self._tracks = None
         self._trwalker = urwid.SimpleFocusListWalker([urwid.Button("(empty)")])
         self.plpane = urwid.ListBox(self._plwalker)
         self.trackpane = urwid.ListBox(self._trwalker)
@@ -234,32 +230,22 @@ class XplodifyDisplay(urwid.Frame):
             self.mainview.set_focus_column(0)
         self.body = self.mainview
 
-    def logout(self):
-        if self.logged:
-            self.spoticlient.logout()
-
-        return
 
     def get_playlists(self):
-        pl_set = self.spoticlient.getplaylists()
-        pl_widgets = []
-        if pl_set:
+        self._playlists = self.spoticlient.getplaylists()
+        if self._playlists:
             pid = 1
-            self._playlists = []
-            for pl in pl_set:
-                self._playlists.append(pl)
-                self._plwalker.insert(0, XplodifyElement(pid,pl))
+            for pl in self._playlists:
+                self._plwalker.insert(0, XplodifyElement(pid, pl))
                 pid += 1
 
-        self.set_tracks(self._playlists[0])
+        self.set_tracks(list(self._playlists)[0])
 
     def set_tracks(self, playlist):
-        track_set = self.spoticlient.gettracks(self._playlists[0])
-        if track_set:
+        self._tracks = self.spoticlient.gettracks(playlist)
+        if self._tracks:
             tid = 1
-            self._tracks = []
-            for track in track_set:
-                self._tracks.append(track)
+            for track in self._tracks:
                 self._trwalker.insert(0, XplodifyElement(tid, track))
                 tid += 1
 
@@ -282,8 +268,11 @@ class XplodifyDisplay(urwid.Frame):
         elif k == "f8":
             raise urwid.ExitMainLoop()
         elif k == "f9":
-            raise urwid.ExitMainLoop()
+            if self.logged:
+                self.spoticlient.logout()
         elif k == "f10":
+            if self.logged:
+                self.spoticlient.logout()
             raise urwid.ExitMainLoop()
         elif k == "tab":
             self.mainview.focus_position = (self.mainview.focus_position + 1) % 2
