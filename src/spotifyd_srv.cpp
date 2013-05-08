@@ -330,6 +330,7 @@ void XplodifyHandler::getPlaylistByName(
 	boost::shared_ptr<SpotifyTrack> spt(new SpotifyTrack());
 
 	spt->__set__name( tr->get_name() );
+        std::cerr << "getting track: " << tr->get_name() << "\n";
 	spt->__set__artist( tr->get_artist(0) ); //first artist (this sucks).
 	spt->__set__minutes( duration / 60000 );
 	spt->__set__seconds( (duration / 1000) % 60 );

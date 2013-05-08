@@ -121,15 +121,10 @@ class spclient(object):
 
         return tracks
 
-    def spot_selplaylist(self):
+    def spot_selplaylist(self, idx):
         try:
-            self._window.clear()
-            self._window.border(0)
-            row = 5
-            for p in self._playlists:
-                row += 1
-            plidx = self.get_param("Playlist to select: ")
-            self._client.selectPlaylist(self._credentials, self._playlists[int(plidx)])
+            self._client.selectPlaylist(self._credentials, self._playlists[idx])
+            self._success = True
 
         except Exception, e:
             self._success = False
@@ -232,21 +227,28 @@ class XplodifyDisplay(urwid.Frame):
 
 
     def get_playlists(self):
-        self._playlists = self.spoticlient.getplaylists()
+        try:
+            self._playlists = list(self.spoticlient.getplaylists())
+        except Exception, e:
+            self._playlists = []
+
         if self._playlists:
             pid = 1
             for pl in self._playlists:
                 self._plwalker.insert(0, XplodifyElement(pid, pl))
                 pid += 1
 
-        self.set_tracks(list(self._playlists)[0])
+        self.set_tracks(self._playlists[0])
 
     def set_tracks(self, playlist):
-        self._tracks = self.spoticlient.gettracks(playlist)
+        try:
+            self._tracks = list( self.spoticlient.gettracks(playlist))
+        except Exception, e:
+            self._tracks = []
         if self._tracks:
             tid = 1
             for track in self._tracks:
-                self._trwalker.insert(0, XplodifyElement(tid, track))
+                self._trwalker.insert(0, XplodifyElement(tid, track._name))
                 tid += 1
 
     def set_playlist(self, button, playlist): 
