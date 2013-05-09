@@ -23,8 +23,12 @@ import urwid
 import signal
 import getpass
 
+import logging
+
 SPOTIFYD_PORT = 9090
 VERSION = "0.1"
+
+logging.basicConfig(filename='debug.log',level=logging.DEBUG)
 
 def signal_handler(signal, frame):
     sys.exit(0)
@@ -67,6 +71,7 @@ class spclient(object):
             self._credentials = self._client.loginSession(credentials)
             success=True #refine this.
         except Exception, e:
+            logging.debug("Exception: %s", e)
             return False
 
         return success
@@ -77,6 +82,7 @@ class spclient(object):
                 self._client.logoutSession(self._credentials)
                 self._credentials = None
         except Exception, e:
+            logging.debug("Exception: %s", e)
             return False
 
         return True
@@ -86,18 +92,19 @@ class spclient(object):
     in succesfully.
     """
     def loggedin(self, username=None, uid=None):
-       ret = False
-       if username is None and uid is None:
-           return ret
+        ret = False
+        if username is None and uid is None:
+            return ret
 
-       try:
+        try:
             credentials = SpotifyCredential( username )
             ret = self._client.isLoggedIn(credentials)
 
-       except Exception, e:
-           self._success = False
-       finally:
-           return ret
+        except Exception, e:
+            logging.debug("Exception: %s", e)
+            self._success = False
+        finally:
+            return ret
 
     def getplaylists(self):
         pls = None
@@ -106,6 +113,7 @@ class spclient(object):
             pls = self._client.getPlaylists(self._credentials)
 
         except Exception, e:
+            logging.debug("Exception: %s", e)
             self._success = False
 
         return pls
@@ -117,6 +125,7 @@ class spclient(object):
             tracks = self._client.getPlaylistByName(self._credentials, playlist)
 
         except Exception, e:
+            logging.debug("Exception: %s", e)
             self._success = False
 
         return tracks
@@ -140,6 +149,7 @@ class spclient(object):
 
         except Exception, e:
             self._success = False
+            logging.debug("Exception: %s", e)
             return None
 
     def spot_getcurrent(self):
@@ -157,8 +167,10 @@ class XplodifyDisplay(urwid.Frame):
     palette = [
             ('body','default', 'default'),
             ('foot','black', 'light gray', 'bold'),
+            ('head','black', 'light gray', 'bold'),
             ('key','light cyan', 'dark blue', 'underline'),
             ]
+
 
     footer_text = ('foot', [
         "Xpldofiy Client "+ VERSION +" -     " ,
@@ -180,6 +192,7 @@ class XplodifyDisplay(urwid.Frame):
         self._trwalker = urwid.SimpleFocusListWalker([urwid.Button("(empty)")])
         self.plpane = urwid.ListBox(self._plwalker)
         self.trackpane = urwid.ListBox(self._trwalker)
+        self.header = urwid.AttrWrap(urwid.Text(u"Not Logged In."), "head")
         self.footer = urwid.AttrWrap(urwid.Text(self.footer_text), "foot")
 
         self.widgets = [
@@ -199,7 +212,7 @@ class XplodifyDisplay(urwid.Frame):
                 align='center', width=('relative', 30),
                 valign='middle', height=('relative', 30),
                 min_width=30, min_height=6)
-        super(XplodifyDisplay, self).__init__(urwid.AttrWrap(self.mainview, 'body'), footer=self.footer)
+        super(XplodifyDisplay, self).__init__(urwid.AttrWrap(self.mainview, 'body'), footer=self.footer, header=self.header)
 
         self.loop = urwid.MainLoop(self, self.palette,
              unhandled_input=self.unhandled_keypress)
@@ -219,8 +232,9 @@ class XplodifyDisplay(urwid.Frame):
         passwd = self.loginview.original_widget.widget_list[1].get_edit_text()
         if not self.logged:
             self.logged = self.spoticlient.login(username, passwd)
-        time.sleep(1)
+        time.sleep(2)
         if self.logged:
+            self.header.original_widget.set_text(u"Logged in as "+username) 
             self.get_playlists()
             self.mainview.set_focus_column(0)
         self.body = self.mainview
@@ -231,6 +245,7 @@ class XplodifyDisplay(urwid.Frame):
             self._playlists = list(self.spoticlient.getplaylists())
         except Exception, e:
             self._playlists = []
+            logging.debug("Exception: %s", e)
 
         if self._playlists:
             pid = 1
@@ -238,18 +253,19 @@ class XplodifyDisplay(urwid.Frame):
                 self._plwalker.insert(0, XplodifyElement(pid, pl))
                 pid += 1
 
-        self.set_tracks(self._playlists[0])
+            self.set_tracks(self._playlists[0])
 
     def set_tracks(self, playlist):
         try:
-            self._tracks = list( self.spoticlient.gettracks(playlist))
+            self._tracks = self.spoticlient.gettracks(playlist)
         except Exception, e:
             self._tracks = []
+            logging.debug("Exception: %s", e)
         if self._tracks:
             tid = 1
             for track in self._tracks:
-                self._trwalker.insert(0, XplodifyElement(tid, track._name))
-                tid += 1
+                logging.debug("Processing track: %s", track._name)
+                self._trwalker.insert(0, XplodifyElement(track._id, track._name))
 
     def set_playlist(self, button, playlist): 
         return
@@ -272,6 +288,7 @@ class XplodifyDisplay(urwid.Frame):
         elif k == "f9":
             if self.logged:
                 self.spoticlient.logout()
+                self.header.original_widget.set_text(u"Not Logged in.")
         elif k == "f10":
             if self.logged:
                 self.spoticlient.logout()
