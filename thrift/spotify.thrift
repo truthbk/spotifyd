@@ -37,7 +37,7 @@ struct SpotifyCredential {
 //TODO: We must implement exceptions.
 
 typedef set<string> SpotifyPlaylistList
-typedef set<SpotifyTrack> SpotifyPlaylist
+typedef list<SpotifyTrack> SpotifyPlaylist
 typedef map<string, SpotifyPlaylist> SpotifyLibrary
 //map of uuid SessionId for client and saved credentials.
 typedef map<string, SpotifyCredential> SpotifySessions
