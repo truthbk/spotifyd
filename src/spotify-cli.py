@@ -192,7 +192,8 @@ class XplodifyApp(urwid.Frame):
         self.spoticlient = spclient(host, port)
 
         self._playlists = None
-        self._active_playlist = None
+        self._active_pl = None
+        self._active_pl_button = None
         self._plwalker = urwid.SimpleFocusListWalker([urwid.Button("(empty)")])
         self._tracks = {}
         self._trwalker = urwid.SimpleFocusListWalker([urwid.Button("(empty)")])
@@ -284,7 +285,15 @@ class XplodifyApp(urwid.Frame):
 
         if self._tracks[playlist]:
             self.clear_track_panel()
-            self._active_playlist = playlist
+            self._active_pl = playlist
+            #set focus
+            """
+            if self._active_pl_button:
+                button.set_attr_map({'reversed': None})
+
+            button.set_attr_map({None: 'reversed'})
+            """
+            self._active_pl_button = button
 
             tid=1
             for track in self._tracks[playlist]:
