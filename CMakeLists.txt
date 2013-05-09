@@ -6,6 +6,7 @@ set (spotifyd_VERSION_MAJOR 0)
 set (spotifyd_VERSION_MINOR 1)
 set (spotifyd_VERSION_PATCH 0)
 
+OPTION(DEBUG "Activate debug flags" OFF)
 
 #should we bundle the libs??? 
 #spotify yes, thrift no. Make use of FindThrift.cmake 
@@ -66,6 +67,10 @@ else()
 	add_definitions(-DHAVE_INTTYPES_H -DHAVE_NETINET_IN_H)
 	set(CMAKE_CXX_FLAGS "-std=c++0x -ggdb -Wall -W -fbuiltin -pthread")
 endif()
+
+if(DEBUG)
+	add_definitions("-D_DEBUG")
+endif(DEBUG)
 
 # compile as C++0x
 #add_definitions(-std=c++0x -DHAVE_INTTYPES_H -DHAVE_NETINET_IN_H)
