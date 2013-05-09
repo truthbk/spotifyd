@@ -108,7 +108,7 @@ void XplodifyHandler::run()
 void XplodifyHandler::loginSession(SpotifyCredential& _return, const SpotifyCredential& cred) {
 
     sp_error err;
-#ifdef DEBUG
+#ifdef _DEBUG
     printf("initiatingSession\n");
 #endif
 
@@ -284,18 +284,20 @@ void XplodifyHandler::getPlaylist(SpotifyPlaylist& _return, const SpotifyCredent
 	return;
     }
 
-    for(int j = 0 ; j < pl->get_num_tracks() ; j++ ) {
+    for(unsigned int j = 0 ; j < pl->get_num_tracks() ; j++ ) {
         boost::shared_ptr<XplodifyTrack> tr = pl->get_track_at(j);
 	int duration = tr->get_duration(); //millisecs?
-	boost::shared_ptr<SpotifyTrack> spt(new SpotifyTrack());
+	SpotifyTrack spt;
 
-	spt->__set__name( tr->get_name() );
-	spt->__set__artist( tr->get_artist(0) ); //first artist (this sucks).
-	spt->__set__minutes( duration / 60000 );
-	spt->__set__seconds( (duration / 1000) % 60 );
-	spt->__set__popularity( tr->get_popularity() );
-	spt->__set__starred( tr->is_starred() );
-	_return.insert(*spt);
+	spt.__set__id( j );
+	spt.__set__name( tr->get_name() );
+	spt.__set__artist( tr->get_artist(0) ); //first artist (this sucks).
+	spt.__set__minutes( duration / 60000 );
+	spt.__set__seconds( (duration / 1000) % 60 );
+	spt.__set__popularity( tr->get_popularity() );
+	spt.__set__starred( tr->is_starred() );
+	spt.__set__genre( "unknown" );
+	_return.push_back(spt);
     }
 
     return;
@@ -305,8 +307,9 @@ void XplodifyHandler::getPlaylistByName(
         SpotifyPlaylist& _return, const SpotifyCredential& cred,
         const std::string& name) {
 
+#ifdef _DEBUG
     std::cerr << "getPlaylistByName: " << name << "\n";
-    printf("getPlaylistByName: %s\n ", name.c_str());
+#endif
 
     boost::shared_ptr<XplodifySession> sess = get_session(cred._uuid);
     if(!sess) {
@@ -324,20 +327,28 @@ void XplodifyHandler::getPlaylistByName(
         return;
     }
 
-    for(int j = 0 ; j < pl->get_num_tracks() ; j++ ) {
+    for(unsigned int j = 0 ; j < pl->get_num_tracks() ; j++ ) {
         boost::shared_ptr<XplodifyTrack> tr = pl->get_track_at(j);
 	int duration = tr->get_duration(); //millisecs?
-	boost::shared_ptr<SpotifyTrack> spt(new SpotifyTrack());
+	//boost::shared_ptr<SpotifyTrack> spt(new SpotifyTrack());
+        SpotifyTrack spt;
 
-	spt->__set__name( tr->get_name() );
-        std::cerr << "getting track: " << tr->get_name() << "\n";
-	spt->__set__artist( tr->get_artist(0) ); //first artist (this sucks).
-	spt->__set__minutes( duration / 60000 );
-	spt->__set__seconds( (duration / 1000) % 60 );
-	spt->__set__popularity( tr->get_popularity() );
-	spt->__set__starred( tr->is_starred() );
-	_return.insert(*spt);
+	spt.__set__id( j );
+	spt.__set__name( tr->get_name() );
+	spt.__set__artist( tr->get_artist(0) ); //first artist (this sucks).
+	spt.__set__minutes( duration / 60000 );
+	spt.__set__seconds( (duration / 1000) % 60 );
+	spt.__set__popularity( tr->get_popularity() );
+	spt.__set__starred( tr->is_starred() );
+	spt.__set__genre( "unknown" );
+	_return.push_back(spt);
     }
+#ifdef _DEBUG
+    SpotifyPlaylist::const_iterator it;
+    for(it = _return.begin() ; it != _return.end() ; it++) {
+        std::cerr << (*it)._name << "\n";
+    }
+#endif
 
     return;
 }
