@@ -256,11 +256,11 @@ class XplodifyApp(urwid.Frame):
 
             pid = 1
             for pl in self._playlists:
-                self._plwalker.insert(0, XplodifyElement(pid, pl))
+                self._plwalker.insert(0, XplodifyElement(pid, pl, callback=self.set_track_panel, userdata=pl))
                 self.get_tracks(pl)
                 pid += 1
 
-            self.set_track_panel(self._playlists[0])
+            self.set_track_panel(None, self._playlists[0])
 
     def get_tracks(self, playlist):
         try:
@@ -268,7 +268,7 @@ class XplodifyApp(urwid.Frame):
         except Exception, e:
             logging.debug("Exception: %s", e)
 
-    def set_track_panel(self, playlist):
+    def set_track_panel(self, button, playlist):
         if playlist not in self._tracks:
             self.get_tracks(playlist)
 
