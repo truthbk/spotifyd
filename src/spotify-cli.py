@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+# -*- coding: latin-1 -*- 
+
 import sys
 import time
 import getopt
@@ -162,7 +164,7 @@ class XplodifyElement(urwid.Button):
     def __init__(self, el_id, el_name, callback=None, userdata=None):
         self.el_id = el_id 
         self.el_name = el_name
-        super(XplodifyElement, self).__init__(u"" + self.el_name, on_press=callback, user_data=userdata)
+        super(XplodifyElement, self).__init__(self.el_name, on_press=callback, user_data=userdata)
 
 
 class XplodifyApp(urwid.Frame):
@@ -189,6 +191,7 @@ class XplodifyApp(urwid.Frame):
         self.spoticlient = spclient(host, port)
 
         self._playlists = None
+        self._active_playlist = None
         self._plwalker = urwid.SimpleFocusListWalker([urwid.Button("(empty)")])
         self._tracks = {}
         self._trwalker = urwid.SimpleFocusListWalker([urwid.Button("(empty)")])
@@ -216,6 +219,7 @@ class XplodifyApp(urwid.Frame):
                 min_width=30, min_height=6)
         super(XplodifyApp, self).__init__(urwid.AttrWrap(self.mainview, 'body'), footer=self.footer, header=self.header)
 
+        urwid.set_encoding("ISO-8859-*")
         self.loop = urwid.MainLoop(self, self.palette,
              unhandled_input=self.unhandled_keypress)
 
@@ -256,7 +260,9 @@ class XplodifyApp(urwid.Frame):
 
             pid = 1
             for pl in self._playlists:
-                self._plwalker.insert(0, XplodifyElement(pid, pl, callback=self.set_track_panel, userdata=pl))
+                self._plwalker.insert(0, XplodifyElement(pid, pl,
+                    callback=self.set_track_panel, 
+                    userdata=pl))
                 self.get_tracks(pl)
                 pid += 1
 
@@ -273,6 +279,8 @@ class XplodifyApp(urwid.Frame):
             self.get_tracks(playlist)
 
         if self._tracks[playlist]:
+            self._active_playlist = playlist
+
             #empty the track listwalker first...
             while self._trwalker:
                 self._trwalker.pop()
@@ -280,7 +288,14 @@ class XplodifyApp(urwid.Frame):
             tid=1
             for track in self._tracks[playlist]:
                 logging.debug("Processing track: %s", track._name)
-                self._trwalker.insert(0, XplodifyElement(track._id, track._name.decode('utf8')+" - "+track._artist.decode('utf8')))
+                self._trwalker.insert(0, XplodifyElement(
+                    track._id, track._name+" - "+track._artist,
+                    callback=self.playback_track,
+                    userdata=track))
+
+    def playback_track(self, button, track):
+        logging.debug("Toggling playback for track: %s", track._name)
+
 
     def set_playlist(self, button, playlist): 
         return
