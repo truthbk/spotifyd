@@ -146,8 +146,19 @@ void XplodifyHandler::loginSession(SpotifyCredential& _return, const SpotifyCred
 void XplodifyHandler::login_timeout(const boost::system::error_code&,
         std::string uuid) {
 #ifdef _DEBUG
-    std::cout << "Timeout for login: " << uuid << " Checking status...\n";
+    std::cout << "Event timeout for login: " << uuid << " Checking status...\n";
 #endif
+    timer_map::iterator it = m_timers.find(uuid);
+
+    //Free up resources, cleanup.
+    if(it != m_timers.end()) {
+        delete it->second;
+        m_timers.erase(it);
+    } else {
+        return;
+    }
+
+    //check session status...
 }
 
 bool XplodifyHandler::isLoggedIn(const SpotifyCredential& cred) {
