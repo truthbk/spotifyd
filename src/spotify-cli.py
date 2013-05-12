@@ -280,7 +280,7 @@ class XplodifyApp(urwid.Frame):
             tid=1
             for track in self._tracks[playlist]:
                 logging.debug("Processing track: %s", track._name)
-                self._trwalker.insert(0, XplodifyElement(track._id, track._name))
+                self._trwalker.insert(0, XplodifyElement(track._id, track._name.decode('utf8')+" - "+track._artist.decode('utf8')))
 
     def set_playlist(self, button, playlist): 
         return
