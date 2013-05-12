@@ -2,6 +2,7 @@
 #define _SPOTIFY_CUST_HH
 
 #include <cstdint>
+#include <map>
 
 #include <boost/shared_ptr.hpp>
 #include <boost/enable_shared_from_this.hpp>
@@ -12,6 +13,10 @@
 #include <boost/multi_index/sequenced_index.hpp>
 #include <boost/multi_index/ordered_index.hpp>
 #include <boost/multi_index/hashed_index.hpp>
+
+#include <boost/asio.hpp>
+#include <boost/bind.hpp>
+#include <boost/date_time/posix_time/posix_time.hpp>
 
 #include "lockable.h"
 #include "runnable.h"
@@ -148,10 +153,17 @@ class XplodifyHandler
         typedef sess_map::nth_index<0>::type sess_map_sequenced;
         typedef sess_map::nth_index<1>::type sess_map_by_uuid;
         typedef sess_map::nth_index<2>::type sess_map_by_sessptr;
-
         sess_map m_session_cache;
 
+        //no transfer of ownership, we're good with raw pointers.
+        typedef std::map<std::string, boost::asio::deadline_timer *> timer_map;
+        timer_map m_timers;
+        boost::asio::io_service m_io;
+        const size_t LOGIN_TO = 3;
 
+
+        void login_timeout(const boost::system::error_code&,
+                std::string uuid);
         boost::shared_ptr<XplodifySession> get_session(const std::string& uuid);
         boost::shared_ptr<XplodifySession> get_session(const sp_session * sps);
         boost::shared_ptr<XplodifySession> getActiveSession(void);

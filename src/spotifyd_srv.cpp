@@ -128,11 +128,26 @@ void XplodifyHandler::loginSession(SpotifyCredential& _return, const SpotifyCred
         sess->set_uuid(uuid_str);
         m_session_cache.get<1>().insert(sess_map_entry( uuid_str, 
                     const_cast<const sp_session *>(sess->get_session()), sess ));
+#ifdef _DEBUG
+        std::cout << "starting timer for session: "<< uuid_str <<"\n";
+        //no transfer of ownership, we're good with raw pointers.
+        boost::asio::deadline_timer * t = new boost::asio::deadline_timer(m_io);
+        t->expires_from_now(boost::posix_time::seconds(LOGIN_TO));
+        t->async_wait(boost::bind(login_timeout,
+                    boost::asio::placeholders::error, uuid_str));
+        m_io.run();
+#endif
 
         _return = cred;
         _return.__set__uuid(uuid_str);
         unlock();
     }
+}
+void XplodifyHandler::login_timeout(const boost::system::error_code&,
+        std::string uuid) {
+#ifdef _DEBUG
+    std::cout << "Timeout for login: " << uuid << " Checking status...\n";
+#endif
 }
 
 bool XplodifyHandler::isLoggedIn(const SpotifyCredential& cred) {
