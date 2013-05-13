@@ -171,6 +171,7 @@ class XplodifyApp(urwid.Frame):
     palette = [
             ('body','default', 'default'),
             ('reversed','light gray', 'black', 'bold'),
+            ('playback','light red', 'dark gray', 'bold'),
             ('foot','black', 'light gray', 'bold'),
             ('head','black', 'light gray', 'bold'),
             ('key','light cyan', 'dark blue', 'underline'),
@@ -196,6 +197,7 @@ class XplodifyApp(urwid.Frame):
         self._active_pl_button = None
         self._plwalker = urwid.SimpleFocusListWalker([urwid.Button("(empty)")])
         self._tracks = {}
+        self._active_tr_button = None
         self._trwalker = urwid.SimpleFocusListWalker([urwid.Button("(empty)")])
         self.plpane = urwid.ListBox(self._plwalker)
         self.trackpane = urwid.ListBox(self._trwalker)
@@ -247,6 +249,17 @@ class XplodifyApp(urwid.Frame):
             self.mainview.set_focus_column(0)
         self.body = self.mainview
 
+    def logout(self):
+        if self.logged:
+            self.spoticlient.logout()
+            
+            self._active_pl = None
+            self._active_pl_button = None
+
+            self.clear_pl_panel()
+            self.clear_track_panel()
+            self.header.original_widget.set_text(u"Not Logged in.")
+
 
     def get_playlists(self):
         try:
@@ -286,14 +299,16 @@ class XplodifyApp(urwid.Frame):
         if self._tracks[playlist]:
             self.clear_track_panel()
             self._active_pl = playlist
-            #set focus
-            """
-            if self._active_pl_button:
-                button.set_attr_map({'reversed': None})
 
-            button.set_attr_map({None: 'reversed'})
-            """
-            self._active_pl_button = button
+            #remove highlight to old button
+            if self._active_pl_button:
+                self._active_pl_button.set_attr_map({'reversed': None})
+
+            #if button, set highlight - playlist was selected.
+            if button:
+                w, pos = self._plwalker.get_focus()
+                w.set_attr_map({None: 'reversed'})
+                self._active_pl_button = w
 
             tid=1
             for track in self._tracks[playlist]:
@@ -306,12 +321,25 @@ class XplodifyApp(urwid.Frame):
     def clear_pl_panel(self):
         while self._plwalker:
             self._plwalker.pop()
+        self._active_pl_button = None
+        self._active_tr = None
 
     def clear_track_panel(self):
         while self._trwalker:
             self._trwalker.pop()
+        self._active_tr_button = None
 
     def playback_track(self, button, track):
+        #remove highlight to old track button
+        if self._active_tr_button:
+            self._active_tr_button.set_attr_map({'playback': None})
+
+        #if button, set highlight - playlist was selected.
+        if button:
+            w, pos = self._trwalker.get_focus()
+            w.set_attr_map({None: 'playback'})
+            self._active_tr_button = w
+
         logging.debug("Toggling playback for track: %s", track._name)
 
 
@@ -334,14 +362,9 @@ class XplodifyApp(urwid.Frame):
         elif k == "f8":
             raise urwid.ExitMainLoop()
         elif k == "f9":
-            if self.logged:
-                self.spoticlient.logout()
-                self.clear_pl_panel()
-                self.clear_track_panel()
-                self.header.original_widget.set_text(u"Not Logged in.")
+            self.logout()
         elif k == "f10":
-            if self.logged:
-                self.spoticlient.logout()
+            self.logout()
             raise urwid.ExitMainLoop()
         elif k == "tab":
             self.mainview.focus_position = (self.mainview.focus_position + 1) % 2
