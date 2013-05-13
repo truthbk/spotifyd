@@ -170,6 +170,7 @@ class XplodifyElement(urwid.Button):
 class XplodifyApp(urwid.Frame):
     palette = [
             ('body','default', 'default'),
+            ('reversed','light gray', 'black', 'bold'),
             ('foot','black', 'light gray', 'bold'),
             ('head','black', 'light gray', 'bold'),
             ('key','light cyan', 'dark blue', 'underline'),
@@ -260,11 +261,14 @@ class XplodifyApp(urwid.Frame):
 
             pid = 1
             for pl in self._playlists:
-                self._plwalker.insert(0, XplodifyElement(pid, pl,
-                    callback=self.set_track_panel, 
-                    userdata=pl))
-                self.get_tracks(pl)
-                pid += 1
+                try:
+                    self._plwalker.insert(0, urwid.AttrMap(
+                        XplodifyElement(pid, pl, callback=self.set_track_panel, userdata=pl),
+                        None, focus_map='reversed'))
+                    self.get_tracks(pl)
+                    pid += 1
+                except Exception, e:
+                    logging.debug("Exception: %s", e)
 
             self.set_track_panel(None, self._playlists[0])
 
@@ -279,19 +283,24 @@ class XplodifyApp(urwid.Frame):
             self.get_tracks(playlist)
 
         if self._tracks[playlist]:
+            self.clear_track_panel()
             self._active_playlist = playlist
-
-            #empty the track listwalker first...
-            while self._trwalker:
-                self._trwalker.pop()
 
             tid=1
             for track in self._tracks[playlist]:
                 logging.debug("Processing track: %s", track._name)
-                self._trwalker.insert(0, XplodifyElement(
-                    track._id, track._name+" - "+track._artist,
-                    callback=self.playback_track,
-                    userdata=track))
+                self._trwalker.insert(0, urwid.AttrMap(
+                        XplodifyElement(track._id, track._name+" - "+track._artist, 
+                            callback=self.playback_track, userdata=track),
+                        None, focus_map='reversed'))
+
+    def clear_pl_panel(self):
+        while self._plwalker:
+            self._plwalker.pop()
+
+    def clear_track_panel(self):
+        while self._trwalker:
+            self._trwalker.pop()
 
     def playback_track(self, button, track):
         logging.debug("Toggling playback for track: %s", track._name)
@@ -318,6 +327,8 @@ class XplodifyApp(urwid.Frame):
         elif k == "f9":
             if self.logged:
                 self.spoticlient.logout()
+                self.clear_pl_panel()
+                self.clear_track_panel()
                 self.header.original_widget.set_text(u"Not Logged in.")
         elif k == "f10":
             if self.logged:
