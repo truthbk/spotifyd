@@ -83,6 +83,7 @@ class XplodifySession :
         XplodifySession();
         XplodifySession(XplodifyHandler * h);
 
+        void flush();
         void logged_in(sp_session *sess, sp_error error);
         void play_token_lost();
         void start_playback();

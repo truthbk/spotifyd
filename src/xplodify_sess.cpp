@@ -258,6 +258,15 @@ void XplodifySession::logged_in(sp_session *sess, sp_error error) {
     return;
 }
 
+void XplodifySession::flush() {
+    boost::shared_ptr<XplodifyPlaylistContainer> pc = get_pl_container();
+    if(!pc) {
+        return;
+    }
+
+    pc->flush();
+}
+
 void XplodifySession::start_playback()
 {
     sp_session_player_play(m_session, 1);

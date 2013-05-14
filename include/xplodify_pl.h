@@ -35,6 +35,7 @@ class XplodifyPlaylist :
 
         bool load(sp_playlist * pl);
         bool unload();
+        void flush();
         bool load_tracks();
         std::string get_name();
         size_t get_num_tracks();
@@ -141,6 +142,7 @@ class XplodifyPlaylistContainer :
 
         bool    load(sp_playlistcontainer * plc);
         bool    unload();
+        void    flush();
         void    add_playlist(boost::shared_ptr<XplodifyPlaylist> pl);
         void    add_playlist(boost::shared_ptr<XplodifyPlaylist> pl, int pos);
         size_t  get_num_playlists();

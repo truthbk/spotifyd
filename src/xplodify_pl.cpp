@@ -85,6 +85,20 @@ bool XplodifyPlaylist::load(sp_playlist * pl) {
     return true;
 }
 
+void XplodifyPlaylist::flush() {
+
+    track_cache_by_rand& t_r = m_track_cache.get<0>();
+
+    track_cache_by_rand::iterator it = t_r.begin();
+
+    while(it != m_track_cache.get<0>().end() ) {
+        boost::shared_ptr<XplodifyTrack> tr = it->track;
+        //flush the tracks from the playlist as well...
+        it = t_r.erase(it);
+        tr.reset();
+    }
+}
+
 bool XplodifyPlaylist::load_tracks() {
     int n;
 
@@ -178,6 +192,7 @@ XplodifyPlaylist * XplodifyPlaylist::get_playlist_from_udata(
 
     return plptr;
 }
+
 
 void XplodifyPlaylist::tracks_added(
         sp_track *const *tracks, int num_tracks, 
@@ -498,6 +513,22 @@ XplodifyPlaylistContainer::get_playlist(std::string name) {
 
     return boost::shared_ptr<XplodifyPlaylist>(it->_playlist);
 
+}
+
+void XplodifyPlaylistContainer::flush() {
+
+    pl_cache_by_rand& c_r = m_pl_cache.get<0>();
+
+    pl_cache_by_rand::iterator it = c_r.begin();
+
+    while(it != m_pl_cache.get<0>().end() ) {
+        boost::shared_ptr<XplodifyPlaylist> pl = it->_playlist;
+        //flush the tracks from the playlist as well...
+        it = c_r.erase(it);
+
+        pl->flush();
+        pl.reset();
+    }
 }
 
 void XplodifyPlaylistContainer::playlist_added(sp_playlist *pl, int pos){
