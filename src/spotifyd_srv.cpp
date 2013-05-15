@@ -150,7 +150,7 @@ bool XplodifyHandler::isLoggedIn(const SpotifyCredential& cred) {
 void XplodifyHandler::logoutSession(const SpotifyCredential& cred) {
 
     sp_error err;
-    bool fix_iter = false;
+    bool switched = false;
 
     boost::shared_ptr<XplodifySession> sess = get_session(cred._uuid);
     if(!sess) {
@@ -161,22 +161,25 @@ void XplodifyHandler::logoutSession(const SpotifyCredential& cred) {
     if(sess == m_active_session) 
     {
         //stop track move onto next session.
-        switchSession();
+        switch_session();
+        switched = true;
+
     }
+
     err = sp_session_logout(sess->get_session());
 
-    //iterators are not invalidated by insertion/removal in maps!
     if(err == SP_ERROR_OK )
     {
-        sess_map_by_uuid& sessByUuid = m_session_cache.get<1>();
-        sessByUuid.erase(cred._uuid);
+        //remove from session caches
+        sess_map_entry aux_entry(*m_sess_it);
 
-        //fix the invalidated iterator.
-        m_sess_it = m_session_cache.get<0>().begin();
-        while (m_sess_it->session != m_active_session) {
-            m_sess_it++;
-        }
+        sess_map_by_uuid& sess_by_uuid = m_session_cache.get<1>();
+        sess_by_uuid.erase(cred._uuid);
+
+        //fix the potentially invalidated iterator.
+        m_sess_it = m_session_cache.get<0>().iterator_to(aux_entry);
     }
+    sess.reset();
     unlock();
 
     return;
@@ -215,11 +218,12 @@ void XplodifyHandler::sendCommand(const SpotifyCredential& cred, const SpotifyCm
 }
 
 //change session, allow it to be played.
-void XplodifyHandler::switchSession() {
+void XplodifyHandler::switch_session() {
     sp_session_player_unload(m_active_session->get_session());
 
     //Currently just round-robin.
-    if (++m_sess_it == m_session_cache.get<0>().end())
+    m_sess_it++;
+    if (m_sess_it == m_session_cache.get<0>().end())
     {
         m_sess_it = m_session_cache.get<0>().begin();
     }
@@ -416,9 +420,9 @@ void XplodifyHandler::whats_playing(SpotifyTrack& _return) {
 
 boost::shared_ptr<XplodifySession> XplodifyHandler::get_session(const std::string& uuid) {
 
-    sess_map_by_uuid& sessByUuid = m_session_cache.get<1>();
+    sess_map_by_uuid& sess_by_uuid = m_session_cache.get<1>();
 
-    sess_map_by_uuid::iterator sit = sessByUuid.find(uuid);
+    sess_map_by_uuid::iterator sit = sess_by_uuid.find(uuid);
     if( sit == m_session_cache.get<1>().end() ) {
         return boost::shared_ptr<XplodifySession>();
     }
