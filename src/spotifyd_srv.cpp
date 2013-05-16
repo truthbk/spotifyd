@@ -133,8 +133,8 @@ void XplodifyHandler::loginSession(SpotifyCredential& _return, const SpotifyCred
         //no transfer of ownership, we're good with raw pointers.
         boost::asio::deadline_timer * t = new boost::asio::deadline_timer(m_io);
         t->expires_from_now(boost::posix_time::seconds(LOGIN_TO));
-        t->async_wait(boost::bind(login_timeout,
-                    boost::asio::placeholders::error, uuid_str));
+        t->async_wait(boost::bind(&XplodifyHandler::login_timeout,
+                    this, _1, uuid_str));
         m_io.run();
 #endif
 
