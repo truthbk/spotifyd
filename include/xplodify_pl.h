@@ -42,6 +42,8 @@ class XplodifyPlaylist :
         boost::shared_ptr<XplodifyTrack> get_track_at(size_t idx);
         void   add_track(boost::shared_ptr<XplodifyTrack> tr);
         void   add_track(boost::shared_ptr<XplodifyTrack> tr, int pos);
+        boost::shared_ptr<XplodifyTrack> get_track(int pos, bool remove=false);
+        boost::shared_ptr<XplodifyTrack> get_track(std::string name, bool remove=false);
 
         static XplodifyPlaylist * get_playlist_from_udata(
                 sp_playlist * pl, void * userdata);

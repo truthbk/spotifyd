@@ -21,6 +21,7 @@ class XplodifySession :
     public boost::enable_shared_from_this<XplodifySession> {
 
     public:
+        friend class XplodifyHandler;
         ~XplodifySession();
 
         static boost::shared_ptr< XplodifySession > create(XplodifyHandler * h = NULL );

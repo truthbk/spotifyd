@@ -88,13 +88,10 @@ bool XplodifyPlaylist::load(sp_playlist * pl) {
 void XplodifyPlaylist::flush() {
 
     track_cache_by_rand& t_r = m_track_cache.get<0>();
+    std::size_t sz = t_r.size();
 
-    track_cache_by_rand::iterator it = t_r.begin();
-
-    while(it != m_track_cache.get<0>().end() ) {
-        boost::shared_ptr<XplodifyTrack> tr = it->track;
-        //flush the tracks from the playlist as well...
-        it = t_r.erase(it);
+    for(std::size_t i=0 ; i<sz ; i++) {
+        boost::shared_ptr<XplodifyTrack> tr = get_track(0, true);
         tr.reset();
     }
 }
@@ -181,6 +178,43 @@ void XplodifyPlaylist::add_track(boost::shared_ptr<XplodifyTrack> tr, int pos) {
     t_r.insert(it, track_entry(tr->get_name(), tr));
 }
 
+boost::shared_ptr<XplodifyTrack> XplodifyPlaylist::get_track(int pos, bool remove) {
+    boost::shared_ptr<XplodifyTrack> t;
+
+    track_cache_by_rand& t_r = m_track_cache.get<0>();
+    track_cache_by_rand::iterator it = t_r.iterator_to(t_r[pos]);
+
+    if(it == t_r.end()) {
+        t = boost::shared_ptr<XplodifyTrack>();
+    } else {
+        t = it->track;
+    }
+    if(remove) {
+        t_r.erase(it);
+    }
+
+    return t;
+}
+
+boost::shared_ptr<XplodifyTrack> XplodifyPlaylist::get_track(std::string name, bool remove) {
+    boost::shared_ptr<XplodifyTrack> t;
+
+    track_cache_by_name& t_n = m_track_cache.get<1>();
+    track_cache_by_name::iterator it = t_n.find(name);
+
+    if(it == t_n.end()) {
+        t = boost::shared_ptr<XplodifyTrack>();
+    } else {
+        t = it->track;
+    }
+    if(remove) {
+        t_n.erase(it);
+    }
+
+    return t;
+}
+
+
 XplodifyPlaylist * XplodifyPlaylist::get_playlist_from_udata(
         sp_playlist * pl, void * userdata) {
     XplodifyPlaylist * plptr = 
@@ -221,7 +255,9 @@ void XplodifyPlaylist::tracks_removed(const int *tracks, int num_tracks) {
 
     //Assuming *tracks is ordered : CHECK THIS!
     for(int i=0 ; i<num_tracks ; i++) {
-        remove_track_from_cache(tracks[num_tracks-i-1]);
+        boost::shared_ptr<XplodifyTrack> tr = 
+            remove_track_from_cache(tracks[num_tracks-i-1]);
+        tr.reset();
     }
 
     return;
@@ -545,20 +581,18 @@ void XplodifyPlaylistContainer::playlist_removed(sp_playlist *pl, int pos){
 
     pl_cache_by_name& c = m_pl_cache.get<1>();
     c.erase(std::string(sp_playlist_name(pl)));
-
 }
 
 //might have to lock().
 void XplodifyPlaylistContainer::playlist_moved(sp_playlist *pl, int pos, int newpos){
 
     //put in the right place in the rand index...
-    pl_cache_by_rand& c_r = m_pl_cache.get<0>();
     pl_cache_by_name& c_n = m_pl_cache.get<1>();
 
     pl_cache_by_name::iterator it = c_n.find(sp_playlist_name(pl));
 
     //shouldn't happen
-    if(it == m_pl_cache.get<1>().end() ) {
+    if(it == m_pl_cache.get<1>().end()) {
         return;
     }
 

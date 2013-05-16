@@ -179,6 +179,7 @@ void XplodifyHandler::logoutSession(const SpotifyCredential& cred) {
         //fix the potentially invalidated iterator.
         m_sess_it = m_session_cache.get<0>().iterator_to(aux_entry);
     }
+    sess->flush();
     sess.reset();
     unlock();
 
