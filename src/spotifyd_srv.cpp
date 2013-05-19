@@ -101,6 +101,9 @@ void XplodifyHandler::run()
         } while (next_timeout == 0);
 
         lock();
+
+        m_io.poll();
+        m_io.reset();
     }
 }
 
@@ -130,13 +133,12 @@ void XplodifyHandler::loginSession(SpotifyCredential& _return, const SpotifyCred
                     const_cast<const sp_session *>(sess->get_session()), sess ));
 #ifdef _DEBUG
         std::cout << "starting timer for session: "<< uuid_str <<"\n";
+#endif
         //no transfer of ownership, we're good with raw pointers.
         boost::asio::deadline_timer * t = new boost::asio::deadline_timer(m_io);
         t->expires_from_now(boost::posix_time::seconds(LOGIN_TO));
         t->async_wait(boost::bind(&XplodifyHandler::login_timeout,
-                    this, _1, uuid_str));
-        m_io.run();
-#endif
+                    this, boost::asio::placeholders::error, uuid_str));
 
         _return = cred;
         _return.__set__uuid(uuid_str);

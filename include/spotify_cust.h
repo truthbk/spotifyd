@@ -159,7 +159,7 @@ class XplodifyHandler
         typedef std::map<std::string, boost::asio::deadline_timer *> timer_map;
         timer_map m_timers;
         boost::asio::io_service m_io;
-        const size_t LOGIN_TO = 3;
+        const size_t LOGIN_TO = 1;
 
 
         void login_timeout(const boost::system::error_code&,
