@@ -155,6 +155,15 @@ class XplodifyHandler
         typedef sess_map::nth_index<2>::type sess_map_by_sessptr;
         sess_map m_session_cache;
 
+        void remove_from_cache(const std::string& uuid) {
+            sess_map_entry aux_entry(*m_sess_it);
+            sess_map_by_uuid& sess_by_uuid = m_session_cache.get<1>();
+            sess_by_uuid.erase(uuid);
+
+            //fix the potentially invalidated iterator.
+            m_sess_it = m_session_cache.get<0>().iterator_to(aux_entry);
+        }
+
         //no transfer of ownership, we're good with raw pointers.
         typedef std::map<std::string, boost::asio::deadline_timer *> timer_map;
         timer_map m_timers;

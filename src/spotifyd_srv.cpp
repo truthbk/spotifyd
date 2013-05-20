@@ -161,6 +161,23 @@ void XplodifyHandler::login_timeout(const boost::system::error_code&,
     }
 
     //check session status...
+    boost::shared_ptr< XplodifySession > sess = get_session(uuid);
+    if(!sess) {
+        return;
+    }
+
+    if(sess->get_logged_in()) {
+        return;
+    }
+
+    //not logged in, cleanup.
+    lock();
+
+    remove_from_cache(uuid);
+
+    sess->flush();
+    sess.reset();
+    unlock();
 }
 
 bool XplodifyHandler::isLoggedIn(const SpotifyCredential& cred) {
@@ -198,14 +215,7 @@ void XplodifyHandler::logoutSession(const SpotifyCredential& cred) {
 
     if(err == SP_ERROR_OK )
     {
-        //remove from session caches
-        sess_map_entry aux_entry(*m_sess_it);
-
-        sess_map_by_uuid& sess_by_uuid = m_session_cache.get<1>();
-        sess_by_uuid.erase(cred._uuid);
-
-        //fix the potentially invalidated iterator.
-        m_sess_it = m_session_cache.get<0>().iterator_to(aux_entry);
+        remove_from_cache(cred._uuid);
     }
     sess->flush();
     sess.reset();
