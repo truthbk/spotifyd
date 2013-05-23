@@ -96,6 +96,8 @@ class XplodifyHandler
 			const std::string& name);
         void selectPlaylist(const SpotifyCredential& cred, const std::string& playlist);
         void selectPlaylistById(const SpotifyCredential& cred, const int32_t plist_id);
+        void selectTrack(const SpotifyCredential& cred, const std::string& track);
+        void selectTrackById(const SpotifyCredential& cred, const int32_t track_id);
         bool merge2playlist(const SpotifyCredential& cred, const std::string& pl,
 			const SpotifyPlaylist& tracks);
         bool add2playlist(const SpotifyCredential& cred, const std::string& pl,

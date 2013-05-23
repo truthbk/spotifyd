@@ -430,6 +430,18 @@ void XplodifyHandler::selectPlaylistById(const SpotifyCredential& cred, const in
 #endif
 }
 
+void XplodifyHandler::selectTrack(const SpotifyCredential& cred, const std::string& track) {
+
+    //TODO
+    return;
+
+}
+void XplodifyHandler::selectTrackById(const SpotifyCredential& cred, const int32_t track_id) {
+
+    //TODO
+    return;
+}
+
 bool XplodifyHandler::merge2playlist(const SpotifyCredential& cred, const std::string& pl,
 		const SpotifyPlaylist& tracks) {
     boost::shared_ptr< XplodifySession > sess = get_session(cred._uuid);
