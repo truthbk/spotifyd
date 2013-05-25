@@ -433,12 +433,24 @@ void XplodifyHandler::selectPlaylistById(const SpotifyCredential& cred, const in
 void XplodifyHandler::selectTrack(const SpotifyCredential& cred, const std::string& track) {
 
     //TODO
+    boost::shared_ptr< XplodifySession > sess = get_session(cred._uuid);
+    if(!sess) {
+        return;
+    }
+
+    sess->set_track(track);
     return;
 
 }
 void XplodifyHandler::selectTrackById(const SpotifyCredential& cred, const int32_t track_id) {
 
     //TODO
+    boost::shared_ptr< XplodifySession > sess = get_session(cred._uuid);
+    if(!sess) {
+        return;
+    }
+
+    sess->set_track(track_id);
     return;
 }
 
