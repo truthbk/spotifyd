@@ -6,6 +6,7 @@
 #include <boost/uuid/uuid_io.hpp>
 #include <boost/lexical_cast.hpp>
 
+#include <iostream>
 #include <cstring>
 #include <string>
 
@@ -282,6 +283,10 @@ void XplodifySession::play_token_lost()
 void XplodifySession::logged_in(sp_session *sess, sp_error error) {
     //We've logged in succesfully, lets load pl container, and pl's
     m_plcontainer = get_pl_container(); 
+
+#if _DEBUG
+    std::cout << "Session " << m_uuid << " logged in succesfully." << std::endl;
+#endif
 
     return;
 }

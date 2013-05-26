@@ -414,20 +414,7 @@ void XplodifyHandler::selectPlaylistById(const SpotifyCredential& cred, const in
 	return;
     }
 
-    boost::shared_ptr<XplodifyPlaylistContainer> pc = sess->get_pl_container();
-    if(!pc) {
-	return;
-    }
-
-#if 0
-    sp_playlist *pl = sp_playlistcontainer_playlist(pc, plist_id);
-
-    if(!pl) {
-	return;
-    }
-
-    sess->setActivePlaylist(pl);
-#endif
+    sess->set_active_playlist(plist_id);
 }
 
 void XplodifyHandler::selectTrack(const SpotifyCredential& cred, const std::string& track) {

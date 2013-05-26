@@ -110,7 +110,7 @@ class spclient(object):
         finally:
             return ret
 
-    def getplaylists(self):
+    def get_playlists(self):
         pls = None
         try:
             """ pls will be a set with the playlists """
@@ -122,7 +122,7 @@ class spclient(object):
 
         return pls
 
-    def gettracks(self, playlist):
+    def get_tracks(self, playlist):
         tracks = None
         try:
             """ pls will be a set with the playlists """
@@ -134,16 +134,34 @@ class spclient(object):
 
         return tracks
 
-    def spot_selplaylist(self, idx):
+    def select_playlist(self, idx):
         try:
             self._client.selectPlaylist(self._credentials, self._playlists[idx])
             self._success = True
 
         except Exception, e:
             self._success = False
-            return None
 
-    def spot_seltrack(self):
+        return None
+
+    def select_track(self, track_name):
+        try:
+            self._client.selectTrack(self._credentials, track_name)
+            self._success = True
+
+        except Exception, e:
+            self._success = False
+
+        return None
+
+    def select_track_id(self, track_id):
+        try:
+            self._client.selectTrackById(self._credentials, track_id)
+            self._success = True
+
+        except Exception, e:
+            self._success = False
+
         return None
 
     def spot_playback(self):
@@ -242,7 +260,7 @@ class XplodifyApp(urwid.Frame):
         passwd = self.loginview.original_widget.widget_list[1].get_edit_text()
         if not self.logged:
             self.logged = self.spoticlient.login(username, passwd)
-        time.sleep(2)
+        time.sleep(4)
         if self.logged:
             self.header.original_widget.set_text(u"Logged in as "+username) 
             self.get_playlists()
@@ -263,7 +281,7 @@ class XplodifyApp(urwid.Frame):
 
     def get_playlists(self):
         try:
-            self._playlists = list(self.spoticlient.getplaylists())
+            self._playlists = list(self.spoticlient.get_playlists())
         except Exception, e:
             self._playlists = []
             logging.debug("Exception: %s", e)
@@ -288,7 +306,8 @@ class XplodifyApp(urwid.Frame):
 
     def get_tracks(self, playlist):
         try:
-            self._tracks[playlist] = self.spoticlient.gettracks(playlist)
+            self._tracks[playlist] = self.spoticlient.get_tracks(playlist)
+            self.spoticlient.select_playlist(playlist)
         except Exception, e:
             logging.debug("Exception: %s", e)
 
@@ -341,6 +360,7 @@ class XplodifyApp(urwid.Frame):
             self._active_tr_button = w
 
         logging.debug("Toggling playback for track: %s", track._name)
+        self.spoticlient.select_playlist(track)
 
 
     def set_playlist(self, button, playlist): 
