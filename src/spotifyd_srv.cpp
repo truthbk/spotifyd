@@ -235,8 +235,10 @@ void XplodifyHandler::sendCommand(const SpotifyCredential& cred, const SpotifyCm
 
     switch(cmd){
 	case SpotifyCmd::PLAY:
+            sess->start_playback();
 	    break;
 	case SpotifyCmd::PAUSE:
+            sess->stop_playback();
 	    break;
 	case SpotifyCmd::NEXT:
 	    break;
