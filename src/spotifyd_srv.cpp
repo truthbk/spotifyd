@@ -52,6 +52,16 @@ XplodifyHandler::XplodifyHandler()
     , m_notify_events(0)
 {
     //Nothing else
+    enum audio_arch arch;
+#ifdef _OSX
+    arch = OSX;
+#else
+#ifdef _LINUX
+    arch = ALSA;
+#endif
+#endif
+    set_audio(arch);
+    audio_init(&m_audiofifo);
 }
 
 
