@@ -425,6 +425,10 @@ void XplodifyHandler::selectTrack(const SpotifyCredential& cred, const std::stri
         return;
     }
 
+#ifdef _DEBUG
+    std::cout << "Selecting track " << track << " for session with uuid: " 
+        << sess->m_uuid << std::endl;
+#endif
     sess->set_track(track);
     return;
 

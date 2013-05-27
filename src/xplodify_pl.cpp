@@ -1,5 +1,6 @@
 #include <cstdint>
 #include <cstring>
+#include <iostream>
 #include <string>
 
 //boost
@@ -199,6 +200,9 @@ boost::shared_ptr<XplodifyTrack> XplodifyPlaylist::get_track(int pos, bool remov
 boost::shared_ptr<XplodifyTrack> XplodifyPlaylist::get_track(std::string name, bool remove) {
     boost::shared_ptr<XplodifyTrack> t;
 
+#ifdef _DEBUG
+    std::cout << "Seeking for track " << name << " from playlist: " << get_name() << std::endl;
+#endif
     track_cache_by_name& t_n = m_track_cache.get<1>();
     track_cache_by_name::iterator it = t_n.find(name);
 

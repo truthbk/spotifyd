@@ -134,12 +134,24 @@ class spclient(object):
 
         return tracks
 
-    def select_playlist(self, idx):
+    def select_playlist(self, playlist):
         try:
-            self._client.selectPlaylist(self._credentials, self._playlists[idx])
+            self._client.selectPlaylist(self._credentials, playlist)
             self._success = True
 
         except Exception, e:
+            logging.debug("Exception: %s", e)
+            self._success = False
+
+        return None
+
+    def select_playlist_by_id(self, pl_id):
+        try:
+            self._client.selectPlaylist(self._credentials, pl_id)
+            self._success = True
+
+        except Exception, e:
+            logging.debug("Exception: %s", e)
             self._success = False
 
         return None
@@ -150,6 +162,7 @@ class spclient(object):
             self._success = True
 
         except Exception, e:
+            logging.debug("Exception: %s", e)
             self._success = False
 
         return None
@@ -160,6 +173,7 @@ class spclient(object):
             self._success = True
 
         except Exception, e:
+            logging.debug("Exception: %s", e)
             self._success = False
 
         return None
@@ -170,8 +184,8 @@ class spclient(object):
             self._client.sendCommand(self._credentials, SpotifyCmd.PLAY)
 
         except Exception, e:
-            self._success = False
             logging.debug("Exception: %s", e)
+            self._success = False
             return None
 
     def spot_getcurrent(self):
@@ -307,7 +321,6 @@ class XplodifyApp(urwid.Frame):
     def get_tracks(self, playlist):
         try:
             self._tracks[playlist] = self.spoticlient.get_tracks(playlist)
-            self.spoticlient.select_playlist(playlist)
         except Exception, e:
             logging.debug("Exception: %s", e)
 
@@ -317,6 +330,7 @@ class XplodifyApp(urwid.Frame):
 
         if self._tracks[playlist]:
             self.clear_track_panel()
+            self.spoticlient.select_playlist(playlist)
             self._active_pl = playlist
 
             #remove highlight to old button
@@ -360,7 +374,9 @@ class XplodifyApp(urwid.Frame):
             self._active_tr_button = w
 
         logging.debug("Toggling playback for track: %s", track._name)
-        self.spoticlient.select_playlist(track)
+        self.spoticlient.select_track(track._name)
+        time.sleep(4)
+        self.spoticlient.spot_playback()
 
 
     def set_playlist(self, button, playlist): 

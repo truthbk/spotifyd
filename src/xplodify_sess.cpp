@@ -214,6 +214,9 @@ void XplodifySession::set_track(int idx) {
     m_track = track;
     m_track_idx = idx;
     sp_session_player_load(m_session, m_track->m_track);
+#if _DEBUG
+    std::cout << "Track " << m_track->get_name() << " loaded succesfully." << std::endl;
+#endif
 }
 
 void XplodifySession::set_track(std::string trackname) {
@@ -241,6 +244,9 @@ void XplodifySession::set_track(std::string trackname) {
     }
     m_track = track;
     sp_session_player_load(m_session, m_track->m_track);
+#if _DEBUG
+    std::cout << "Track " << m_track->get_name() << " loaded succesfully." << std::endl;
+#endif
 }
 
 #if 0
@@ -341,6 +347,9 @@ int XplodifySession::music_delivery(sp_session *sess, const sp_audioformat *form
     int n_frames;
 
     n_frames = m_handler->music_playback(format, frames, num_frames);
+#ifdef _DEBUG
+    std::cout << "Delivering " << n_frames << " for session: " << m_uuid << std::endl;
+#endif
     return n_frames;
 }
 
