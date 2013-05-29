@@ -22,20 +22,24 @@
  *
  * OSX AudioQueue output driver.
  *
- * This file is part of the libspotify examples suite.
- */
+ * */
 
 #include <AudioToolbox/AudioQueue.h>
 #include "audio.h"
 
-audio_init_ptr audio_init;
+//audio_init_ptr audio_init;
 
-#define BUFFER_COUNT 7
+static const int kNumberBuffers = 7;
+
 static struct AQPlayerState {
     AudioStreamBasicDescription   desc;
     AudioQueueRef                 queue;
-    AudioQueueBufferRef           buffers[BUFFER_COUNT];
-    unsigned buffer_size;
+    AudioQueueBufferRef           buffers[kNumberBuffers];
+    UInt32                        bufferByteSize;
+    SInt64                        mCurrentPacket;
+    UInt32                        mNumPacketsToRead;
+    AudioStreamPacketDescription  *mPacketDescs;
+    bool                          mIsRunning;
 } state;
 
 static void audio_callback (void *aux, AudioQueueRef aq, AudioQueueBufferRef bufout)
@@ -45,7 +49,7 @@ static void audio_callback (void *aux, AudioQueueRef aq, AudioQueueBufferRef buf
 
     bufout->mAudioDataByteSize = afd->nsamples * sizeof(short) * afd->channels;
 
-    assert(bufout->mAudioDataByteSize <= state.buffer_size);
+    assert(bufout->mAudioDataByteSize <= state.bufferByteSize);
     memcpy(bufout->mAudioData, afd->samples, bufout->mAudioDataByteSize);
 
     AudioQueueEnqueueBuffer(state.queue, bufout, 0, NULL);
@@ -75,7 +79,7 @@ void osx_audio_init(audio_fifo_t *af)
     state.desc.mBitsPerChannel = (state.desc.mBytesPerFrame*8)/state.desc.mChannelsPerFrame;
     state.desc.mReserved = 0;
 
-    state.buffer_size = state.desc.mBytesPerFrame * kSampleCountPerBuffer;
+    state.bufferByteSize = state.desc.mBytesPerFrame * kSampleCountPerBuffer;
 
     if (noErr != AudioQueueNewOutput(&state.desc, audio_callback, af, NULL, NULL, 0, &state.queue)) {
 	printf("audioqueue error\n");
@@ -83,11 +87,13 @@ void osx_audio_init(audio_fifo_t *af)
     }
 
     // Start some empty playback so we'll get the callbacks that fill in the actual audio.
-    for (i = 0; i < BUFFER_COUNT; ++i) {
-		AudioQueueAllocateBuffer(state.queue, state.buffer_size, &state.buffers[i]);
-		state.buffers[i]->mAudioDataByteSize = state.buffer_size;
+    for (i = 0; i < kNumberBuffers; ++i) {
+		AudioQueueAllocateBuffer(state.queue, state.bufferByteSize, &state.buffers[i]);
+		state.buffers[i]->mAudioDataByteSize = state.bufferByteSize;
 		AudioQueueEnqueueBuffer(state.queue, state.buffers[i], 0, NULL);
     }
+
+    AudioQueueSetParameter(state.queue, kAudioQueueParam_Volume, 1.0f);
     if (noErr != AudioQueueStart(state.queue, NULL)) puts("AudioQueueStart failed");
 }
 

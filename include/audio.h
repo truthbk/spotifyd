@@ -55,12 +55,13 @@ typedef struct audio_fifo {
 typedef void (* audio_init_ptr)(audio_fifo_t *);
 
 enum audio_arch {
-#ifdef _LINUX
     DUMMY = 1,
+#ifdef _LINUX
     ALSA,
-    OPENAL,
+    OPENAL_ARCH,
 #elif _OSX
-    OSX  = 1,
+    OPENAL_ARCH,
+    AUDIOTOOLKIT,
 #endif
 };
 
@@ -74,7 +75,11 @@ void openal_audio_init(audio_fifo_t *af);
 #endif
 void dummy_audio_init(audio_fifo_t *af);
 #elif _OSX
+#ifdef HAS_OPENAL
+void openal_audio_init(audio_fifo_t *af);
+#elif HAS_AUDIOTOOLKIT
 void osx_audio_init(audio_fifo_t *af);
+#endif
 #endif
 
 

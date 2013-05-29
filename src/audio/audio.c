@@ -28,6 +28,8 @@
 #include "audio.h"
 #include <stdlib.h>
 
+audio_init_ptr audio_init;
+
 audio_fifo_data_t* audio_get(audio_fifo_t *af)
 {
     audio_fifo_data_t *afd;
@@ -65,7 +67,11 @@ void set_audio_init( audio_init_ptr ptr ) {
 #ifdef _LINUX
         audio_init = dummy_audio_init;
 #elif _OSX
+#ifdef HAS_OPENAL
+        audio_init = openal_audio_init;
+#elif HAS_AUDIOTOOLKIT
         audio_init = osx_audio_init;
+#endif
 #endif
         return;
     }
@@ -79,30 +85,31 @@ int set_audio(enum audio_arch arch)
     switch(arch)
     {
 #ifdef _LINUX
-	case ALSA:
 #ifdef HAS_ALSA
+	case ALSA:
 	    set_audio_init(alsa_audio_init);
-#else
-	    set_audio_init(dummy_audio_init);
-	    ret = 1;
-#endif
 	    break;
-	case OPENAL:
-#ifdef HASH_OPENAL
+#endif
+#ifdef HAS_OPENAL
+	case OPENAL_ARCH:
 	    set_audio_init(openal_audio_init);
-#else
-	    set_audio_init(dummy_audio_init);
-	    ret = 1;
-#endif
 	    break;
+#endif
 	default:
 	    set_audio_init(dummy_audio_init);
 	    break;
 #endif
 #ifdef _OSX
-	case OSX:
-	default:
+#ifdef HAS_AUDIOTOOLKIT
+	case AUDIOTOOLKIT:
 	    set_audio_init(osx_audio_init);
+	    break;
+#endif
+#ifdef HAS_OPENAL
+	case OPENAL_ARCH:
+	    set_audio_init(openal_audio_init);
+#endif
+	default:
 	    break;
 #endif
 

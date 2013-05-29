@@ -54,7 +54,11 @@ XplodifyHandler::XplodifyHandler()
     //Nothing else
     enum audio_arch arch;
 #ifdef _OSX
-    arch = OSX;
+#ifdef HAS_OPENAL
+    arch = OPENAL_ARCH;
+#elif HAS_AUDIOTOOLKIT
+    arch = AUDIOTOOLKIT;
+#endif
 #else
 #ifdef _LINUX
     arch = ALSA;
@@ -613,9 +617,9 @@ int main(int argc, char **argv) {
 #ifdef HAS_ALSA
     arch = ALSA;
 #elif HAS_OPENAL
-    arch = OPENAL;
-#else
-    arch = OSX;
+    arch = OPENAL_ARCH;
+#elif HAS_AUDIOTOOLKIT
+    arch = AUDIOTOOLKIT;
 #endif
     set_audio(arch),
 
