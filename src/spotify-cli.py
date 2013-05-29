@@ -178,15 +178,16 @@ class spclient(object):
 
         return None
 
-    def spot_playback(self):
+    def spot_playback(self, cmd):
         try:
             #keeping it real simple for now.
-            self._client.sendCommand(self._credentials, SpotifyCmd.PLAY)
+            self._client.sendCommand(self._credentials, cmd)
 
         except Exception, e:
             logging.debug("Exception: %s", e)
             self._success = False
             return None
+
 
     def spot_getcurrent(self):
         return None
@@ -230,6 +231,7 @@ class XplodifyApp(urwid.Frame):
         self._plwalker = urwid.SimpleFocusListWalker([urwid.Button("(empty)")])
         self._tracks = {}
         self._active_tr_button = None
+        self._current_state = SpotifyCmd.PAUSE
         self._trwalker = urwid.SimpleFocusListWalker([urwid.Button("(empty)")])
         self.plpane = urwid.ListBox(self._plwalker)
         self.trackpane = urwid.ListBox(self._trwalker)
@@ -373,10 +375,26 @@ class XplodifyApp(urwid.Frame):
             w.set_attr_map({None: 'playback'})
             self._active_tr_button = w
 
-        logging.debug("Toggling playback for track: %s", track._name)
+        if self._current_state == SpotifyCmd.PLAY:
+            self.toggle_playback()
+
+        logging.debug("Selecting track: %s", track._name)
+
         self.spoticlient.select_track(track._name)
-        time.sleep(4)
-        self.spoticlient.spot_playback()
+        time.sleep(2)
+        self.toggle_playback()
+
+    def toggle_playback(self):
+        logging.debug("Toggling playback")
+        try:
+            if self._current_state == SpotifyCmd.PAUSE:
+                self.spoticlient.spot_playback(SpotifyCmd.PLAY)
+                self._current_state = SpotifyCmd.PLAY
+            elif self._current_state == SpotifyCmd.PLAY:
+                self.spoticlient.spot_playback(SpotifyCmd.PAUSE)
+                self._current_state = SpotifyCmd.PAUSE
+        except Exception, e:
+            logging.debug("Exception: %s", e)
 
 
     def set_playlist(self, button, playlist): 
@@ -394,7 +412,7 @@ class XplodifyApp(urwid.Frame):
         elif k == "f6":
             raise urwid.ExitMainLoop()
         elif k == "f7":
-            raise urwid.ExitMainLoop()
+            self.toggle_playback();
         elif k == "f8":
             raise urwid.ExitMainLoop()
         elif k == "f9":
