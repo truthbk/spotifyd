@@ -20,6 +20,9 @@ class XplodifyAudio
          : public Runnable
          , private Lockable {
 
+    public:
+        void enqueue_samples(audio_data * d);
+        void dequeue();
     protected:
         void initialize();
         // implemeting runnable
