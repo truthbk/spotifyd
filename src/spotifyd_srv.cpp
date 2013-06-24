@@ -546,37 +546,36 @@ int XplodifyHandler::music_playback(const sp_audioformat *format,
 	const void *frames, int num_frames)
 {
     size_t s;
-    audio_fifo_data_t *afd;
 
     if (num_frames == 0)
     {
 	return 0; // Audio discontinuity, do nothing
     }
 
-    pthread_mutex_lock(&m_audiofifo.mutex);
+    m_audio.lock();
 
     /* Buffer one second of audio */
     if (m_audiofifo.qlen > format->sample_rate)
     {
-	pthread_mutex_unlock(&m_audiofifo.mutex);
+        m_audio.unlock();
 	return 0;
     }
 
-    s = num_frames * sizeof(int16_t) * format->channels;
+    boost::shared_ptr<audio_data> afd =
+        boost::shared_ptr<audio_data>(new audio_data());
 
-    //dont want to malloc, change this to new....
-    afd = (audio_fifo_data_t *) malloc(sizeof(audio_fifo_data_t) + s);
-    memcpy(afd->samples, frames, s);
+    s = num_frames * format->channels;
+    afd->add_samples(reinterpret_cast<int16_t *>(frames), s);
 
     afd->nsamples = num_frames;
     afd->rate = format->sample_rate;
     afd->channels = format->channels;
 
-    TAILQ_INSERT_TAIL(&m_audiofifo.q, afd, link);
-    m_audiofifo.qlen += num_frames;
+    m_audio.enqueue_samples(afd);
+    //TAILQ_INSERT_TAIL(&m_audiofifo.q, afd, link);
 
-    pthread_cond_signal(&m_audiofifo.cond);
-    pthread_mutex_unlock(&m_audiofifo.mutex);
+    m_audio.cond_signal();
+    m_audio.unlock();
 
     return num_frames;
 }

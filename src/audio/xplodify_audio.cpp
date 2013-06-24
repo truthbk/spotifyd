@@ -4,37 +4,47 @@
 #include <OpenAL/al.h>
 #include <OpenAL/alc.h>
 
-void XplodifyAudio::initialize() {
-    return;
-}
-
-void XplodifyAudio::run() {
-    audio_fifo_t *af = aux;
-    audio_fifo_data_t *afd;
-    unsigned int frame = 0;
-    ALCdevice *device = NULL;
-    ALCcontext *context = NULL;
-    ALuint buffers[NUM_BUFFERS];
-    ALuint source;
-    ALint processed;
-    ALenum error;
-    ALint rate;
-    ALint channels;
-
-
+XplodifyAudio::XplodifyAudio() {
     device = alcOpenDevice(NULL); /* Use the default device */
-    if (!device) error_exit("failed to open device");
+    if (!device) {
+        error_exit("failed to open device");
+    }
+
     context = alcCreateContext(device, NULL);
     alcMakeContextCurrent(context);
     alListenerf(AL_GAIN, 1.0f);
     alDistanceModel(AL_NONE);
     alGenBuffers((ALsizei)NUM_BUFFERS, buffers);
     alGenSources(1, &source);
+}
+
+void XplodifyAudio::initialize() {
+    return;
+}
+
+int XplodifyAudio::queue_buffer(ALuint src, ALuint buffer) {
+    boost::shared_ptr<audio_data> ad = audio_queue.pop_front();
+
+    alBufferData(buffer,
+            ad->channels == 1 ? AL_FORMAT_MONO16 : AL_FORMAT_STEREO16,
+            &(ad->samples[0]), //elements are guaranteed to be contiguous!
+            ad->n_samples * ad->channels * sizeof(short),
+            ad->rate);
+    alSourceQueueBuffers(src, 1, &buffer);
+    return 1;
+}
+
+void XplodifyAudio::run() {
+
+    boost::shared_ptr<audio_data> ad;
+
+    unsigned int frame = 0;
+
 
     /* First prebuffer some audio */
-    queue_buffer(source, af, buffers[0]);
-    queue_buffer(source, af, buffers[1]);
-    queue_buffer(source, af, buffers[2]);
+    queue_buffer(source, buffers[0]);
+    queue_buffer(source, buffers[1]);
+    queue_buffer(source, buffers[2]);
     for (;;) {
 
         alSourcePlay(source);
@@ -49,20 +59,20 @@ void XplodifyAudio::run() {
             alSourceUnqueueBuffers(source, 1, &buffers[frame % 3]);
 
             /* and queue some more audio */
-            afd = audio_get(af);
+            ad = audio_queue.pop_front();
             alGetBufferi(buffers[frame % 3], AL_FREQUENCY, &rate);
             alGetBufferi(buffers[frame % 3], AL_CHANNELS, &channels);
-            if (afd->rate != rate || afd->channels != channels) {
+            if (ad->rate != rate || ad->channels != channels) {
                 printf("rate or channel count changed, resetting\n");
-                free(afd);
+                free(ad);
                 break;
             }
             alBufferData(buffers[frame % 3], 
-                    afd->channels == 1 ? AL_FORMAT_MONO16 : AL_FORMAT_STEREO16, 
-                    afd->samples, 
-                    afd->nsamples * afd->channels * sizeof(short), 
-                    afd->rate);
-            free(afd);
+                    ad->channels == 1 ? AL_FORMAT_MONO16 : AL_FORMAT_STEREO16, 
+                    &(ad->samples[0]), 
+                    ad->nsamples * ad->channels * sizeof(short), 
+                    ad->rate);
+
             alSourceQueueBuffers(source, 1, &buffers[frame % 3]);
 
             if ((error = alcGetError(device)) != AL_NO_ERROR) {
@@ -77,22 +87,27 @@ void XplodifyAudio::run() {
 
         /* Make sure we don't lose the audio packet that caused the change */
         alBufferData(buffers[0], 
-                afd->channels == 1 ? AL_FORMAT_MONO16 : AL_FORMAT_STEREO16, 
-                afd->samples, 
-                afd->nsamples * afd->channels * sizeof(short), 
-                afd->rate);
+                ad->channels == 1 ? AL_FORMAT_MONO16 : AL_FORMAT_STEREO16, 
+                &(ad->samples[0]), 
+                ad->nsamples * ad->channels * sizeof(short), 
+                ad->rate);
 
         alSourceQueueBuffers(source, 1, &buffers[0]);
-        queue_buffer(source, af, buffers[1]);
-        queue_buffer(source, af, buffers[2]);
+        queue_buffer(source, buffers[1]);
+        queue_buffer(source, buffers[2]);
         frame = 0;
     }
 
     return;
 }
 
-void XplodifyAudio::enqueue(audio_data * d) {
-    return;
+void XplodifyAudio::enqueue(boost::shared_ptr<audio_data>  d) {
+    if(!d) {
+        return;
+    }
+
+    audio_queue.push_back(d);
+    n_samples += d->n_samples;
 }
 
 void XplodifyAudio::dequeue() {
