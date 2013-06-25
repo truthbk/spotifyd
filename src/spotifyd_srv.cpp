@@ -531,8 +531,8 @@ sp_playlistcontainer * XplodifyHandler::getPlaylistContainer(SpotifyCredential& 
 }
 
 
-audio_fifo_t * XplodifyHandler::audio_fifo() {
-    return &m_audiofifo;
+XplodifyAudio& XplodifyHandler::audio() {
+    return m_audio;
 }
 
 void XplodifyHandler::notify_main_thread(void)
@@ -555,7 +555,7 @@ int XplodifyHandler::music_playback(const sp_audioformat *format,
     m_audio.lock();
 
     /* Buffer one second of audio */
-    if (m_audiofifo.qlen > format->sample_rate)
+    if (m_audio.qlen > format->sample_rate)
     {
         m_audio.unlock();
 	return 0;
@@ -565,14 +565,13 @@ int XplodifyHandler::music_playback(const sp_audioformat *format,
         boost::shared_ptr<audio_data>(new audio_data());
 
     s = num_frames * format->channels;
-    afd->add_samples(reinterpret_cast<int16_t *>(frames), s);
+    afd->add_samples(static_cast<const int16_t *>(frames), s);
 
-    afd->nsamples = num_frames;
+    afd->n_samples = num_frames;
     afd->rate = format->sample_rate;
     afd->channels = format->channels;
 
     m_audio.enqueue_samples(afd);
-    //TAILQ_INSERT_TAIL(&m_audiofifo.q, afd, link);
 
     m_audio.cond_signal();
     m_audio.unlock();
@@ -583,18 +582,18 @@ int XplodifyHandler::music_playback(const sp_audioformat *format,
 void XplodifyHandler::audio_fifo_stats(sp_audio_buffer_stats *stats)
 {
 
-    pthread_mutex_lock(&m_audiofifo.mutex);
+    m_audio.lock();
 
     stats->samples = m_audiofifo.qlen;
     stats->stutter = 0; //how do we calculate this?
 
-    pthread_cond_signal(&m_audiofifo.cond);
-    pthread_mutex_unlock(&m_audiofifo.mutex);
+    m_audio.cond_signal();
+    m_audio.unlock();
 
 }
 
 void XplodifyHandler::audio_fifo_flush_now() {
-    audio_fifo_flush(audio_fifo());
+    m_audio.flush_queue();
 }
 
 int main(int argc, char **argv) {

@@ -33,6 +33,14 @@ int XplodifyAudio::queue_buffer(ALuint src, ALuint buffer) {
     alSourceQueueBuffers(src, 1, &buffer);
     return 1;
 }
+ void XplodifyAudio::flush_queue() {
+     lock();
+     while(!audio_queue.empty()) {
+         audio_queue.pop_front();
+     }
+     qlen = 0;
+     unlock();
+ }
 
 void XplodifyAudio::run() {
 
@@ -70,7 +78,7 @@ void XplodifyAudio::run() {
             alBufferData(buffers[frame % 3], 
                     ad->channels == 1 ? AL_FORMAT_MONO16 : AL_FORMAT_STEREO16, 
                     &(ad->samples[0]), 
-                    ad->nsamples * ad->channels * sizeof(short), 
+                    ad->n_samples * ad->channels * sizeof(short), 
                     ad->rate);
 
             alSourceQueueBuffers(source, 1, &buffers[frame % 3]);
@@ -89,7 +97,7 @@ void XplodifyAudio::run() {
         alBufferData(buffers[0], 
                 ad->channels == 1 ? AL_FORMAT_MONO16 : AL_FORMAT_STEREO16, 
                 &(ad->samples[0]), 
-                ad->nsamples * ad->channels * sizeof(short), 
+                ad->n_samples * ad->channels * sizeof(short), 
                 ad->rate);
 
         alSourceQueueBuffers(source, 1, &buffers[0]);
@@ -107,7 +115,7 @@ void XplodifyAudio::enqueue(boost::shared_ptr<audio_data>  d) {
     }
 
     audio_queue.push_back(d);
-    n_samples += d->n_samples;
+    qlen += d->n_samples;
 }
 
 void XplodifyAudio::dequeue() {

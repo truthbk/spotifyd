@@ -15,7 +15,7 @@ struct audio_data {
         uint32_t n_samples;
         std::vector<int16_t> samples;
 
-        uint32_t add_samples(int16_t * smpl, uint32_t n) {
+        uint32_t add_samples(const int16_t * smpl, uint32_t n) {
             samples.assign(smpl, smpl+n );
         }
 }
@@ -27,17 +27,19 @@ class XplodifyAudio
 
     public:
         XplodifyAudio();
+        void initialize();
+        void flush_queue();
         void enqueue_samples(boost::shared_ptr<audio_data> d);
         void dequeue();
     protected:
-        void initialize();
         int queue_buffer(ALuint src, ALuint buffer);
         // implemeting runnable
         void run();
     private:
         ALCdevice *device = NULL;
         ALCcontext *context = NULL;
-#define NUM_BUFFERS 3
+
+        enum { NUM_BUFFERS = 3 };
         ALuint buffers[NUM_BUFFERS];
         ALuint source;
         ALint processed;
@@ -45,7 +47,7 @@ class XplodifyAudio
         ALint rate;
         ALint channels;
 
-        uint32_t n_samples;
+        uint32_t qlen;
         std::queue<boost::shared_ptr<audio_data> > audio_queue;
 }
 
