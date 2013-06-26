@@ -25,6 +25,9 @@ struct audio_data {
         }
 };
 
+//Forward declaration
+class XplodifyHandler;
+
 //This will probably end up being a superclass
 class XplodifyAudio 
          : public Runnable
@@ -35,6 +38,7 @@ class XplodifyAudio
         void flush_queue();
         void enqueue_samples(boost::shared_ptr<audio_data> d);
         boost::shared_ptr<audio_data> get_samples();
+        friend class XplodifyHandler;
     protected:
         void queue_buffer(ALuint src, ALuint buffer);
         // implemeting runnable
