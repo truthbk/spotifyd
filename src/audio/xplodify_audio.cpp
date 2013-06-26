@@ -1,15 +1,14 @@
 #include <cstdlib>
 #include "xplodify_audio.h"
 
-#include <OpenAL/al.h>
-#include <OpenAL/alc.h>
 
 XplodifyAudio::XplodifyAudio() 
     : Runnable()
     , Lockable() {
     device = alcOpenDevice(NULL); /* Use the default device */
     if (!device) {
-        error_exit("failed to open device");
+        //TODO: exit cleanly.
+        exit(1);
     }
 
     context = alcCreateContext(device, NULL);
@@ -20,8 +19,8 @@ XplodifyAudio::XplodifyAudio()
     alGenSources(1, &source);
 }
 
-int XplodifyAudio::queue_buffer(ALuint src, ALuint buffer) {
-    boost::shared_ptr<audio_data> ad = audio_queue.pop_front();
+void XplodifyAudio::queue_buffer(ALuint src, ALuint buffer) {
+    boost::shared_ptr<audio_data> ad = get_samples();
 
     alBufferData(buffer,
             ad->channels == 1 ? AL_FORMAT_MONO16 : AL_FORMAT_STEREO16,
@@ -29,13 +28,14 @@ int XplodifyAudio::queue_buffer(ALuint src, ALuint buffer) {
             ad->n_samples * ad->channels * sizeof(short),
             ad->rate);
     alSourceQueueBuffers(src, 1, &buffer);
-    return 1;
+
+    return;
 }
 
 void XplodifyAudio::flush_queue() {
      lock();
      while(!audio_queue.empty()) {
-         audio_queue.pop_front();
+         audio_queue.pop();
      }
      qlen = 0;
      unlock();
@@ -107,13 +107,15 @@ void XplodifyAudio::run() {
     return;
 }
 
-void XplodifyAudio::enqueue(boost::shared_ptr<audio_data>  d) {
+void XplodifyAudio::enqueue_samples(boost::shared_ptr<audio_data> d) {
     if(!d) {
         return;
     }
 
-    audio_queue.push_back(d);
+    lock();
+    audio_queue.push(d);
     qlen += d->n_samples;
+    unlock();
 }
 
 boost::shared_ptr<audio_data> XplodifyAudio::get_samples() {
@@ -121,7 +123,8 @@ boost::shared_ptr<audio_data> XplodifyAudio::get_samples() {
     while(audio_queue.empty()) 
         cond_wait();
 
-    boost::shared_ptr<audio_data> ad = audio_queue.pop_front();
+    boost::shared_ptr<audio_data> ad = audio_queue.front();
+    audio_queue.pop();
     qlen -= ad->n_samples;
     unlock();
 
