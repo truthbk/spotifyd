@@ -13,11 +13,12 @@ set(ThriftPyGen_SRCS
 	)
 
 set(Spotifyd_SRCS
-	spotifyd_srv.cpp
-	xplodify_sess.cpp
-	xplodify_pl.cpp
-	xplodify_track.cpp
-	)
+        audio/xplodify_audio.cpp
+        spotifyd_srv.cpp
+        xplodify_sess.cpp
+        xplodify_pl.cpp
+        xplodify_track.cpp
+        )
 
 #if this doesn't work add it to the top-level
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/gen-cpp)
@@ -25,27 +26,27 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/gen-cpp)
 #build thrift lib
 add_library(SpotifydThrift ${ThriftGen_SRCS})
 
-#build audio lib
-if(APPLE)
-	if(OPENAL_FOUND)
-		set(Audio_SRCS ${Audio_SRCS} audio/openal-audio.c) 
-	endif(OPENAL_FOUND)
-	add_library(spotaudio audio/audio.c audio/osx-audio.c audio/dummy-audio.c ${Audio_SRCS})
-else(APPLE)
-	if(OPENAL_FOUND)
-		set(Audio_SRCS ${Audio_SRCS} audio/openal-audio.c) 
-	endif(OPENAL_FOUND)
-	if(ALSA_FOUND)
-		set(Audio_SRCS ${Audio_SRCS} audio/alsa-audio.c) 
-	endif(ALSA_FOUND)
-	add_library(spotaudio audio/audio.c audio/dummy-audio.c ${Audio_SRCS} )
-endif(APPLE)
+##build audio lib
+#if(APPLE)
+#	if(OPENAL_FOUND)
+#		set(Audio_SRCS ${Audio_SRCS} audio/openal-audio.c) 
+#	endif(OPENAL_FOUND)
+#	add_library(spotaudio audio/audio.c audio/osx-audio.c audio/dummy-audio.c ${Audio_SRCS})
+#else(APPLE)
+#	if(OPENAL_FOUND)
+#		set(Audio_SRCS ${Audio_SRCS} audio/openal-audio.c) 
+#	endif(OPENAL_FOUND)
+#	if(ALSA_FOUND)
+#		set(Audio_SRCS ${Audio_SRCS} audio/alsa-audio.c) 
+#	endif(ALSA_FOUND)
+#	add_library(spotaudio audio/audio.c audio/dummy-audio.c ${Audio_SRCS} )
+#endif(APPLE)
 
 add_executable(spotifyd ${Spotifyd_SRCS})
 if(UNIX AND NOT APPLE)
-	target_link_libraries(spotifyd SpotifydThrift spotaudio ${Boost_LIBRARIES} ${ALSA_LIBRARIES} ${Spotify_LIB} ${Thrift_LIBS} ${LibEvent_LIBS} )
+	target_link_libraries(spotifyd SpotifydThrift ${Boost_LIBRARIES} ${ALSA_LIBRARIES} ${Spotify_LIB} ${Thrift_LIBS} ${LibEvent_LIBS} )
 elseif(APPLE)
-	target_link_libraries(spotifyd SpotifydThrift spotaudio ${Boost_LIBRARIES} ${Spotify_LIB} ${Thrift_LIBS} ${LibEvent_LIBS} ${COREAUDIO} ${AUDIOUNIT} ${AUDIOTOOLBOX} ${OPENAL_LIBRARY})
+	target_link_libraries(spotifyd SpotifydThrift ${Boost_LIBRARIES} ${Spotify_LIB} ${Thrift_LIBS} ${LibEvent_LIBS} ${COREAUDIO} ${AUDIOUNIT} ${AUDIOTOOLBOX} ${OPENAL_LIBRARY})
 endif()
 
 add_custom_command(

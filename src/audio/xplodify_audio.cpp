@@ -4,7 +4,9 @@
 #include <OpenAL/al.h>
 #include <OpenAL/alc.h>
 
-XplodifyAudio::XplodifyAudio() {
+XplodifyAudio::XplodifyAudio() 
+    : Runnable()
+    , Lockable() {
     device = alcOpenDevice(NULL); /* Use the default device */
     if (!device) {
         error_exit("failed to open device");
@@ -18,10 +20,6 @@ XplodifyAudio::XplodifyAudio() {
     alGenSources(1, &source);
 }
 
-void XplodifyAudio::initialize() {
-    return;
-}
-
 int XplodifyAudio::queue_buffer(ALuint src, ALuint buffer) {
     boost::shared_ptr<audio_data> ad = audio_queue.pop_front();
 
@@ -33,7 +31,8 @@ int XplodifyAudio::queue_buffer(ALuint src, ALuint buffer) {
     alSourceQueueBuffers(src, 1, &buffer);
     return 1;
 }
- void XplodifyAudio::flush_queue() {
+
+void XplodifyAudio::flush_queue() {
      lock();
      while(!audio_queue.empty()) {
          audio_queue.pop_front();
@@ -67,12 +66,11 @@ void XplodifyAudio::run() {
             alSourceUnqueueBuffers(source, 1, &buffers[frame % 3]);
 
             /* and queue some more audio */
-            ad = audio_queue.pop_front();
+            ad = get_samples();
             alGetBufferi(buffers[frame % 3], AL_FREQUENCY, &rate);
             alGetBufferi(buffers[frame % 3], AL_CHANNELS, &channels);
             if (ad->rate != rate || ad->channels != channels) {
                 printf("rate or channel count changed, resetting\n");
-                free(ad);
                 break;
             }
             alBufferData(buffers[frame % 3], 
@@ -118,6 +116,14 @@ void XplodifyAudio::enqueue(boost::shared_ptr<audio_data>  d) {
     qlen += d->n_samples;
 }
 
-void XplodifyAudio::dequeue() {
-    return;
+boost::shared_ptr<audio_data> XplodifyAudio::get_samples() {
+    lock();
+    while(audio_queue.empty()) 
+        cond_wait();
+
+    boost::shared_ptr<audio_data> ad = audio_queue.pop_front();
+    qlen -= ad->n_samples;
+    unlock();
+
+    return ad;
 }

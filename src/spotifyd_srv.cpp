@@ -22,6 +22,7 @@
 
 #include "xplodify_sess.h"
 #include "xplodify_pl.h"
+#include "xplodify_audio.h"
 #include "spotify_cust.h"
 
 
@@ -47,25 +48,13 @@ bool SpotifyCredential::operator < (const SpotifyCredential & other) const
 XplodifyHandler::XplodifyHandler()
     : Runnable()
     , Lockable()
+    , m_audio()
     , m_sess_it(m_session_cache.get<0>().begin())
     , m_playback_done(1)
     , m_notify_events(0)
 {
-    //Nothing else
-    enum audio_arch arch;
-#ifdef _OSX
-#ifdef HAS_OPENAL
-    arch = OPENAL_ARCH;
-#elif HAS_AUDIOTOOLKIT
-    arch = AUDIOTOOLKIT;
-#endif
-#else
-#ifdef _LINUX
-    arch = ALSA;
-#endif
-#endif
-    set_audio(arch);
-    audio_init(&m_audiofifo);
+    //start audio queue
+    m_audio.start();
 }
 
 
@@ -542,6 +531,7 @@ void XplodifyHandler::notify_main_thread(void)
     unlock();
 }
 
+//TODO: m_audio should implement scoped_locks.
 int XplodifyHandler::music_playback(const sp_audioformat *format,
 	const void *frames, int num_frames)
 {
@@ -584,7 +574,7 @@ void XplodifyHandler::audio_fifo_stats(sp_audio_buffer_stats *stats)
 
     m_audio.lock();
 
-    stats->samples = m_audiofifo.qlen;
+    stats->samples = m_audio.qlen;
     stats->stutter = 0; //how do we calculate this?
 
     m_audio.cond_signal();
@@ -610,16 +600,6 @@ int main(int argc, char **argv) {
     boost::shared_ptr<TProtocolFactory> protocolFactory(new TBinaryProtocolFactory());
 
     TSimpleServer server(processor, serverTransport, transportFactory, protocolFactory);
-
-    //configure audio architecture
-#ifdef HAS_ALSA
-    arch = ALSA;
-#elif HAS_OPENAL
-    arch = OPENAL_ARCH;
-#elif HAS_AUDIOTOOLKIT
-    arch = AUDIOTOOLKIT;
-#endif
-    set_audio(arch),
 
     sHandler->start();
     server.serve();

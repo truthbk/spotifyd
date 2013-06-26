@@ -27,10 +27,9 @@ class XplodifyAudio
 
     public:
         XplodifyAudio();
-        void initialize();
         void flush_queue();
         void enqueue_samples(boost::shared_ptr<audio_data> d);
-        void dequeue();
+        boost::shared_ptr<audio_data> get_samples();
     protected:
         int queue_buffer(ALuint src, ALuint buffer);
         // implemeting runnable
