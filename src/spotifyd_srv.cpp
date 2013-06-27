@@ -562,8 +562,8 @@ int XplodifyHandler::music_playback(const sp_audioformat *format,
     afd->channels = format->channels;
 
     m_audio.enqueue_samples(afd);
-
     m_audio.cond_signal();
+
     m_audio.unlock();
 
     return num_frames;

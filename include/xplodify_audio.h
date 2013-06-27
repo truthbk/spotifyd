@@ -14,8 +14,8 @@ extern "C" {
 
 struct audio_data {
     public:
-        uint32_t channels;
-        uint32_t rate;
+        int32_t channels;
+        int32_t rate;
         uint32_t n_samples;
         std::vector<int16_t> samples;
 

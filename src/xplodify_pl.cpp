@@ -15,19 +15,19 @@ extern "C" {
 }
 
 const sp_playlist_callbacks XplodifyPlaylist::cbs = {
-    cb_tracks_added,
-    cb_tracks_removed,
-    cb_tracks_moved,
-    cb_playlist_renamed,
-    cb_playlist_state_changed,
-    cb_playlist_update_in_progress,
-    cb_playlist_metadata_updated,
-    cb_track_created_changed,
-    cb_track_seen_changed,
-    cb_description_changed,
-    cb_image_changed,
-    cb_track_message_changed,
-    cb_subscribers_changed
+    .tracks_added = cb_tracks_added,
+    .tracks_removed = cb_tracks_removed,
+    .tracks_moved = cb_tracks_moved,
+    .playlist_renamed = cb_playlist_renamed,
+    .playlist_state_changed = cb_playlist_state_changed,
+    .playlist_update_in_progress = cb_playlist_update_in_progress,
+    .playlist_metadata_updated = cb_playlist_metadata_updated,
+    .track_created_changed = cb_track_created_changed,
+    .track_seen_changed = cb_track_seen_changed,
+    .description_changed = cb_description_changed,
+    .image_changed = cb_image_changed,
+    .track_message_changed = cb_track_message_changed,
+    .subscribers_changed = cb_subscribers_changed
 };
 
 XplodifyPlaylist::XplodifyPlaylist(boost::shared_ptr<XplodifySession> sess) 
@@ -45,7 +45,7 @@ XplodifyPlaylist::remove_track_from_cache(int idx) {
     track_cache_by_rand& tr_cache_rand = m_track_cache.get<0>();
     track_cache_by_rand::const_iterator cit = tr_cache_rand.begin();
 
-    cit = cit+idx-1;
+    cit = cit+(idx-1);
     boost::shared_ptr<XplodifyTrack> ret_track(cit->track);
 
     tr_cache_rand.erase(cit);
