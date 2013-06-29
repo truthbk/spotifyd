@@ -288,6 +288,7 @@ void XplodifySession::play_token_lost()
 
 void XplodifySession::logged_in(sp_session *sess, sp_error error) {
     //We've logged in succesfully, lets load pl container, and pl's
+    m_loggedin = true;
     m_plcontainer = get_pl_container(); 
 
 #if _DEBUG
@@ -363,6 +364,9 @@ void XplodifySession::notify_main_thread(sp_session *sess)
 void SP_CALLCONV XplodifySession::cb_logged_in(
         sp_session *sess, sp_error error) {
 
+#if _DEBUG
+    std::cout << "Session Logged In callback reached." << std::endl;
+#endif
     XplodifySession * s = XplodifySession::get_session_from_udata(sess);
     if(!s) {
         return;

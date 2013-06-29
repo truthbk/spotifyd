@@ -143,6 +143,9 @@ void XplodifyHandler::loginSession(SpotifyCredential& _return, const SpotifyCred
         t->async_wait(boost::bind(&XplodifyHandler::login_timeout,
                     this, boost::asio::placeholders::error, uuid_str));
 
+        m_timers.insert(
+                std::pair< std::string, boost::asio::deadline_timer *>(uuid_str, t));
+
         _return = cred;
         _return.__set__uuid(uuid_str);
         unlock();
@@ -170,6 +173,9 @@ void XplodifyHandler::login_timeout(const boost::system::error_code&,
     }
 
     if(sess->get_logged_in()) {
+#ifdef _DEBUG
+        std::cout << "Session: " << uuid << " Logged in succesfully.\n";
+#endif
         return;
     }
 
@@ -178,8 +184,10 @@ void XplodifyHandler::login_timeout(const boost::system::error_code&,
 
     remove_from_cache(uuid);
 
+    //should cleanup further?
     sess->flush();
     sess.reset();
+
     unlock();
 }
 
