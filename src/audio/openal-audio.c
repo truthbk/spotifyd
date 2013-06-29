@@ -25,8 +25,13 @@
  * This file is part of the libspotify examples suite.
  */
 
+#ifdef _OSX
 #include <OpenAL/al.h>
 #include <OpenAL/alc.h>
+#else
+#include <AL/al.h>
+#include <AL/alc.h>
+#endif
 #include <errno.h>
 #include <math.h>
 #include <stdio.h>
