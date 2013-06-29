@@ -51,7 +51,7 @@ XplodifyHandler::XplodifyHandler()
     , Lockable()
     , m_audio()
     , m_sess_it(m_session_cache.get<0>().begin())
-    , m_playback_done(1)
+    , m_playback_done(0)
     , m_notify_events(0)
 {
     //start audio queue
@@ -543,6 +543,7 @@ void XplodifyHandler::notify_main_thread(void)
 {
     lock();
     m_notify_events = 1;
+    cond_signal();
     unlock();
 }
 
