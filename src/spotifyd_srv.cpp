@@ -181,7 +181,7 @@ void XplodifyHandler::login_timeout(const boost::system::error_code&,
 
     if(sess->get_logged_in()) {
 #ifdef _DEBUG
-        std::cout << "Session: " << uuid << " Logged in succesfully.\n";
+        std::cout << "Session: " << uuid << " Succesfully logged in ...\n";
 #endif
         return;
     }

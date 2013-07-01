@@ -290,6 +290,7 @@ void XplodifySession::logged_in(sp_session *sess, sp_error error) {
     //We've logged in succesfully, lets load pl container, and pl's
     m_loggedin = true;
     m_plcontainer = get_pl_container(); 
+    m_loggedin = true;
 
 #if _DEBUG
     std::cout << "Session " << m_uuid << " logged in succesfully." << std::endl;
