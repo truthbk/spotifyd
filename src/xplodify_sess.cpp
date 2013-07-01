@@ -79,8 +79,8 @@ int XplodifySession::init_session(const uint8_t * appkey, size_t appkey_size) {
     sp_error err;
 
     m_spconfig.api_version = SPOTIFY_API_VERSION;
-    m_spconfig.cache_location = "tmp";
-    m_spconfig.settings_location = "tmp";
+    m_spconfig.cache_location = SP_TMPDIR;
+    m_spconfig.settings_location = SP_TMPDIR;
     m_spconfig.application_key = appkey;
     m_spconfig.application_key_size = appkey_size; // Set in main()
     m_spconfig.user_agent = "spotifyd";

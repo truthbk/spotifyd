@@ -54,6 +54,8 @@ const uint8_t g_appkey[] = {
 
 const size_t g_appkey_size = sizeof(g_appkey);
 
+#define SP_TMPDIR "/tmp/spotifyd"
+
 
 //Forward declaration
 class XplodifySession;
@@ -172,7 +174,7 @@ class XplodifyHandler
         typedef std::map<std::string, boost::asio::deadline_timer *> timer_map;
         timer_map m_timers;
         boost::asio::io_service m_io;
-        const size_t LOGIN_TO = 1;
+        const size_t LOGIN_TO = 2;
 
 
         void login_timeout(const boost::system::error_code&,
