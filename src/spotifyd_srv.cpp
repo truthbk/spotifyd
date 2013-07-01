@@ -48,7 +48,7 @@ XplodifyHandler::XplodifyHandler()
     : Runnable()
     , Lockable()
     , m_sess_it(m_session_cache.get<0>().begin())
-    , m_playback_done(0)
+    , m_playback_done(1)
     , m_notify_events(0)
 {
     //Nothing else
@@ -181,6 +181,9 @@ void XplodifyHandler::login_timeout(const boost::system::error_code&,
     }
 
     if(sess->get_logged_in()) {
+#ifdef _DEBUG
+        std::cout << "Session: " << uuid << " Succesfully logged in ...\n";
+#endif
         return;
     }
 
