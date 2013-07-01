@@ -13,6 +13,7 @@
 #include <boost/uuid/uuid_generators.hpp>
 #include <boost/uuid/uuid_io.hpp>
 #include <boost/lexical_cast.hpp>
+#include <boost/filesystem.hpp>
 
 #include <iostream>
 #include <cstring>
@@ -132,7 +133,14 @@ void XplodifyHandler::loginSession(SpotifyCredential& _return, const SpotifyCred
     boost::shared_ptr< XplodifySession > sess = get_session(cred._uuid);
     if(!sess) {
         sess = XplodifySession::create(this);
-        sess->init_session(g_appkey, g_appkey_size );
+        if(sess->init_session(g_appkey, g_appkey_size )) {
+            //can't continue....
+#ifdef _DEBUG
+            std::cout << "Unexpected error creating session. "<< std::endl;
+#endif
+            sess.reset();
+            return;
+        }
 
         sess->login(cred._username, cred._passwd);
 
@@ -153,6 +161,8 @@ void XplodifyHandler::loginSession(SpotifyCredential& _return, const SpotifyCred
         t->expires_from_now(boost::posix_time::seconds(LOGIN_TO));
         t->async_wait(boost::bind(&XplodifyHandler::login_timeout,
                     this, boost::asio::placeholders::error, uuid_str));
+
+        m_timers.insert(std::pair< std::string, boost::asio::deadline_timer *>(uuid_str, t));
 
         _return = cred;
         _return.__set__uuid(uuid_str);
@@ -616,6 +626,9 @@ int main(int argc, char **argv) {
     boost::shared_ptr<TProtocolFactory> protocolFactory(new TBinaryProtocolFactory());
 
     TSimpleServer server(processor, serverTransport, transportFactory, protocolFactory);
+
+    //create temporary dir structure
+    boost::filesystem::create_directories( SP_TMPDIR );
 
     //configure audio architecture
 #ifdef HAS_ALSA
