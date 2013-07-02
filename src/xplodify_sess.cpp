@@ -102,12 +102,7 @@ int XplodifySession::init_session(const uint8_t * appkey, size_t appkey_size) {
     session_callbacks.streaming_error = cb_streaming_error;
     session_callbacks.get_audio_buffer_stats = cb_get_audio_buffer_stats;
     session_callbacks.userinfo_updated = cb_userinfo_updated;
-#if 0 //PENDING
-    pl_callbacks.tracks_added = &tracks_added;
-    pl_callbacks.tracks_removed = &tracks_removed;
-    pl_callbacks.tracks_moved = &tracks_moved;
-    pl_callbacks.playlist_renamed = &playlist_renamed;
-#endif
+
     m_spconfig.callbacks = &session_callbacks;
 
     err = sp_session_create( &m_spconfig, &m_session );
