@@ -87,6 +87,7 @@ int XplodifySession::init_session(const uint8_t * appkey, size_t appkey_size) {
     m_spconfig.userdata = this; //we'll use this in callbacks
 
     //get callbacks ready
+    memset(&session_callbacks, 0, sizeof(session_callbacks));
     session_callbacks.connection_error = cb_connection_error;
     session_callbacks.logged_in = cb_logged_in;
     session_callbacks.logged_out = cb_logged_out;
