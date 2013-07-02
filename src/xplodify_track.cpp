@@ -15,7 +15,8 @@ extern "C" {
 //TODO: exceptions.
 
 XplodifyTrack::XplodifyTrack(boost::shared_ptr<XplodifySession> sess) 
-    : m_sess(sess) {
+    : m_sess(sess) 
+    , m_track(NULL){
         //empty
 }
 
