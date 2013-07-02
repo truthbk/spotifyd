@@ -276,7 +276,7 @@ class XplodifyApp(urwid.Frame):
         passwd = self.loginview.original_widget.widget_list[1].get_edit_text()
         if not self.logged:
             self.logged = self.spoticlient.login(username, passwd)
-        time.sleep(4)
+        time.sleep(10)
         if self.logged:
             self.header.original_widget.set_text(u"Logged in as "+username) 
             self.get_playlists()
