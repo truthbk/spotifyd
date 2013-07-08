@@ -307,9 +307,11 @@ class XplodifyApp(urwid.Frame):
         passwd = self.loginview.original_widget.widget_list[1].get_edit_text()
         if not self.logged:
             self.logged = self.spoticlient.login(username, passwd)
-        time.sleep(10)
+        time.sleep(20)
         if self.logged:
             self.header.original_widget.set_text(u"Logged in as "+username)
+            logging.debug("Retrieving playlists.")
+
             self.get_playlists()
             self.mainview.set_focus_column(0)
         self.body = self.mainview
@@ -328,6 +330,7 @@ class XplodifyApp(urwid.Frame):
     def get_playlists(self):
         try:
             self._playlists = list(self.spoticlient.get_playlists())
+            logging.debug("Retrieved %d playlists: ", len(self._playlists))
         except Exception, e:
             self._playlists = []
             logging.debug("Exception: %s", e)

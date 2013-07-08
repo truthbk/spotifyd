@@ -57,6 +57,8 @@ void XplodifyAudio::run() {
                 free(afd);
                 break;
             }
+
+            std::cout << "Buffering data. " << ad->n_samples << " samples" << std::endl;
             alBufferData(buffers[frame % 3], 
                     afd->channels == 1 ? AL_FORMAT_MONO16 : AL_FORMAT_STEREO16, 
                     afd->samples, 

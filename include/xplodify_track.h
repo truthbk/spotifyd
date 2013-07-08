@@ -23,7 +23,7 @@ class XplodifyTrack
 
         bool          load(sp_track * track);
         void          unload();
-        bool          is_loading();
+        bool          is_loaded();
         std::string   get_name();
         int           get_duration();
         int           get_num_artists();
@@ -35,8 +35,8 @@ class XplodifyTrack
         sp_error      get_track_error();
     private:
         friend class XplodifySession;
-        sp_track *                            m_track;
         boost::shared_ptr<XplodifySession>    m_sess;
+        sp_track *                            m_track;
 };
 
 #endif
