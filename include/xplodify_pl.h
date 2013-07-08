@@ -34,9 +34,11 @@ class XplodifyPlaylist :
         ~XplodifyPlaylist();
 
         bool load(sp_playlist * pl);
+        bool load(sp_playlist * pl, int32_t pos);
         bool unload();
         void flush();
         bool load_tracks();
+        bool is_loaded();
         std::string get_name();
         size_t get_num_tracks();
         boost::shared_ptr<XplodifyTrack> get_track_at(size_t idx);
@@ -132,6 +134,9 @@ class XplodifyPlaylist :
         sp_playlist *                                  m_playlist;
         bool                                           m_loading;
 
+        //LOAD_WAIT
+        enum { LOAD_WAIT_MS = 200 };
+
 };
 
 //NOTE: should this be lockable? I'm not sure Spotify C api enfores thread safety.
@@ -199,6 +204,9 @@ class XplodifyPlaylistContainer :
         static const sp_playlistcontainer_callbacks cbs;
 
         pl_cache                           m_pl_cache;
+        std::vector< 
+            boost::shared_ptr<XplodifyPlaylist> >
+                                           m_loading_cache;
         sp_playlistcontainer *             m_plcontainer;
         boost::shared_ptr<XplodifySession> m_session;
         bool                               m_loading;

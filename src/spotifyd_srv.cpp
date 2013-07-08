@@ -115,10 +115,10 @@ void XplodifyHandler::run()
             unlock();
         } while (next_timeout == 0);
 
-        lock();
-
         m_io.poll();
         m_io.reset();
+
+        lock();
     }
 }
 
@@ -178,8 +178,10 @@ void XplodifyHandler::login_timeout(const boost::system::error_code&,
 
     //Free up resources, cleanup.
     if(it != m_timers.end()) {
+        lock();
         delete it->second;
         m_timers.erase(it);
+        unlock();
     } else {
         return;
     }
@@ -252,8 +254,7 @@ void XplodifyHandler::logoutSession(const SpotifyCredential& cred) {
 }
 
 void XplodifyHandler::sendCommand(const SpotifyCredential& cred, const SpotifyCmd::type cmd) {
-    // Your implementation goes here
-    printf("sendCommand\n");
+    std::cout << "sendCommand" << std::endl;
 
     boost::shared_ptr<XplodifySession> sess = get_session(cred._uuid);
     if(!sess) {
@@ -326,6 +327,9 @@ void XplodifyHandler::getPlaylists(SpotifyPlaylistList& _return, const SpotifyCr
     }
 
     int n =  pc->get_num_playlists();
+#ifdef _DEBUG
+    std::cout << "About to retrieve " << n << "playlists.";
+#endif
     for (int i = 0; i<n; ++i)
     {
         boost::shared_ptr<XplodifyPlaylist> pl = pc->get_playlist(i);
@@ -358,6 +362,11 @@ void XplodifyHandler::getPlaylist(SpotifyPlaylist& _return, const SpotifyCredent
 
     for(unsigned int j = 0 ; j < pl->get_num_tracks() ; j++ ) {
         boost::shared_ptr<XplodifyTrack> tr = pl->get_track_at(j);
+#ifdef _DEBUG
+        if(!tr->is_loaded()) {
+            std::cout << "Track at index: "<<  j << " is loading" << std::endl;
+        }
+#endif
 	int duration = tr->get_duration(); //millisecs?
 	SpotifyTrack spt;
 
@@ -380,7 +389,7 @@ void XplodifyHandler::getPlaylistByName(
         const std::string& name) {
 
 #ifdef _DEBUG
-    std::cerr << "getPlaylistByName: " << name << "\n";
+    std::cout << "getPlaylistByName: " << name << "\n";
 #endif
 
     boost::shared_ptr<XplodifySession> sess = get_session(cred._uuid);
@@ -401,24 +410,31 @@ void XplodifyHandler::getPlaylistByName(
 
     for(unsigned int j = 0 ; j < pl->get_num_tracks() ; j++ ) {
         boost::shared_ptr<XplodifyTrack> tr = pl->get_track_at(j);
-	int duration = tr->get_duration(); //millisecs?
-	//boost::shared_ptr<SpotifyTrack> spt(new SpotifyTrack());
-        SpotifyTrack spt;
+        if(tr->is_loaded()) {
+            int duration = tr->get_duration(); //millisecs?
+            //boost::shared_ptr<SpotifyTrack> spt(new SpotifyTrack());
+            SpotifyTrack spt;
 
-	spt.__set__id( j );
-	spt.__set__name( tr->get_name() );
-	spt.__set__artist( tr->get_artist(0) ); //first artist (this sucks).
-	spt.__set__minutes( duration / 60000 );
-	spt.__set__seconds( (duration / 1000) % 60 );
-	spt.__set__popularity( tr->get_popularity() );
-	spt.__set__starred( tr->is_starred() );
-	spt.__set__genre( "unknown" );
-	_return.push_back(spt);
+            spt.__set__id( j );
+            spt.__set__name( tr->get_name() );
+            spt.__set__artist( tr->get_artist(0) ); //first artist (this sucks).
+            spt.__set__minutes( duration / 60000 );
+            spt.__set__seconds( (duration / 1000) % 60 );
+            spt.__set__popularity( tr->get_popularity() );
+            spt.__set__starred( tr->is_starred() );
+            spt.__set__genre( "unknown" );
+            _return.push_back(spt);
+        }
+#ifdef _DEBUG
+        else {
+            std::cout << "Track at index:  "<<  j << " is loading" << std::endl;
+        }
+#endif
     }
 #ifdef _DEBUG
     SpotifyPlaylist::const_iterator it;
     for(it = _return.begin() ; it != _return.end() ; it++) {
-        std::cerr << (*it)._name << "\n";
+        std::cout << (*it)._name << "\n";
     }
 #endif
 
@@ -592,6 +608,10 @@ int XplodifyHandler::music_playback(const sp_audioformat *format,
     pthread_cond_signal(&m_audiofifo.cond);
     pthread_mutex_unlock(&m_audiofifo.mutex);
 
+#ifdef _DEBUG
+    std::cout << "Succesfully(?) queued " << num_frames 
+        << " audio frames" << std::endl;
+#endif
     return num_frames;
 }
 
@@ -644,6 +664,7 @@ int main(int argc, char **argv) {
     server.serve();
 
     //TODO: proper cleanup
+    boost::filesystem::remove_all( SP_TMPDIR );
 
     return 0;
 }
