@@ -73,6 +73,8 @@ void XplodifyAudio::run() {
                 printf("rate or channel count changed, resetting\n");
                 break;
             }
+
+            std::cout << "Buffering data. " << ad->n_samples << " samples" << std::endl;
             alBufferData(buffers[frame % 3], 
                     ad->channels == 1 ? AL_FORMAT_MONO16 : AL_FORMAT_STEREO16, 
                     &(ad->samples[0]), 

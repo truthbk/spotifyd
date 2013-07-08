@@ -23,7 +23,7 @@ extern "C" {
 
 XplodifySession::XplodifySession() 
     :m_session(NULL)
-    ,m_plcontainer()
+    ,m_plcontainer(NULL)
     ,m_playlist()
     ,m_track()
     ,m_handler(NULL)
@@ -38,7 +38,7 @@ XplodifySession::XplodifySession()
 
 XplodifySession::XplodifySession(XplodifyHandler * h) 
     :m_session(NULL)
-    ,m_plcontainer()
+    ,m_plcontainer(NULL)
     ,m_playlist()
     ,m_track()
     ,m_handler(h)
@@ -142,10 +142,11 @@ boost::shared_ptr<XplodifyPlaylistContainer> XplodifySession::get_pl_container(v
     }
 
     m_plcontainer.reset(new XplodifyPlaylistContainer(shared_from_this()));
+#ifdef _DEBUG
+    std::cout << "Loading playlist container..." << std::endl;
+#endif
 
-    if (!m_plcontainer->load(c)) {
-        m_plcontainer.reset();
-    }
+    m_plcontainer->load(c);
 
     return m_plcontainer;
 }
@@ -254,6 +255,10 @@ void selectPlaylist(const SpotifyCredential& cred, const std::string& playlist) 
 
 
 void XplodifySession::end_of_track() {
+    set_playback_done(1);
+#if _DEBUG
+    std::cout << "Track has finished." << std::endl;
+#endif
 #if 0
     lock();
     m_playback_done = 1;
@@ -306,12 +311,18 @@ void XplodifySession::flush() {
 
 void XplodifySession::start_playback()
 {
+#if _DEBUG
+    std::cout << "Starting playback." << std::endl;
+#endif
     sp_session_player_play(m_session, 1);
     return;
 }
 
 void XplodifySession::stop_playback()
 {
+#if _DEBUG
+    std::cout << "Stopping playback." << std::endl;
+#endif
     sp_session_player_play(m_session, 0);
     return;
 }
@@ -345,9 +356,6 @@ int XplodifySession::music_delivery(sp_session *sess, const sp_audioformat *form
     int n_frames;
 
     n_frames = m_handler->music_playback(format, frames, num_frames);
-#ifdef _DEBUG
-    std::cout << "Delivering " << n_frames << " for session: " << m_uuid << std::endl;
-#endif
     return n_frames;
 }
 

@@ -33,7 +33,7 @@ void XplodifyTrack::unload(){
     sp_track_release(m_track);
     m_track = NULL;
 }
-bool XplodifyTrack::is_loading(){
+bool XplodifyTrack::is_loaded(){
     if(!m_track) {
         return false;
     }
@@ -94,3 +94,4 @@ void XplodifyTrack::set_starred(bool star){
 sp_error XplodifyTrack::get_track_error(){
     return sp_track_error(m_track);
 }
+
