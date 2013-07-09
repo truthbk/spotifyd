@@ -8,8 +8,13 @@
 #include "runnable.h"
 
 extern "C" {
+#ifdef _LINUX
+    #include <AL/al.h>
+    #include <AL/alc.h>
+#elif _OSX
     #include <OpenAL/al.h>
     #include <OpenAL/alc.h>
+#endif
 }
 
 struct audio_data {

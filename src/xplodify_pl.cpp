@@ -256,7 +256,12 @@ bool XplodifyPlaylist::playlist_ready(
 }
 bool XplodifyPlaylist::playlist_ready_action(
         boost::shared_ptr<XplodifyPlaylist> pl) {
-    return false;
+#ifdef _DEBUG
+    std::cout << "Playlist " << pl->get_name() 
+        << " ready to be inserted in cache." << std::endl;
+#endif
+    pl->m_plcontainer->add_playlist(pl);
+    return true;
 }
 
 
