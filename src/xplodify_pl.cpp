@@ -626,7 +626,7 @@ void XplodifyPlaylistContainer::playlist_added(sp_playlist *pl, int pos){
     if(!npl->is_loaded()) {
         m_loading_cache.push_back(npl);
 #ifdef _DEBUG
-        std::cout << "Playlist loading... Deferring cache insertion." << std::endl;
+        std::cout << "Deferring cache insertion." << std::endl;
 #endif
     } else {
         add_playlist(npl, pos);
@@ -679,11 +679,10 @@ void XplodifyPlaylistContainer::container_loaded(){
         npl->load(p);
         if(!npl->is_loaded()) {
 #ifdef _DEBUG
-            std::cout << "Playlist loading... Deferring cache insertion." << std::endl;
+            std::cout << "Deferring cache insertion." << std::endl;
 #endif
             m_loading_cache.push_back(npl);
-        }
-        else {
+        } else {
 #ifdef _DEBUG
             std::cout << "Playlist " << npl->get_name() << " loaded into plc." << std::endl;
 #endif
