@@ -30,8 +30,9 @@ class TickingStore
                     cond_timedwait(&m_to);
                 }
                 typename std::vector<T>::iterator it;
-                for (it=store.begin() ; it<store.end() ; ) {
-                    if(m_ready_fn(*it) && m_action_fn(*it)){
+                for (it=store.begin() ; it != store.end() ; ) {
+                    T t = *it;
+                    if(m_ready_fn(t) && m_action_fn(t)){
                         it = store.erase(it);
                     } else {
                         it++;
@@ -50,8 +51,10 @@ class TickingStore
             m_to.tv_sec = ms_to/1000;
             m_to.tv_nsec = (ms_to % 1000)*1000*1000;
         }
-        void push_back(T& t) {
+        void push_back(T t) {
+            lock();
             store.push_back(t);
+            unlock();
         }
 };
 
