@@ -23,7 +23,7 @@ extern "C" {
 
 XplodifySession::XplodifySession() 
     :m_session(NULL)
-    ,m_plcontainer(NULL)
+    ,m_plcontainer()
     ,m_playlist()
     ,m_track()
     ,m_handler(NULL)
@@ -38,7 +38,7 @@ XplodifySession::XplodifySession()
 
 XplodifySession::XplodifySession(XplodifyHandler * h) 
     :m_session(NULL)
-    ,m_plcontainer(NULL)
+    ,m_plcontainer()
     ,m_playlist()
     ,m_track()
     ,m_handler(h)
