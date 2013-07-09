@@ -250,6 +250,14 @@ XplodifyPlaylist * XplodifyPlaylist::get_playlist_from_udata(
 
     return plptr;
 }
+bool XplodifyPlaylist::playlist_ready(
+        boost::shared_ptr<XplodifyPlaylist> pl) {
+    return pl->is_loaded();
+}
+bool XplodifyPlaylist::playlist_ready_action(
+        boost::shared_ptr<XplodifyPlaylist> pl) {
+    return false;
+}
 
 
 void XplodifyPlaylist::tracks_added(
@@ -485,10 +493,15 @@ const sp_playlistcontainer_callbacks XplodifyPlaylistContainer::cbs = {
 
 XplodifyPlaylistContainer::XplodifyPlaylistContainer(
         boost::shared_ptr<XplodifySession> sess)
-    : m_plcontainer(NULL)
+    : m_loading_cache(
+            static_cast<size_t>(STORAGE_TICK_MS), 
+            XplodifyPlaylist::playlist_ready, 
+            XplodifyPlaylist::playlist_ready_action )
+    , m_plcontainer(NULL)
     , m_session(sess)
     , m_loading(false) 
 {
+    m_loading_cache.start();
 }
 
 XplodifyPlaylistContainer::~XplodifyPlaylistContainer(){

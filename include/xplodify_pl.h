@@ -15,6 +15,7 @@
 #include <boost/multi_index/ordered_index.hpp>
 #include <boost/multi_index/hashed_index.hpp>
 
+#include "ticking_store.h"
 #include "xplodify_track.h"
 
 extern "C" {
@@ -49,6 +50,10 @@ class XplodifyPlaylist :
 
         static XplodifyPlaylist * get_playlist_from_udata(
                 sp_playlist * pl, void * userdata);
+        static bool playlist_ready(
+                boost::shared_ptr<XplodifyPlaylist> pl);
+        static bool playlist_ready_action(
+                boost::shared_ptr<XplodifyPlaylist> pl);
 
     protected:
         void tracks_added(
@@ -204,7 +209,7 @@ class XplodifyPlaylistContainer :
         static const sp_playlistcontainer_callbacks cbs;
 
         pl_cache                           m_pl_cache;
-        std::vector< 
+        TickingStore<
             boost::shared_ptr<XplodifyPlaylist> >
                                            m_loading_cache;
         sp_playlistcontainer *             m_plcontainer;
