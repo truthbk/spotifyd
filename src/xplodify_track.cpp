@@ -21,6 +21,9 @@ XplodifyTrack::XplodifyTrack(boost::shared_ptr<XplodifySession> sess)
 }
 
 XplodifyTrack::~XplodifyTrack() {
+#ifdef _DEBUG
+    std::cout << "Destroying Track." << std::endl;
+#endif
 }
 
 

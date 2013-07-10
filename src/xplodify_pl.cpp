@@ -42,6 +42,9 @@ XplodifyPlaylist::XplodifyPlaylist(boost::shared_ptr<XplodifySession> sess)
 }
 XplodifyPlaylist::~XplodifyPlaylist() {
     //EMPTY
+#ifdef _DEBUG
+    std::cout << "XplodifyPlaylist being destroyed..." << std::endl;
+#endif
 }
 
 boost::shared_ptr<XplodifyTrack> 
@@ -121,14 +124,8 @@ bool XplodifyPlaylist::load_tracks() {
 
         boost::shared_ptr<XplodifyTrack> tr(new XplodifyTrack(m_session));
         if(tr->load(t)){
-#if 0
-            std::chrono::milliseconds hiatus(LOAD_WAIT_MS);
-            while(!tr->is_loaded()) {
-                //sleep for a bit... HATE THIS.
-                std::this_thread::sleep_for(hiatus);
-            }
-#endif
-            tr_cache_rand.push_back(track_entry(tr->get_name(), tr));
+            std::string trname(tr->get_name());
+            tr_cache_rand.push_back(track_entry(trname, tr));
 #ifdef _DEBUG
             std::cout << "Track " << tr->get_name() << " loaded for playlist "
                 << get_name() << std::endl;
@@ -313,7 +310,7 @@ void XplodifyPlaylist::playlist_state_changed(){
 #ifdef _DEBUG
     std::cout << "Playlist state changed" << std::endl;
 #endif
-    if( m_loading && sp_playlist_is_loaded(m_playlist))
+    if(sp_playlist_is_loaded(m_playlist))
     {
         m_loading = false;
         load_tracks();
@@ -498,15 +495,11 @@ const sp_playlistcontainer_callbacks XplodifyPlaylistContainer::cbs = {
 
 XplodifyPlaylistContainer::XplodifyPlaylistContainer(
         boost::shared_ptr<XplodifySession> sess)
-    : m_loading_cache(
-            static_cast<size_t>(STORAGE_TICK_MS), 
-            XplodifyPlaylist::playlist_ready, 
-            XplodifyPlaylist::playlist_ready_action )
-    , m_plcontainer(NULL)
+    : m_plcontainer(NULL)
     , m_session(sess)
     , m_loading(false) 
 {
-    m_loading_cache.start();
+    //EMPTY
 }
 
 XplodifyPlaylistContainer::~XplodifyPlaylistContainer(){
@@ -524,6 +517,9 @@ bool XplodifyPlaylistContainer::load(sp_playlistcontainer * plc) {
 
     m_loading = !sp_playlistcontainer_is_loaded(plc);
     if(!m_loading) {
+#ifdef _DEBUG
+        std::cout << "container was immediately loaded" << std::endl;
+#endif
         container_loaded();
     }
     return m_loading;
@@ -620,15 +616,19 @@ void XplodifyPlaylistContainer::flush() {
 
 void XplodifyPlaylistContainer::playlist_added(sp_playlist *pl, int pos){
     //log this.
+    if(m_loading) {
+#ifdef _DEBUG
+        std::cout << "Playlist Container still loading... easy!" << std::endl;
+#endif
+        return;
+    }
 
     boost::shared_ptr<XplodifyPlaylist> npl(new XplodifyPlaylist(m_session));
     npl->load(pl);
-    if(!npl->is_loaded()) {
-        m_loading_cache.push_back(npl);
+    if(npl->is_loaded()) {
 #ifdef _DEBUG
-        std::cout << "Deferring cache insertion." << std::endl;
+        std::cout << "Playlist " << npl->get_name() << " loaded into plc." << std::endl;
 #endif
-    } else {
         add_playlist(npl, pos);
     }
 
@@ -677,12 +677,7 @@ void XplodifyPlaylistContainer::container_loaded(){
         sp_playlist * p = sp_playlistcontainer_playlist( m_plcontainer, i);
         boost::shared_ptr<XplodifyPlaylist> npl(new XplodifyPlaylist(m_session));
         npl->load(p);
-        if(!npl->is_loaded()) {
-#ifdef _DEBUG
-            std::cout << "Deferring cache insertion." << std::endl;
-#endif
-            m_loading_cache.push_back(npl);
-        } else {
+        if(npl->is_loaded()) {
 #ifdef _DEBUG
             std::cout << "Playlist " << npl->get_name() << " loaded into plc." << std::endl;
 #endif
