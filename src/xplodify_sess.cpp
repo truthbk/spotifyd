@@ -55,6 +55,9 @@ XplodifySession::XplodifySession(XplodifyHandler * h)
 XplodifySession::~XplodifySession()
 {
     //empty
+#ifdef _DEBUG
+    std::cout << "Xplodify Session destroyed...." << std::endl;
+#endif
 }
 
 boost::shared_ptr< XplodifySession > XplodifySession::create(XplodifyHandler * h)
@@ -141,7 +144,11 @@ boost::shared_ptr<XplodifyPlaylistContainer> XplodifySession::get_pl_container(v
         return boost::shared_ptr<XplodifyPlaylistContainer>();
     }
 
-    m_plcontainer.reset(new XplodifyPlaylistContainer(shared_from_this()));
+    XplodifyPlaylistContainer * xplc = 
+        new XplodifyPlaylistContainer(shared_from_this());
+
+    m_plcontainer = boost::shared_ptr<XplodifyPlaylistContainer>(xplc);
+
 #ifdef _DEBUG
     std::cout << "Loading playlist container..." << std::endl;
 #endif
