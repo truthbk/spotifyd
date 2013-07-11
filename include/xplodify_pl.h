@@ -49,11 +49,6 @@ class XplodifyPlaylist :
 
         static XplodifyPlaylist * get_playlist_from_udata(
                 sp_playlist * pl, void * userdata);
-        static bool playlist_ready(
-                boost::shared_ptr<XplodifyPlaylist> pl);
-        static bool playlist_ready_action(
-                boost::shared_ptr<XplodifyPlaylist> pl);
-
     protected:
         void tracks_added(
                 sp_track *const *tracks, int num_tracks, 
@@ -134,7 +129,6 @@ class XplodifyPlaylist :
         track_cache                                    m_track_cache;
 
         boost::shared_ptr<XplodifySession>             m_session;
-        boost::shared_ptr<XplodifyPlaylistContainer>   m_plcontainer;
         sp_playlist *                                  m_playlist;
         bool                                           m_loading;
 
@@ -154,6 +148,7 @@ class XplodifyPlaylistContainer :
         bool    load(sp_playlistcontainer * plc);
         bool    unload();
         void    flush();
+        void    add_playlist(XplodifyPlaylist * pl);
         void    add_playlist(boost::shared_ptr<XplodifyPlaylist> pl);
         void    add_playlist(boost::shared_ptr<XplodifyPlaylist> pl, int pos);
         size_t  get_num_playlists();
