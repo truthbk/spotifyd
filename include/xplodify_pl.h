@@ -129,6 +129,9 @@ class XplodifyPlaylist :
         track_cache                                    m_track_cache;
 
         boost::shared_ptr<XplodifySession>             m_session;
+        std::vector<
+            boost::shared_ptr<XplodifyTrack>
+            >                                          m_pending_tracks;
         sp_playlist *                                  m_playlist;
         bool                                           m_loading;
 
