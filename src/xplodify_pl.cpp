@@ -321,11 +321,13 @@ void XplodifyPlaylist::playlist_metadata_updated(){
     typedef std::vector< boost::shared_ptr<XplodifyTrack> > wvec;
     wvec::iterator it;
     for (it=m_pending_tracks.begin() ; it != m_pending_tracks.end() ; ) {
-        if((*it)->is_loaded()) {
-            std::string trname((*it)->get_name());
-            tr_cache_rand.push_back(track_entry(trname, *it));
+        boost::shared_ptr<XplodifyTrack> t = *it;
+
+        if(t->is_loaded()) {
+            std::string trname(t->get_name());
+            tr_cache_rand.push_back(track_entry(trname, t));
 #ifdef _DEBUG
-            std::cout << "Track " << (*it)->get_name() << " loaded for playlist "
+            std::cout << "Track " << t->get_name() << " loaded for playlist "
                 << get_name() << std::endl;
 #endif
             it = m_pending_tracks.erase(it);
