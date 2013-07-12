@@ -30,7 +30,7 @@ XplodifyTrack::~XplodifyTrack() {
 bool XplodifyTrack::load(sp_track * track){
     m_track = track;
     sp_track_add_ref(m_track);
-    return true;
+    return is_loaded();
 }
 void XplodifyTrack::unload(){
     sp_track_release(m_track);
