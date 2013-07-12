@@ -130,6 +130,8 @@ bool XplodifyPlaylist::load_tracks() {
             std::cout << "Track " << tr->get_name() << " loaded for playlist "
                 << get_name() << std::endl;
 #endif
+        } else {
+            m_pending_tracks.push_back(tr);
         }
     }
     return true;
@@ -312,7 +314,25 @@ void XplodifyPlaylist::playlist_update_in_progress(bool done){
     return;
 }
 void XplodifyPlaylist::playlist_metadata_updated(){
-    //TODO
+    //If playlist metadata has been updated, we first check
+    //for pending tracks that are ready....
+    track_cache_by_rand& tr_cache_rand = m_track_cache.get<0>();
+
+    typedef std::vector< boost::shared_ptr<XplodifyTrack> > wvec;
+    wvec::iterator it;
+    for (it=m_pending_tracks.begin() ; it != m_pending_tracks.end() ; ) {
+        if((*it)->is_loaded()) {
+            std::string trname((*it)->get_name());
+            tr_cache_rand.push_back(track_entry(trname, *it));
+#ifdef _DEBUG
+            std::cout << "Track " << (*it)->get_name() << " loaded for playlist "
+                << get_name() << std::endl;
+#endif
+            it = m_pending_tracks.erase(it);
+        } else {
+            it++;
+        }
+    }
     return;
 }
 void XplodifyPlaylist::track_created_changed(int position, sp_user *user, int when){
