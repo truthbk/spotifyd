@@ -19,6 +19,9 @@
 #include <cstring>
 #include <string>
 
+#include <sys/types.h>
+#include <unistd.h>
+
 #include "Spotify.h"
 
 #include "xplodify_sess.h"
@@ -637,13 +640,18 @@ int main(int argc, char **argv) {
 
     TSimpleServer server(processor, serverTransport, transportFactory, protocolFactory);
 
-    //create temporary dir structure
-    boost::filesystem::create_directories( SP_TMPDIR );
+    //create temporary dir
+    int pid = getpid();
+    std::stringstream sst;
+    sst << SP_TMPDIR << "-" << pid;
+    std::string tmpdir(sst.str());
+
+    boost::filesystem::create_directories(tmpdir);
     sHandler->start();
     server.serve();
 
     //TODO: proper cleanup
-    boost::filesystem::remove_all( SP_TMPDIR );
+    boost::filesystem::remove_all(tmpdir);
 
     return 0;
 }
