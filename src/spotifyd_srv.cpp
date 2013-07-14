@@ -57,6 +57,12 @@ XplodifyHandler::XplodifyHandler()
     , m_playback_done(0)
     , m_notify_events(0)
 {
+    //tmp dir name
+    int pid = getpid();
+    std::stringstream sst;
+    sst << SP_TMPDIR << "-" << pid;
+    m_sp_tmpdir = sst.str();
+
     //start audio queue
     m_audio.start();
 }
@@ -625,6 +631,10 @@ void XplodifyHandler::audio_fifo_flush_now() {
     m_audio.flush_queue();
 }
 
+std::string XplodifyHandler::get_tmpdir() {
+    return m_sp_tmpdir;
+}
+
 int main(int argc, char **argv) {
     int port = 9090;
     enum audio_arch arch;
@@ -641,17 +651,12 @@ int main(int argc, char **argv) {
     TSimpleServer server(processor, serverTransport, transportFactory, protocolFactory);
 
     //create temporary dir
-    int pid = getpid();
-    std::stringstream sst;
-    sst << SP_TMPDIR << "-" << pid;
-    std::string tmpdir(sst.str());
-
-    boost::filesystem::create_directories(tmpdir);
+    boost::filesystem::create_directories(sHandler->get_tmpdir().c_str());
     sHandler->start();
     server.serve();
 
     //TODO: proper cleanup
-    boost::filesystem::remove_all(tmpdir);
+    boost::filesystem::remove_all(sHandler->get_tmpdir().c_str());
 
     return 0;
 }
