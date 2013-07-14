@@ -112,6 +112,8 @@ class XplodifyHandler
         void audio_fifo_stats(sp_audio_buffer_stats *stats);
         void audio_fifo_flush_now();
 
+        std::string get_tmpdir();
+
 
     protected:
         //implementing runnable
@@ -199,6 +201,7 @@ class XplodifyHandler
 
         int                                     m_playback_done;
         int                                     m_notify_events;
+        std::string                             m_sp_tmpdir;
 
 };
 #endif

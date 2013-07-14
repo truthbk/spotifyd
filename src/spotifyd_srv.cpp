@@ -55,7 +55,12 @@ XplodifyHandler::XplodifyHandler()
     , m_playback_done(1)
     , m_notify_events(0)
 {
-    //Nothing else
+    //tmp dir name
+    int pid = getpid();
+    std::stringstream sst;
+    sst << SP_TMPDIR << "-" << pid;
+    m_sp_tmpdir = sst.str();
+
     enum audio_arch arch;
 #ifdef _OSX
 #ifdef HAS_OPENAL
@@ -70,6 +75,7 @@ XplodifyHandler::XplodifyHandler()
 #endif
     set_audio(arch);
     audio_init(&m_audiofifo);
+
 }
 
 
@@ -635,6 +641,10 @@ void XplodifyHandler::audio_fifo_flush_now() {
     audio_fifo_flush(audio_fifo());
 }
 
+std::string XplodifyHandler::get_tmpdir() {
+    return m_sp_tmpdir;
+}
+
 int main(int argc, char **argv) {
     int port = 9090;
     enum audio_arch arch;
@@ -650,6 +660,7 @@ int main(int argc, char **argv) {
 
     TSimpleServer server(processor, serverTransport, transportFactory, protocolFactory);
 
+<<<<<<< HEAD
     //configure audio architecture
 #ifdef HAS_ALSA
     arch = ALSA;
@@ -659,10 +670,18 @@ int main(int argc, char **argv) {
     arch = AUDIOTOOLKIT;
 #endif
     set_audio(arch),
+=======
+    //create temporary dir
+    boost::filesystem::create_directories(sHandler->get_tmpdir().c_str());
+>>>>>>> XplodifyHandler handles the temporary directory structure. Defining get_tmpdir method to retrieve location.
     sHandler->start();
     server.serve();
 
     //TODO: proper cleanup
+<<<<<<< HEAD
+=======
+    boost::filesystem::remove_all(sHandler->get_tmpdir().c_str());
+>>>>>>> XplodifyHandler handles the temporary directory structure. Defining get_tmpdir method to retrieve location.
 
     return 0;
 }
