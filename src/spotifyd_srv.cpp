@@ -19,6 +19,9 @@
 #include <cstring>
 #include <string>
 
+#include <sys/types.h>
+#include <unistd.h>
+
 #include "Spotify.h"
 
 #include "xplodify_sess.h"
@@ -647,9 +650,6 @@ int main(int argc, char **argv) {
 
     TSimpleServer server(processor, serverTransport, transportFactory, protocolFactory);
 
-    //create temporary dir structure
-    boost::filesystem::create_directories( SP_TMPDIR );
-
     //configure audio architecture
 #ifdef HAS_ALSA
     arch = ALSA;
@@ -659,12 +659,10 @@ int main(int argc, char **argv) {
     arch = AUDIOTOOLKIT;
 #endif
     set_audio(arch),
-
     sHandler->start();
     server.serve();
 
     //TODO: proper cleanup
-    boost::filesystem::remove_all( SP_TMPDIR );
 
     return 0;
 }
