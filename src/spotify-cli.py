@@ -217,8 +217,9 @@ class XplodifyApp(urwid.Frame):
         ('key', "F5"), " |<   ",
         ('key', "F7"), " |> / ||   ",
         ('key', "F8"), " >|   ",
-        ('key', "F9"), " logout  ",
-        ('key', "F10"), " quit ",
+        ('key', "F9"), " Refresh ",
+        ('key', "F10"), " logout  ",
+        ('key', "F11"), " quit ",
         ])
 
     def __init__(self, host='localhost', port=XPLODIFYD_PORT):
@@ -418,8 +419,10 @@ class XplodifyApp(urwid.Frame):
         elif k == "f8":
             raise urwid.ExitMainLoop()
         elif k == "f9":
-            self.logout()
+            self.get_playlists()
         elif k == "f10":
+            self.logout()
+        elif k == "f11":
             self.logout()
             raise urwid.ExitMainLoop()
         elif k == "tab":
