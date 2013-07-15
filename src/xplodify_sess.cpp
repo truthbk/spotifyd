@@ -459,14 +459,16 @@ int SP_CALLCONV XplodifySession::cb_music_delivery(
         sp_session *sess, const sp_audioformat *format,
         const void *frames, int num_frames)
 {
+    int frames_consumed = 0;
 
     XplodifySession * s = XplodifySession::get_session_from_udata(sess);
     if(!s) {
         return 0;
     }
 
-    s->music_delivery(sess, format, frames, num_frames);
-    return 0; //or whatever...
+    frames_consumed = 
+        s->music_delivery(sess, format, frames, num_frames);
+    return frames_consumed; //or whatever...
 }
 
 void SP_CALLCONV XplodifySession::cb_play_token_lost(sp_session *sess) {
