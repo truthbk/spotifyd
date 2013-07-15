@@ -660,7 +660,14 @@ int main(int argc, char **argv) {
 
     TSimpleServer server(processor, serverTransport, transportFactory, protocolFactory);
 
-<<<<<<< HEAD
+    //make tmp dir
+    boost::filesystem::path dir(sHandler->get_tmpdir());
+    if(!boost::filesystem::create_directory(dir)) {
+        //TODO: proper cleanup
+        exit(1);
+    }
+
+
     //configure audio architecture
 #ifdef HAS_ALSA
     arch = ALSA;
@@ -670,18 +677,11 @@ int main(int argc, char **argv) {
     arch = AUDIOTOOLKIT;
 #endif
     set_audio(arch),
-=======
-    //create temporary dir
-    boost::filesystem::create_directories(sHandler->get_tmpdir().c_str());
->>>>>>> XplodifyHandler handles the temporary directory structure. Defining get_tmpdir method to retrieve location.
+
     sHandler->start();
     server.serve();
 
     //TODO: proper cleanup
-<<<<<<< HEAD
-=======
-    boost::filesystem::remove_all(sHandler->get_tmpdir().c_str());
->>>>>>> XplodifyHandler handles the temporary directory structure. Defining get_tmpdir method to retrieve location.
 
     return 0;
 }
