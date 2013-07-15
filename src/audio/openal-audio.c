@@ -117,7 +117,7 @@ static void* audio_start(void *aux)
                     afd->samples, 
                     afd->nsamples * afd->channels * sizeof(short), 
                     afd->rate);
-            free(afd);
+            //free(afd);
             alSourceQueueBuffers(source, 1, &buffers[frame % 3]);
 
             if ((error = alcGetError(device)) != AL_NO_ERROR) {
