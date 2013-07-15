@@ -651,7 +651,10 @@ int main(int argc, char **argv) {
     TSimpleServer server(processor, serverTransport, transportFactory, protocolFactory);
 
     //create temporary dir
-    boost::filesystem::create_directories(sHandler->get_tmpdir().c_str());
+    if(boost::filesystem::create_directories(sHandler->get_tmpdir())) {
+        //TODO: proper cleanup
+        exit(1);
+    }
     sHandler->start();
     server.serve();
 
