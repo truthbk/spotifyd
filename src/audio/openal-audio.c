@@ -117,9 +117,9 @@ static void* audio_start(void *aux)
                     afd->samples, 
                     afd->nsamples * afd->channels * sizeof(short), 
                     afd->rate);
-            //free(afd);
             alSourceQueueBuffers(source, 1, &buffers[frame % 3]);
 
+            free(afd);
             if ((error = alcGetError(device)) != AL_NO_ERROR) {
                 printf("openal al error: %d\n", error);
                 exit(1);
