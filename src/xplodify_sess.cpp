@@ -8,9 +8,12 @@
 
 #include <iostream>
 #include <cstring>
+#include <cstdlib>
+#include <ctime>
 #include <string>
 
 #include "Spotify.h"
+
 #include "spotify_cust.h"
 #include "xplodify_pl.h"
 #include "xplodify_sess.h"
@@ -32,8 +35,10 @@ XplodifySession::XplodifySession()
     ,m_playback_done(1)
     ,m_remove_tracks(0)
     ,m_track_idx(-1)
+    ,m_mode(SpotifyCmd::LINEAR)
+    ,m_playback(SpotifyCmd::PAUSE)
 {
-    //EMPTY
+    srand(time(NULL));
 }
 
 XplodifySession::XplodifySession(XplodifyHandler * h) 
@@ -48,8 +53,7 @@ XplodifySession::XplodifySession(XplodifyHandler * h)
     ,m_remove_tracks(0)
     ,m_track_idx(-1)
 {
-        //assign ssession later.
-
+    srand(time(NULL));
 }
 
 XplodifySession::~XplodifySession()
@@ -186,6 +190,14 @@ std::string XplodifySession::get_playlist_name(void) {
     return m_playlist->get_name();
 }
 
+void XplodifySession::set_mode(SpotifyCmd::type mode) {
+    m_mode = mode;
+}
+
+SpotifyCmd::type XplodifySession::get_mode(void) {
+    return m_mode;
+}
+
 sp_session * XplodifySession::get_sp_session() {
     return m_session;
 }
@@ -262,10 +274,30 @@ void selectPlaylist(const SpotifyCredential& cred, const std::string& playlist) 
 
 
 void XplodifySession::end_of_track() {
+    int next;
+    int num = m_playlist->get_num_tracks();
+
     set_playback_done(1);
+    sp_session_player_unload(m_session);
+
 #if _DEBUG
     std::cout << "Track has finished." << std::endl;
 #endif
+    switch(m_mode){
+        case SpotifyCmd::REPEAT_ONE:
+        case SpotifyCmd::REPEAT:
+            break;
+        case SpotifyCmd::RAND:
+            //Any track on the playlist.
+            next = rand() % num + 1;
+            set_track(next);
+            break;
+        case SpotifyCmd::LINEAR:
+            //MEANT to get the NEXT playlist.
+        default:
+            break;
+    }
+
 #if 0
     lock();
     m_playback_done = 1;

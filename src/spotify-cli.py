@@ -214,7 +214,7 @@ class XplodifyApp(urwid.Frame):
     footer_text = ('foot', [
         "Xpldofiy Client "+ VERSION +" -     " ,
         ('key', "F4"), " login   ",
-        ('key', "F5"), " |<   ",
+        ('key', "F6"), " |<   ",
         ('key', "F7"), " |> / ||   ",
         ('key', "F8"), " >|   ",
         ('key', "F9"), " Refresh ",

@@ -233,6 +233,20 @@ boost::shared_ptr<XplodifyTrack> XplodifyPlaylist::get_track(std::string name, b
     return t;
 }
 
+boost::shared_ptr<XplodifyTrack> XplodifyPlaylist::get_next_track(
+        boost::shared_ptr<XplodifyTrack> trk) {
+    track_cache_by_rand& t_r = m_track_cache.get<0>();
+
+    track_entry t(trk->get_name(), trk);
+
+    track_cache_by_rand::iterator it = t_r.iterator_to(t);
+    it++;
+    if(it == t_r.end()) {
+        it = t_r.begin();
+    }
+    return it->track;
+}
+
 
 XplodifyPlaylist * XplodifyPlaylist::get_playlist_from_udata(
         sp_playlist * pl, void * userdata) {

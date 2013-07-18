@@ -271,26 +271,24 @@ void XplodifyHandler::sendCommand(const SpotifyCredential& cred, const SpotifyCm
     }
 
     switch(cmd){
-	case SpotifyCmd::PLAY:
+        case SpotifyCmd::PLAY:
             sess->start_playback();
-	    break;
-	case SpotifyCmd::PAUSE:
+            break;
+        case SpotifyCmd::PAUSE:
             sess->stop_playback();
-	    break;
-	case SpotifyCmd::NEXT:
-	    break;
-	case SpotifyCmd::PREV:
-	    break;
-	case SpotifyCmd::RAND:
-	    break;
-            case SpotifyCmd::LINEAR:
-	    break;
-	case SpotifyCmd::REPEAT_ONE:
-	    break;
-	case SpotifyCmd::REPEAT:
-	    break;
-	default:
-	    break;
+            break;
+        case SpotifyCmd::NEXT:
+            break;
+        case SpotifyCmd::PREV:
+            break;
+        case SpotifyCmd::RAND:
+        case SpotifyCmd::LINEAR:
+        case SpotifyCmd::REPEAT_ONE:
+        case SpotifyCmd::REPEAT:
+            sess->set_mode(cmd);
+            break;
+        default:
+            break;
     }
     return;
 }

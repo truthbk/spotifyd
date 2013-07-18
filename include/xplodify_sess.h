@@ -6,6 +6,8 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/enable_shared_from_this.hpp>
 
+#include "Spotify.h"
+
 extern "C" {
 	#include <libspotify/api.h>
 }
@@ -76,6 +78,9 @@ class XplodifySession :
         void set_active_playlist(std::string plname);
         std::string get_playlist_name(void);
 
+        void set_mode(SpotifyCmd::type mode);
+        SpotifyCmd::type get_mode(void);
+
         static XplodifySession * get_session_from_udata(sp_session * sp);
 
 #if 0
@@ -145,7 +150,10 @@ class XplodifySession :
 #define NO_TRACK NULL
 #define NO_TRACK_IDX -1 //not a valid libspotify index that's why we use it.
         int                     m_track_idx;
-        
+
+        SpotifyCmd::type        m_mode;
+        SpotifyCmd::type        m_playback;
+
 
 };
 
