@@ -197,7 +197,7 @@ class XplodifyHandler
         //proper members
         sess_map_sequenced::iterator            m_sess_it;
 
-        boost::shared_ptr<XplodifySession>       m_active_session;
+        boost::shared_ptr<XplodifySession>      m_active_session;
 
         int                                     m_playback_done;
         int                                     m_notify_events;
