@@ -198,12 +198,15 @@ boost::shared_ptr<XplodifyTrack> XplodifyPlaylist::get_track(int pos, bool remov
     boost::shared_ptr<XplodifyTrack> t;
 
     track_cache_by_rand& t_r = m_track_cache.get<0>();
+    track_cache_by_name& t_n = m_track_cache.get<1>();
     track_cache_by_rand::iterator it = t_r.iterator_to(t_r[pos]);
 
     if(it == t_r.end()) {
         t = boost::shared_ptr<XplodifyTrack>();
     } else {
+        track_cache_by_name::iterator itn = t_n.find(it->track->get_name());
         t = it->track;
+        m_it_name = itn;
     }
     if(remove) {
         t_r.erase(it);
@@ -219,12 +222,13 @@ boost::shared_ptr<XplodifyTrack> XplodifyPlaylist::get_track(std::string name, b
     std::cout << "Seeking for track " << name << " from playlist: " << get_name() << std::endl;
 #endif
     track_cache_by_name& t_n = m_track_cache.get<1>();
-    track_cache_by_name::iterator it = t_n.find(name);
+    track_cache_by_name::iterator it(t_n.find(name));
 
     if(it == t_n.end()) {
         t = boost::shared_ptr<XplodifyTrack>();
     } else {
         t = it->track;
+        m_it_name = it;
     }
     if(remove) {
         t_n.erase(it);
@@ -233,16 +237,13 @@ boost::shared_ptr<XplodifyTrack> XplodifyPlaylist::get_track(std::string name, b
     return t;
 }
 
-boost::shared_ptr<XplodifyTrack> XplodifyPlaylist::get_next_track(
-        boost::shared_ptr<XplodifyTrack> trk) {
-    track_cache_by_rand& t_r = m_track_cache.get<0>();
+boost::shared_ptr<XplodifyTrack> XplodifyPlaylist::get_next_track() {
+    track_cache_by_name& t_n = m_track_cache.get<1>();
 
-    track_entry t(trk->get_name(), trk);
-
-    track_cache_by_rand::iterator it = t_r.iterator_to(t);
+    track_cache_by_name::iterator it(m_it_name);
     it++;
-    if(it == t_r.end()) {
-        it = t_r.begin();
+    if(it == t_n.end()) {
+        it = t_n.begin();
     }
     return it->track;
 }

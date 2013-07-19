@@ -52,6 +52,8 @@ XplodifySession::XplodifySession(XplodifyHandler * h)
     ,m_playback_done(1)
     ,m_remove_tracks(0)
     ,m_track_idx(-1)
+    ,m_mode(SpotifyCmd::LINEAR)
+    ,m_playback(SpotifyCmd::PAUSE)
 {
     srand(time(NULL));
 }
@@ -275,6 +277,7 @@ void selectPlaylist(const SpotifyCredential& cred, const std::string& playlist) 
 
 void XplodifySession::end_of_track() {
     int next;
+    boost::shared_ptr<XplodifyTrack> trk;
     int num = m_playlist->get_num_tracks();
 
     set_playback_done(1);
@@ -294,6 +297,9 @@ void XplodifySession::end_of_track() {
             break;
         case SpotifyCmd::LINEAR:
             //MEANT to get the NEXT playlist.
+            trk = m_playlist->get_next_track();
+            set_track(trk->get_name());
+            break;
         default:
             break;
     }
