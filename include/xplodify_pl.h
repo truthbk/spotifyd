@@ -46,7 +46,7 @@ class XplodifyPlaylist :
         boost::shared_ptr<XplodifyTrack> get_track_at(size_t idx);
         boost::shared_ptr<XplodifyTrack> get_track(int pos, bool remove=false);
         boost::shared_ptr<XplodifyTrack> get_track(std::string name, bool remove=false);
-        boost::shared_ptr<XplodifyTrack> get_next_track(boost::shared_ptr<XplodifyTrack> trk);
+        boost::shared_ptr<XplodifyTrack> get_next_track();
 
         static XplodifyPlaylist * get_playlist_from_udata(
                 sp_playlist * pl, void * userdata);
@@ -128,6 +128,8 @@ class XplodifyPlaylist :
         static const sp_playlist_callbacks             cbs;
 
         track_cache                                    m_track_cache;
+        track_cache_by_rand::iterator                  m_it_idx;
+        track_cache_by_name::iterator                  m_it_name;
 
         boost::shared_ptr<XplodifySession>             m_session;
         std::vector<
