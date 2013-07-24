@@ -14,6 +14,7 @@ from spotify import Spotify
 from spotify.ttypes import *
 from spotify.constants import *
 
+import thrift
 from thrift import Thrift
 from thrift.transport import TSocket
 from thrift.transport import TTransport
@@ -53,7 +54,11 @@ class spclient(object):
         self._client = Spotify.Client(self._protocol)
 
         # Connect!
-        self._transport.open()
+        try:
+            self._transport.open()
+        except thrift.transport.TTransport.TTransportException:
+            print "Couldn't connect to server on {}:{}".format(host, port)
+            sys.exit(1)
 
 
         #status
