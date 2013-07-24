@@ -107,6 +107,7 @@ class XplodifyHandler
         void whats_playing(SpotifyTrack& _return);
 
         void notify_main_thread(void);
+        void set_playback_done(bool done);
         int  music_playback(const sp_audioformat * format, 
                 const void * frames, int num_frames);
         void audio_fifo_stats(sp_audio_buffer_stats *stats);

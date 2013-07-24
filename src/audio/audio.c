@@ -27,6 +27,7 @@
 
 #include "audio.h"
 #include <stdlib.h>
+#include <stdio.h>
 
 audio_init_ptr audio_init;
 
@@ -59,6 +60,9 @@ void audio_fifo_flush(audio_fifo_t *af)
 
     af->qlen = 0;
     pthread_mutex_unlock(&af->mutex);
+#ifdef _DEBUG
+    fprintf(stdout, "FIFO Flushed\n");
+#endif
 }
 
 void set_audio_init( audio_init_ptr ptr ) {
