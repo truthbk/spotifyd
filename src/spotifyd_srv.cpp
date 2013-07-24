@@ -571,6 +571,13 @@ audio_fifo_t * XplodifyHandler::audio_fifo() {
     return &m_audiofifo;
 }
 
+void XplodifyHandler::set_playback_done(bool done)
+{
+    lock();
+    m_playback_done = done;
+    unlock();
+}
+
 void XplodifyHandler::notify_main_thread(void)
 {
     lock();
@@ -592,10 +599,13 @@ int XplodifyHandler::music_playback(const sp_audioformat *format,
 
     pthread_mutex_lock(&m_audiofifo.mutex);
 
-    /* Buffer one second of audio */
+    /* Buffer one second of audio, no more */
     if (m_audiofifo.qlen > format->sample_rate)
     {
-	pthread_mutex_unlock(&m_audiofifo.mutex);
+#ifdef _DEBUG
+        std::cout << "Frames in audio_queue: " << m_audiofifo.qlen << std::endl;
+#endif
+        pthread_mutex_unlock(&m_audiofifo.mutex);
 	return 0;
     }
 
@@ -612,13 +622,13 @@ int XplodifyHandler::music_playback(const sp_audioformat *format,
     TAILQ_INSERT_TAIL(&m_audiofifo.q, afd, link);
     m_audiofifo.qlen += num_frames;
 
+#ifdef _DEBUG
+    std::cout << "Frames in audio_queue: " << m_audiofifo.qlen << std::endl;
+#endif
+
     pthread_cond_signal(&m_audiofifo.cond);
     pthread_mutex_unlock(&m_audiofifo.mutex);
 
-#ifdef _DEBUG
-    std::cout << "Succesfully(?) queued " << num_frames 
-        << " audio frames" << std::endl;
-#endif
     return num_frames;
 }
 

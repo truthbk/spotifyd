@@ -281,7 +281,8 @@ void XplodifySession::end_of_track() {
     int num = m_playlist->get_num_tracks();
 
     set_playback_done(1);
-    sp_session_player_unload(m_session);
+    m_handler->set_playback_done(m_playback_done);
+
 
 #if _DEBUG
     std::cout << "Track has finished." << std::endl;
@@ -294,11 +295,13 @@ void XplodifySession::end_of_track() {
             //Any track on the playlist.
             next = rand() % num + 1;
             set_track(next);
+            start_playback();
             break;
         case SpotifyCmd::LINEAR:
             //MEANT to get the NEXT playlist.
             trk = m_playlist->get_next_track();
             set_track(trk->get_name());
+            start_playback();
             break;
         default:
             break;
