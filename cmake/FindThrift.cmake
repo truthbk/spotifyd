@@ -13,6 +13,7 @@ find_path(Thrift_INCLUDE_DIR Thrift.h PATHS
 	/opt/local/include/thrift
 	/opt/thrift/include/thrift
 	/usr/local/Cellar/thrift/0.8.0/include/thrift
+	/usr/include/thrift
 	)
 
 set(Thrift_LIB_PATHS /usr/local/lib /opt/local/lib /opt/thrift/lib /usr/local/Cellar/thrift/0.8.0/lib)
