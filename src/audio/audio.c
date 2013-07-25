@@ -46,6 +46,23 @@ audio_fifo_data_t* audio_get(audio_fifo_t *af)
     return afd;
 }
 
+void audio_fifo_set_reset(audio_fifo_t * af, int r)
+{
+    pthread_mutex_lock(&af->mutex);
+    af->reset = r;
+    pthread_mutex_unlock(&af->mutex);
+}
+
+int audio_fifo_get_reset(audio_fifo_t * af)
+{
+    int res;
+    pthread_mutex_lock(&af->mutex);
+    res = af->reset; 
+    pthread_mutex_unlock(&af->mutex);
+
+    return res;
+}
+
 void audio_fifo_flush(audio_fifo_t *af)
 {
     audio_fifo_data_t *afd;
