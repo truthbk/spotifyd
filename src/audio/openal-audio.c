@@ -107,7 +107,7 @@ static void* audio_start(void *aux)
             afd = audio_get(af);
             alGetBufferi(buffers[frame % 3], AL_FREQUENCY, &rate);
             alGetBufferi(buffers[frame % 3], AL_CHANNELS, &channels);
-            if (afd->rate != rate || afd->channels != channels) {
+            if (audio_fifo_get_reset(af) || afd->rate != rate || afd->channels != channels) {
                 printf("rate or channel count changed, resetting\n");
                 free(afd);
                 break;
@@ -138,9 +138,14 @@ static void* audio_start(void *aux)
                 afd->rate);
 
         alSourceQueueBuffers(source, 1, &buffers[0]);
+        //free(afd);
+
         queue_buffer(source, af, buffers[1]);
         queue_buffer(source, af, buffers[2]);
         frame = 0;
+        if(audio_fifo_get_reset(af)) {
+            audio_fifo_set_reset(af, 0);
+        }
     }
 }
 
@@ -150,6 +155,7 @@ void openal_audio_init(audio_fifo_t *af)
 
     TAILQ_INIT(&af->q);
     af->qlen = 0;
+    af->reset = 0;
 
     pthread_mutex_init(&af->mutex, NULL);
     pthread_cond_init(&af->cond, NULL);

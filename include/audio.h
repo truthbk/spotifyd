@@ -44,6 +44,7 @@ typedef struct audio_fifo_data {
 typedef struct audio_fifo {
     TAILQ_HEAD(, audio_fifo_data) q;
     int qlen;
+    int reset;
     pthread_mutex_t mutex;
     pthread_cond_t cond;
 } audio_fifo_t;
@@ -86,6 +87,8 @@ void osx_audio_init(audio_fifo_t *af);
 extern void audio_fifo_flush(audio_fifo_t *af);
 void set_audio_init( audio_init_ptr ptr );
 audio_fifo_data_t* audio_get(audio_fifo_t *af);
+void audio_fifo_set_reset(audio_fifo_t * af, int r);
+int audio_fifo_get_reset(audio_fifo_t * af);
 
 int set_audio(enum audio_arch arch);
 
