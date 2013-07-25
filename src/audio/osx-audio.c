@@ -63,6 +63,7 @@ void osx_audio_init(audio_fifo_t *af)
     int i;
     TAILQ_INIT(&af->q);
     af->qlen = 0;
+    af->reset = 0;
 
     pthread_mutex_init(&af->mutex, NULL);
     pthread_cond_init(&af->cond, NULL);
