@@ -44,6 +44,7 @@ typedef struct audio_fifo_data {
 typedef struct audio_fifo {
     TAILQ_HEAD(, audio_fifo_data) q;
     int qlen;
+    int prev_qlen;
     int reset;
     pthread_mutex_t mutex;
     pthread_cond_t cond;

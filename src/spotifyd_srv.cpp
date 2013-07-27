@@ -332,7 +332,7 @@ void XplodifyHandler::getPlaylists(SpotifyPlaylistList& _return, const SpotifyCr
     }
     boost::shared_ptr<XplodifyPlaylistContainer> pc = sess->get_pl_container();
     if(!pc) {
-	return;
+        return;
     }
 
     int n =  pc->get_num_playlists();
@@ -343,7 +343,7 @@ void XplodifyHandler::getPlaylists(SpotifyPlaylistList& _return, const SpotifyCr
     {
         boost::shared_ptr<XplodifyPlaylist> pl = pc->get_playlist(i);
         std::string plstr(pl->get_name());
-	_return.insert(plstr);
+        _return.insert(plstr);
     }
 
     return;
@@ -351,22 +351,22 @@ void XplodifyHandler::getPlaylists(SpotifyPlaylistList& _return, const SpotifyCr
 }
 
 void XplodifyHandler::getPlaylist(SpotifyPlaylist& _return, const SpotifyCredential& cred,
-		const int32_t plist_id) {
+        const int32_t plist_id) {
     // Your implementation goes here
     boost::shared_ptr<XplodifySession> sess = get_session(cred._uuid);
     if(!sess) {
-	return;
+        return;
     }
 
     boost::shared_ptr<XplodifyPlaylistContainer> pc = sess->get_pl_container();
     if(!pc) {
-	return;
+        return;
     }
 
     boost::shared_ptr<XplodifyPlaylist> pl = pc->get_playlist(plist_id);
 
     if(!pl) {
-	return;
+        return;
     }
 
     for(unsigned int j = 0 ; j < pl->get_num_tracks() ; j++ ) {
@@ -376,18 +376,18 @@ void XplodifyHandler::getPlaylist(SpotifyPlaylist& _return, const SpotifyCredent
             std::cout << "Track at index: "<<  j << " is loading" << std::endl;
         }
 #endif
-	int duration = tr->get_duration(); //millisecs?
-	SpotifyTrack spt;
+        int duration = tr->get_duration(); //millisecs?
+        SpotifyTrack spt;
 
-	spt.__set__id( j );
-	spt.__set__name( tr->get_name() );
-	spt.__set__artist( tr->get_artist(0) ); //first artist (this sucks).
-	spt.__set__minutes( duration / 60000 );
-	spt.__set__seconds( (duration / 1000) % 60 );
-	spt.__set__popularity( tr->get_popularity() );
-	spt.__set__starred( tr->is_starred() );
-	spt.__set__genre( "unknown" );
-	_return.push_back(spt);
+        spt.__set__id( j );
+        spt.__set__name( tr->get_name() );
+        spt.__set__artist( tr->get_artist(0) ); //first artist (this sucks).
+        spt.__set__minutes( duration / 60000 );
+        spt.__set__seconds( (duration / 1000) % 60 );
+        spt.__set__popularity( tr->get_popularity() );
+        spt.__set__starred( tr->is_starred() );
+        spt.__set__genre( "unknown" );
+        _return.push_back(spt);
     }
 
     return;
@@ -596,7 +596,12 @@ int XplodifyHandler::music_playback(const sp_audioformat *format,
 
     if (num_frames == 0)
     {
-	return 0; // Audio discontinuity, do nothing
+        return 0; // Audio discontinuity, do nothing
+    }
+
+    if (num_frames > SILENCE_N_SAMPLES) {
+        pthread_mutex_unlock(&m_audiofifo.mutex);
+        return 0;
     }
 
     pthread_mutex_lock(&m_audiofifo.mutex);
@@ -605,10 +610,19 @@ int XplodifyHandler::music_playback(const sp_audioformat *format,
     if (m_audiofifo.qlen > format->sample_rate)
     {
 #ifdef _DEBUG
-        std::cout << "Frames in audio_queue: " << m_audiofifo.qlen << std::endl;
+        std::cout << "[INFO] Frames in audio_queue: " << m_audiofifo.qlen << std::endl;
 #endif
         pthread_mutex_unlock(&m_audiofifo.mutex);
-	return 0;
+        return 0;
+    } 
+
+    //buffer underrun
+    if( m_audiofifo.prev_qlen && !m_audiofifo.qlen) 
+    {
+        m_audiofifo.reset = 1;
+#ifdef _DEBUG
+        std::cout << "[WARNING] Buffer underrun detected." << std::endl;
+#endif
     }
 
     s = num_frames * sizeof(int16_t) * format->channels;
@@ -622,10 +636,12 @@ int XplodifyHandler::music_playback(const sp_audioformat *format,
     afd->channels = format->channels;
 
     TAILQ_INSERT_TAIL(&m_audiofifo.q, afd, link);
+    m_audiofifo.prev_qlen = m_audiofifo.qlen;
     m_audiofifo.qlen += num_frames;
 
 #ifdef _DEBUG
-    std::cout << "Frames in audio_queue: " << m_audiofifo.qlen << std::endl;
+    std::cout << "[INFO] Frames fed: " << num_frames << std::endl;
+    std::cout << "[INFO] Frames in audio_queue: " << m_audiofifo.qlen << std::endl;
 #endif
 
     pthread_cond_signal(&m_audiofifo.cond);

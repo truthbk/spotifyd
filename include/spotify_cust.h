@@ -204,5 +204,8 @@ class XplodifyHandler
         int                                     m_notify_events;
         std::string                             m_sp_tmpdir;
 
+        //SILENCE NUM SAMPLES THRESHOLD
+        enum { SILENCE_N_SAMPLES = 8092 };
+
 };
 #endif
