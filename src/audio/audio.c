@@ -76,6 +76,7 @@ void audio_fifo_flush(audio_fifo_t *af)
     }
 
     af->qlen = 0;
+    af->prev_qlen = 0;
     pthread_mutex_unlock(&af->mutex);
 #ifdef _DEBUG
     fprintf(stdout, "FIFO Flushed\n");

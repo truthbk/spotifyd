@@ -218,7 +218,7 @@ void XplodifySession::set_track(int idx) {
     //track has been changed.
     if(m_track && track != m_track) {
         sp_session_player_unload(m_session);
-        m_handler->audio_fifo_flush_now();
+        //m_handler->audio_fifo_flush_now();
         m_track_idx = NO_TRACK_IDX;
         m_track = boost::shared_ptr<XplodifyTrack>();
     }
@@ -250,7 +250,7 @@ void XplodifySession::set_track(std::string trackname) {
     //track has been changed.
     if(m_track && track != m_track) {
         sp_session_player_unload(m_session);
-        m_handler->audio_fifo_flush_now();
+        //m_handler->audio_fifo_flush_now();
         m_track_idx = NO_TRACK_IDX;
         m_track = boost::shared_ptr<XplodifyTrack>();
     }
