@@ -52,6 +52,7 @@ XplodifyHandler::XplodifyHandler()
     : Runnable()
     , Lockable()
     , m_sess_it(m_session_cache.get<0>().begin())
+    , m_active_session()
     , m_playback_done(1)
     , m_notify_events(0)
 {
@@ -173,6 +174,10 @@ void XplodifyHandler::loginSession(SpotifyCredential& _return, const SpotifyCred
 
         m_timers.insert(std::pair< std::string, boost::asio::deadline_timer *>(uuid_str, t));
 
+        if(!getActiveSession()) {
+            setActiveSession(sess);
+        }
+
         _return = cred;
         _return.__set__uuid(uuid_str);
         unlock();
@@ -280,6 +285,7 @@ void XplodifyHandler::sendCommand(const SpotifyCredential& cred, const SpotifyCm
             audio_fifo_set_reset(audio_fifo(), 1);
             break;
         case SpotifyCmd::NEXT:
+            sess->end_of_track();
             break;
         case SpotifyCmd::PREV:
             break;
@@ -599,7 +605,9 @@ int XplodifyHandler::music_playback(const sp_audioformat *format,
         return 0; // Audio discontinuity, do nothing
     }
 
+    //we're receiving synthetic "end of track" silence...
     if (num_frames > SILENCE_N_SAMPLES) {
+        m_active_session->end_of_track();
         pthread_mutex_unlock(&m_audiofifo.mutex);
         return 0;
     }

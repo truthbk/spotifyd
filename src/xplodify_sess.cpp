@@ -520,13 +520,15 @@ void SP_CALLCONV XplodifySession::cb_play_token_lost(sp_session *sess) {
 }
 
 void SP_CALLCONV XplodifySession::cb_end_of_track(sp_session * sess) {
-
+    //sometimes takes for ever to get called by libspotify. deprecating it...
+#if 0
     XplodifySession * s = XplodifySession::get_session_from_udata(sess);
     if(!s) {
         return;
     }
 
     s->end_of_track();
+#endif
     return;
 
 }
