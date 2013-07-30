@@ -24,6 +24,7 @@ class XplodifyTrack
         bool          load(sp_track * track);
         void          unload();
         bool          is_loaded();
+        bool          is_streamable();
         std::string   get_name();
         int           get_duration();
         int           get_num_artists();

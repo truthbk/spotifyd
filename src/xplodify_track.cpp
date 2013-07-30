@@ -42,6 +42,19 @@ bool XplodifyTrack::is_loaded(){
     }
     return sp_track_is_loaded(m_track);
 }
+bool XplodifyTrack::is_streamable(){
+    if(!m_track || !is_loaded()) {
+        return false;
+    }
+
+    sp_track_availability available;
+    available = sp_track_get_availability(m_sess->get_sp_session(), m_track);
+    if(available == SP_TRACK_AVAILABILITY_NOT_STREAMABLE) {
+        return false;
+    }
+
+    return true;
+}
 std::string XplodifyTrack::get_name(){
     if(!m_track) {
         return std::string();
