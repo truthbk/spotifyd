@@ -285,9 +285,8 @@ void XplodifyHandler::sendCommand(const SpotifyCredential& cred, const SpotifyCm
             audio_fifo_set_reset(audio_fifo(), 1);
             break;
         case SpotifyCmd::NEXT:
-            sess->end_of_track();
-            break;
         case SpotifyCmd::PREV:
+            sess->end_of_track();
             break;
         case SpotifyCmd::RAND:
         case SpotifyCmd::LINEAR:
