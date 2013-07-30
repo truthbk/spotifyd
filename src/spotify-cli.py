@@ -399,6 +399,16 @@ class XplodifyApp(urwid.Frame):
         except Exception, e:
             logging.debug("Exception: %s", e)
 
+    def playback_cmd(self, cmd):
+        logging.debug("Modifying playback")
+        try:
+            if self._current_state == SpotifyCmd.PAUSE:
+                self.spoticlient.spot_playback(cmd)
+                self._current_state = SpotifyCmd.PLAY
+            else:
+                self.spoticlient.spot_playback(cmd)
+        except Exception, e:
+            logging.debug("Exception: %s", e)
 
     def set_playlist(self, button, playlist): 
         return
@@ -413,11 +423,11 @@ class XplodifyApp(urwid.Frame):
         elif k == "f5":
             raise urwid.ExitMainLoop()
         elif k == "f6":
-            raise urwid.ExitMainLoop()
+            self.playback_cmd(SpotifyCmd.PREV)
         elif k == "f7":
-            self.toggle_playback();
+            self.toggle_playback()
         elif k == "f8":
-            raise urwid.ExitMainLoop()
+            self.playback_cmd(SpotifyCmd.NEXT)
         elif k == "f9":
             self.get_playlists()
         elif k == "f10":
