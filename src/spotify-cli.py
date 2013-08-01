@@ -441,6 +441,8 @@ class XplodifyApp(urwid.Frame):
             raise urwid.ExitMainLoop()
         elif k == "tab":
             self.mainview.focus_position = (self.mainview.focus_position + 1) % 2
+        elif k == "esc":
+            self.body = self.mainview
         else:
             return
 
