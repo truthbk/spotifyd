@@ -288,13 +288,17 @@ class XplodifyApp(urwid.Frame):
     def logout(self):
         if self.logged:
             self.spoticlient.logout()
-            
+
             self._active_pl = None
             self._active_pl_button = None
 
             self.clear_pl_panel()
             self.clear_track_panel()
             self.header.original_widget.set_text(u"Not Logged in.")
+            self.loginview.original_widget.widget_list[0].set_edit_text(u"")
+            self.loginview.original_widget.widget_list[1].set_edit_text(u"")
+            self.loginview.original_widget.focus_position = 0
+            self.logged = False
 
 
     def get_playlists(self):
