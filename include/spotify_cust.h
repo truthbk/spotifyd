@@ -2,6 +2,7 @@
 #define _SPOTIFY_CUST_HH
 
 #include <cstdint>
+#include <ctime>
 #include <map>
 
 #include <boost/shared_ptr.hpp>
@@ -85,6 +86,7 @@ class XplodifyHandler
         XplodifyHandler();
         void loginSession(SpotifyCredential& _return, const SpotifyCredential& cred);
         bool isLoggedIn(const SpotifyCredential& cred);
+        int64_t getStateTS(const SpotifyCredential& cred);
         void logoutSession(const SpotifyCredential& cred);
         void sendCommand(const SpotifyCredential& cred, const SpotifyCmd::type cmd);
         void switch_session();
@@ -112,7 +114,7 @@ class XplodifyHandler
                 const void * frames, int num_frames);
         void audio_fifo_stats(sp_audio_buffer_stats *stats);
         void audio_fifo_flush_now();
-
+        void update_timestamp();
         std::string get_tmpdir();
 
 
@@ -203,6 +205,7 @@ class XplodifyHandler
         int                                     m_playback_done;
         int                                     m_notify_events;
         std::string                             m_sp_tmpdir;
+        std::time_t                             m_ts;
 
         //SILENCE NUM SAMPLES THRESHOLD
         enum { SILENCE_N_SAMPLES = 8192 };

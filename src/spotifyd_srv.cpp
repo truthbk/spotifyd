@@ -55,6 +55,7 @@ XplodifyHandler::XplodifyHandler()
     , m_active_session()
     , m_playback_done(1)
     , m_notify_events(0)
+    , m_ts(std::time(NULL))
 {
     //tmp dir name
     int pid = getpid();
@@ -232,6 +233,21 @@ bool XplodifyHandler::isLoggedIn(const SpotifyCredential& cred) {
         return false;
 
     return sess->get_logged_in();
+}
+
+int64_t XplodifyHandler::getStateTS(const SpotifyCredential& cred) {
+    int64_t ts;
+    boost::shared_ptr< XplodifySession > 
+        sess = get_session(cred._uuid);
+
+    if(!sess)
+        return false;
+
+    lock();
+    ts = m_ts;
+    unlock();
+
+    return ts;
 }
 
 
@@ -672,6 +688,12 @@ void XplodifyHandler::audio_fifo_stats(sp_audio_buffer_stats *stats)
 
 void XplodifyHandler::audio_fifo_flush_now() {
     audio_fifo_flush(audio_fifo());
+}
+
+void XplodifyHandler::update_timestamp() {
+    lock();
+    m_ts = std::time(NULL);
+    unlock();
 }
 
 std::string XplodifyHandler::get_tmpdir() {
