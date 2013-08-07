@@ -400,7 +400,7 @@ void XplodifyHandler::getPlaylist(SpotifyPlaylist& _return, const SpotifyCredent
         int duration = tr->get_duration(); //millisecs?
         SpotifyTrack spt;
 
-        spt.__set__id( j );
+        spt.__set__id( tr->get_index() );
         spt.__set__name( tr->get_name() );
         spt.__set__artist( tr->get_artist(0) ); //first artist (this sucks).
         spt.__set__minutes( duration / 60000 );
@@ -445,7 +445,7 @@ void XplodifyHandler::getPlaylistByName(
             //boost::shared_ptr<SpotifyTrack> spt(new SpotifyTrack());
             SpotifyTrack spt;
 
-            spt.__set__id( j );
+            spt.__set__id( tr->get_index() );
             spt.__set__name( tr->get_name() );
             spt.__set__artist( tr->get_artist(0) ); //first artist (this sucks).
             spt.__set__minutes( duration / 60000 );
@@ -543,8 +543,27 @@ bool XplodifyHandler::add2playlist(const SpotifyCredential& cred, const std::str
 }
 
 void XplodifyHandler::whats_playing(SpotifyTrack& _return) {
-    // Your implementation goes here
-    printf("whats_playing\n");
+
+    if(!m_active_session) {
+        return;
+    }
+    boost::shared_ptr<XplodifyTrack> tr( m_active_session->get_track());
+    if(!tr) {
+        return;
+    }
+
+    int duration = tr->get_duration(); 
+
+    _return.__set__id( tr->get_index() );
+    _return.__set__name( tr->get_name() );
+    _return.__set__artist( tr->get_artist(0) ); //first artist (this sucks).
+    _return.__set__minutes( duration / 60000 );
+    _return.__set__seconds( (duration / 1000) % 60 );
+    _return.__set__popularity( tr->get_popularity() );
+    _return.__set__starred( tr->is_starred() );
+    _return.__set__genre( "unknown" );
+
+    return;
 }
 
 boost::shared_ptr<XplodifySession> XplodifyHandler::get_session(const std::string& uuid) {
