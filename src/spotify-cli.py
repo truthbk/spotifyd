@@ -207,12 +207,13 @@ class XplodifyElement(urwid.Button):
 
 class XplodifyApp(urwid.Frame):
     palette = [
-        ('body', 'default', 'default'),
-        ('reversed', 'light gray', 'black', 'bold'),
-        ('playback', 'light red', 'dark gray', 'bold'),
-        ('foot', 'black', 'light gray', 'bold'),
-        ('head', 'black', 'light gray', 'bold'),
-        ('key', 'light cyan', 'dark blue', 'underline'),
+        ('body','default', 'default'),
+        ('reversed','light gray', 'black', 'bold'),
+        ('playback','light red', 'dark gray', 'bold'),
+        ('foot','black', 'light gray', 'bold'),
+        ('log','dark blue', 'black', 'bold'),
+        ('track','light red', 'black', 'bold'),
+        ('key','light cyan', 'dark blue', 'underline'),
     ]
 
     footer_text = ('foot', [
@@ -240,8 +241,8 @@ class XplodifyApp(urwid.Frame):
         self._trwalker = urwid.SimpleFocusListWalker([urwid.Button("(empty)")])
         self.plpane = urwid.ListBox(self._plwalker)
         self.trackpane = urwid.ListBox(self._trwalker)
-        self.logwid = urwid.AttrWrap(urwid.Text(u"Not Logged In."), "head")
-        self.trackwid = urwid.AttrWrap(urwid.Text(u"Now playing: (none)"), "head")
+        self.logwid = urwid.AttrWrap(urwid.Text(u"Not Logged In."), "log")
+        self.trackwid = urwid.AttrWrap(urwid.Text(u"Now playing: (none)"), "track")
         self.header = urwid.Pile([self.logwid, self.trackwid])
         self.footer = urwid.AttrWrap(urwid.Text(self.footer_text), "foot")
 
