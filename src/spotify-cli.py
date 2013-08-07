@@ -236,7 +236,9 @@ class XplodifyApp(urwid.Frame):
         self._trwalker = urwid.SimpleFocusListWalker([urwid.Button("(empty)")])
         self.plpane = urwid.ListBox(self._plwalker)
         self.trackpane = urwid.ListBox(self._trwalker)
-        self.header = urwid.AttrWrap(urwid.Text(u"Not Logged In."), "head")
+        self.logwid = urwid.AttrWrap(urwid.Text(u"Not Logged In."), "head")
+        self.trackwid = urwid.AttrWrap(urwid.Text(u"Now playing: (none)"), "head")
+        self.header = urwid.Pile([self.logwid, self.trackwid])
         self.footer = urwid.AttrWrap(urwid.Text(self.footer_text), "foot")
 
         self.widgets = [
@@ -279,7 +281,7 @@ class XplodifyApp(urwid.Frame):
             self.logged = self.spoticlient.login(username, passwd)
         time.sleep(20)
         if self.logged:
-            self.header.original_widget.set_text(u"Logged in as "+username) 
+            self.logwid.original_widget.set_text(u"Logged in as "+username) 
             logging.debug("Retrieving playlists.")
             self.get_playlists()
             self.mainview.set_focus_column(0)
@@ -294,7 +296,7 @@ class XplodifyApp(urwid.Frame):
 
             self.clear_pl_panel()
             self.clear_track_panel()
-            self.header.original_widget.set_text(u"Not Logged in.")
+            self.logwid.original_widget.set_text(u"Not Logged in.")
             self.loginview.original_widget.widget_list[0].set_edit_text(u"")
             self.loginview.original_widget.widget_list[1].set_edit_text(u"")
             self.loginview.original_widget.focus_position = 0
