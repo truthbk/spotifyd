@@ -61,6 +61,13 @@ std::string XplodifyTrack::get_name(){
     }
     return std::string(sp_track_name(m_track));
 }
+int XplodifyTrack::get_index(){
+    if(!m_track) {
+        return 0;
+    }
+    return sp_track_index(m_track);
+
+}
 int XplodifyTrack::get_duration(){
     if(!m_track) {
         return 0;
