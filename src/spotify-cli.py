@@ -350,7 +350,7 @@ class XplodifyApp(urwid.Frame):
                     if cur_song:
                         self.trackwid.original_widget.\
                             set_text(u"Now playing: "+cur_song)
-                    self.get_playlists()
+                    # self.get_playlists()
             finally:
                 self._mutex.release()
 
