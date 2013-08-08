@@ -274,6 +274,7 @@ class XplodifyApp(urwid.Frame):
         self.footer = urwid.AttrWrap(urwid.Text(self.footer_text), "foot")
 
         self._poller = None
+        self._state = 0
         self._lock = threading.Lock()
         self._stop = threading.Event()
 
