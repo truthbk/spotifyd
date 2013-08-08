@@ -19,11 +19,9 @@ from thrift.transport import TSocket
 from thrift.transport import TTransport
 from thrift.protocol import TBinaryProtocol
 
-import curses
-from curses import panel
-
 import urwid
 
+import threading
 import signal
 import getpass
 
@@ -109,6 +107,16 @@ class spclient(object):
             self._success = False
         finally:
             return ret
+
+    def get_state(self):
+        state = None
+        try:
+            state = self._client.getStateTS(self._credentials)
+        except Exception, e:
+            logging.debug("Exception: %s", e)
+            self._success = False
+
+        return state
 
     def get_playlists(self):
         pls = None
@@ -242,6 +250,10 @@ class XplodifyApp(urwid.Frame):
         self.header = urwid.Pile([self.logwid, self.trackwid])
         self.footer = urwid.AttrWrap(urwid.Text(self.footer_text), "foot")
 
+        self._poller = threading.Thread(target=self.poll)
+        self._lock = threading.Lock()
+        self._stop = threading.Event()
+
         self.widgets = [
                 self.plpane,
                 self.trackpane
@@ -274,6 +286,19 @@ class XplodifyApp(urwid.Frame):
             pass
         else:
             self.body = self.overlay
+
+    def poll():
+        while not self._stop.is_set():
+            threading.Event().wait(2)
+            self._mutex.acquire()
+            try:
+                cur_st = self.spoticlient.get_state()
+                if cur_st > self._state:
+                    self._state = cur_st
+                    self.get_playlists()
+            finally:
+                self._mutex.release()
+
 
     def login(self, key):
         username = self.loginview.original_widget.widget_list[0].get_edit_text()
