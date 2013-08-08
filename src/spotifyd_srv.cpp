@@ -705,11 +705,11 @@ void XplodifyHandler::audio_fifo_stats(sp_audio_buffer_stats *stats)
 
 }
 
-void XplodifyHandler::audio_fifo_flush_now() {
+void XplodifyHandler::audio_fifo_flush_now(void) {
     audio_fifo_flush(audio_fifo());
 }
 
-void XplodifyHandler::update_timestamp() {
+void XplodifyHandler::update_timestamp(void) {
     lock();
     m_ts = std::time(NULL);
     unlock();
