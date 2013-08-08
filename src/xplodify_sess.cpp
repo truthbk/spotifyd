@@ -25,35 +25,37 @@ extern "C" {
 
 
 XplodifySession::XplodifySession() 
-    :m_session(NULL)
-    ,m_plcontainer()
-    ,m_playlist()
-    ,m_track()
-    ,m_handler(NULL)
-    ,m_uuid("")
-    ,m_loggedin(false)
-    ,m_playback_done(1)
-    ,m_remove_tracks(0)
-    ,m_track_idx(-1)
-    ,m_mode(SpotifyCmd::LINEAR)
-    ,m_playback(SpotifyCmd::PAUSE)
+    : Lockable()
+    , m_session(NULL)
+    , m_plcontainer()
+    , m_playlist()
+    , m_track()
+    , m_handler(NULL)
+    , m_uuid("")
+    , m_loggedin(false)
+    , m_playback_done(1)
+    , m_remove_tracks(0)
+    , m_track_idx(-1)
+    , m_mode(SpotifyCmd::LINEAR)
+    , m_playback(SpotifyCmd::PAUSE)
 {
     srand(time(NULL));
 }
 
 XplodifySession::XplodifySession(XplodifyHandler * h) 
-    :m_session(NULL)
-    ,m_plcontainer()
-    ,m_playlist()
-    ,m_track()
-    ,m_handler(h)
-    ,m_uuid("")
-    ,m_loggedin(false)
-    ,m_playback_done(1)
-    ,m_remove_tracks(0)
-    ,m_track_idx(-1)
-    ,m_mode(SpotifyCmd::LINEAR)
-    ,m_playback(SpotifyCmd::PAUSE)
+    : Lockable()
+    , m_session(NULL)
+    , m_plcontainer()
+    , m_playlist()
+    , m_track()
+    , m_handler(h)
+    , m_uuid("")
+    , m_loggedin(false)
+    , m_playback_done(1)
+    , m_remove_tracks(0)
+    , m_track_idx(-1)
+    , m_mode(SpotifyCmd::LINEAR)
+    , m_playback(SpotifyCmd::PAUSE)
 {
     srand(time(NULL));
 }
@@ -190,6 +192,12 @@ std::string XplodifySession::get_playlist_name(void) {
     }
 
     return m_playlist->get_name();
+}
+
+void XplodifySession::update_timestamp(void) {
+    lock();
+    m_ts = std::time(NULL);
+    unlock();
 }
 
 void XplodifySession::set_mode(SpotifyCmd::type mode) {

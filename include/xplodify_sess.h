@@ -2,9 +2,12 @@
 #define _XPLODIFY_SESS_HH
 
 #include <cstdint>
+#include <ctime>
 
 #include <boost/shared_ptr.hpp>
 #include <boost/enable_shared_from_this.hpp>
+
+#include "lockable.h"
 
 #include "Spotify.h"
 
@@ -19,8 +22,9 @@ class XplodifyPlaylist;
 class XplodifyTrack;
 
 //nice per session wrapper class
-class XplodifySession : 
-    public boost::enable_shared_from_this<XplodifySession> {
+class XplodifySession 
+    : private Lockable
+    , public boost::enable_shared_from_this<XplodifySession> {
 
     public:
         friend class XplodifyHandler;
@@ -77,6 +81,7 @@ class XplodifySession :
         void set_active_playlist(int idx);
         void set_active_playlist(std::string plname);
         std::string get_playlist_name(void);
+        void update_timestamp(void);
 
         void set_mode(SpotifyCmd::type mode);
         SpotifyCmd::type get_mode(void);
@@ -153,6 +158,7 @@ class XplodifySession :
 
         SpotifyCmd::type        m_mode;
         SpotifyCmd::type        m_playback;
+        std::time_t             m_ts;
 
 
 };
