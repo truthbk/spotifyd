@@ -273,7 +273,7 @@ class XplodifyApp(urwid.Frame):
         self.header = urwid.Pile([self.logwid, self.trackwid])
         self.footer = urwid.AttrWrap(urwid.Text(self.footer_text), "foot")
 
-        self._poller = threading.Thread(target=self.poll)
+        self._poller = None
         self._lock = threading.Lock()
         self._stop = threading.Event()
 
@@ -367,6 +367,9 @@ class XplodifyApp(urwid.Frame):
             logging.debug("Retrieving playlists.")
             self.get_playlists()
             self.mainview.set_focus_column(0)
+            self._poller = threading.Thread(target=self.poll)
+            self._poller.start()
+
         self.body = self.mainview
 
     def logout(self):
@@ -382,6 +385,11 @@ class XplodifyApp(urwid.Frame):
             self.loginview.original_widget.widget_list[0].set_edit_text(u"")
             self.loginview.original_widget.widget_list[1].set_edit_text(u"")
             self.loginview.original_widget.focus_position = 0
+            self._stop.set()
+            self._poller.join(POLL_IVAL+1)
+            if self._poller.isAlive(): 
+                exit(1) # this might be too much.
+
             self.logged = False
 
     def get_playlists(self):
