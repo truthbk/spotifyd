@@ -30,8 +30,9 @@ import logging
 XPLODIFYD_PORT = 9090
 VERSION = "0.1"
 
-logging.basicConfig(filename='debug.log', level=logging.DEBUG)
+POLL_IVAL = 2 #in seconds
 
+logging.basicConfig(filename='debug.log',level=logging.DEBUG)
 
 def signal_handler(signal, frame):
     sys.exit(0)
@@ -76,7 +77,7 @@ class spclient(object):
         try:
             credentials = SpotifyCredential(username, password)
             self._credentials = self._client.loginSession(credentials)
-            success = True  # refine this.
+            success = True   # refine this.
         except Exception, e:
             logging.debug("Exception: %s", e)
             return False
@@ -122,6 +123,16 @@ class spclient(object):
             self._success = False
 
         return state
+
+    def whats_playing(self):
+        song = None
+        try:
+            song = self._client.whats_playing()
+        except Exception, e:
+            logging.debug("Exception: %s", e)
+            self._success = False
+
+        return song
 
     def get_playlists(self):
         pls = None
@@ -275,6 +286,7 @@ class XplodifyApp(urwid.Frame):
             allow_tab=False,
             multiline=False
         )
+
         passwd = urwid.Edit(
             u'Password:  ',
             u"",
@@ -300,7 +312,8 @@ class XplodifyApp(urwid.Frame):
             self.mainview,
             align='center', width=('relative', 30),
             valign='middle', height=('relative', 30),
-            min_width=30, min_height=6)
+            min_width=30, min_height=6
+        )
         super(XplodifyApp, self).__init__(
             urwid.AttrWrap(self.mainview, 'body'),
             footer=self.footer,
@@ -325,21 +338,25 @@ class XplodifyApp(urwid.Frame):
 
     def poll():
         while not self._stop.is_set():
-            threading.Event().wait(2)
+            threading.Event().wait(POLL_IVAL)
             self._mutex.acquire()
             try:
                 cur_st = self.spoticlient.get_state()
                 if cur_st > self._state:
                     self._state = cur_st
+                    cur_song = self.spoticlient.whats_playing()
+                    if cur_song:
+                        self.trackwid.original_widget.\
+                            set_text(u"Now playing: "+cur_song)
                     self.get_playlists()
             finally:
                 self._mutex.release()
 
-
     def login(self, key):
         username = self.loginview.original_widget.\
             widget_list[0].get_edit_text()
-        passwd = self.loginview.original_widget.widget_list[1].get_edit_text()
+        passwd = self.loginview.original_widget.\
+            widget_list[1].get_edit_text()
         if not self.logged:
             self.logged = self.spoticlient.login(username, passwd)
         time.sleep(20)
@@ -429,7 +446,7 @@ class XplodifyApp(urwid.Frame):
                     urwid.AttrMap(
                         XplodifyElement(
                             track._id,
-                            track._name + " - " + track._artist,
+                            track._name+" - "+track._artist,
                             callback=self.playback_track,
                             userdata=track
                         ),
@@ -492,7 +509,7 @@ class XplodifyApp(urwid.Frame):
         except Exception, e:
             logging.debug("Exception: %s", e)
 
-    def set_playlist(self, button, playlist): 
+    def set_playlist(self, button, playlist):
         return
 
     def quit(self):
