@@ -26,6 +26,7 @@ if len(sys.argv) <= 1 or sys.argv[1] == '--help':
   print '  SpotifyCredential loginSession(SpotifyCredential cred)'
   print '  bool isLoggedIn(SpotifyCredential cred)'
   print '  i64 getStateTS(SpotifyCredential cred)'
+  print '  i64 getSessionStateTS(SpotifyCredential cred)'
   print '  void logoutSession(SpotifyCredential cred)'
   print '  void sendCommand(SpotifyCredential cred, SpotifyCmd cmd)'
   print '  SpotifyPlaylist search(SpotifyCredential cred, SpotifySearch criteria)'
@@ -107,6 +108,12 @@ elif cmd == 'getStateTS':
     print 'getStateTS requires 1 args'
     sys.exit(1)
   pp.pprint(client.getStateTS(eval(args[0]),))
+
+elif cmd == 'getSessionStateTS':
+  if len(args) != 1:
+    print 'getSessionStateTS requires 1 args'
+    sys.exit(1)
+  pp.pprint(client.getSessionStateTS(eval(args[0]),))
 
 elif cmd == 'logoutSession':
   if len(args) != 1:

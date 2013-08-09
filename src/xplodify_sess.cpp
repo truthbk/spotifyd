@@ -194,10 +194,20 @@ std::string XplodifySession::get_playlist_name(void) {
     return m_playlist->get_name();
 }
 
-void XplodifySession::update_timestamp(void) {
+void XplodifySession::update_state_ts(void) {
     lock();
     m_ts = std::time(NULL);
     unlock();
+}
+
+int64_t XplodifySession::get_state_ts(void) {
+    int64_t state = 0;
+
+    lock();
+    state = m_ts;
+    unlock();
+
+    return state;
 }
 
 void XplodifySession::set_mode(SpotifyCmd::type mode) {

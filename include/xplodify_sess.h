@@ -81,7 +81,8 @@ class XplodifySession
         void set_active_playlist(int idx);
         void set_active_playlist(std::string plname);
         std::string get_playlist_name(void);
-        void update_timestamp(void);
+        void update_state_ts(void);
+        int64_t get_state_ts(void);
 
         void set_mode(SpotifyCmd::type mode);
         SpotifyCmd::type get_mode(void);

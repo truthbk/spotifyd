@@ -87,6 +87,7 @@ class XplodifyHandler
         void loginSession(SpotifyCredential& _return, const SpotifyCredential& cred);
         bool isLoggedIn(const SpotifyCredential& cred);
         int64_t getStateTS(const SpotifyCredential& cred);
+        int64_t getSessionStateTS(const SpotifyCredential& cred);
         void logoutSession(const SpotifyCredential& cred);
         void sendCommand(const SpotifyCredential& cred, const SpotifyCmd::type cmd);
         void switch_session();
