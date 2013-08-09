@@ -250,6 +250,16 @@ int64_t XplodifyHandler::getStateTS(const SpotifyCredential& cred) {
     return ts;
 }
 
+int64_t XplodifyHandler::getSessionStateTS(const SpotifyCredential& cred) {
+
+    boost::shared_ptr< XplodifySession > 
+        sess = get_session(cred._uuid);
+
+    if(!sess)
+        return false;
+
+    return sess->get_state_ts();
+}
 
 void XplodifyHandler::logoutSession(const SpotifyCredential& cred) {
 
