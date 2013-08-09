@@ -38,6 +38,7 @@ XplodifySession::XplodifySession()
     , m_track_idx(-1)
     , m_mode(SpotifyCmd::LINEAR)
     , m_playback(SpotifyCmd::PAUSE)
+    , m_ts(0)
 {
     srand(time(NULL));
 }
@@ -56,6 +57,7 @@ XplodifySession::XplodifySession(XplodifyHandler * h)
     , m_track_idx(-1)
     , m_mode(SpotifyCmd::LINEAR)
     , m_playback(SpotifyCmd::PAUSE)
+    , m_ts(0)
 {
     srand(time(NULL));
 }

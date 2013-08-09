@@ -57,6 +57,8 @@ XplodifyPlaylist::remove_track_from_cache(int idx) {
     boost::shared_ptr<XplodifyTrack> ret_track(cit->track);
 
     tr_cache_rand.erase(cit);
+
+    m_session->update_state_ts();
     return ret_track;
 }
 
@@ -72,6 +74,8 @@ XplodifyPlaylist::remove_track_from_cache(std::string& name){
     boost::shared_ptr<XplodifyTrack> ret_track(it->track);
 
     tr_cache_name.erase(name);
+
+    m_session->update_state_ts();
     return ret_track;
 }
 
@@ -103,6 +107,7 @@ void XplodifyPlaylist::flush() {
         boost::shared_ptr<XplodifyTrack> tr = get_track(0, true);
         tr.reset();
     }
+    m_session->update_state_ts();
 }
 
 bool XplodifyPlaylist::is_loaded() {
@@ -134,6 +139,7 @@ bool XplodifyPlaylist::load_tracks() {
             m_pending_tracks.push_back(tr);
         }
     }
+    m_session->update_state_ts();
     return true;
 }
 
@@ -144,6 +150,7 @@ bool XplodifyPlaylist::unload() {
     m_loading = false;
     m_playlist = NULL;
 
+    m_session->update_state_ts();
     return true;
 }
 
@@ -180,6 +187,7 @@ void XplodifyPlaylist::add_track(boost::shared_ptr<XplodifyTrack> tr) {
     track_cache_by_rand& t_r = m_track_cache.get<0>();
     //push_back() delivers better performance than insert.
     t_r.push_back(track_entry(tr->get_name(), tr));
+    m_session->update_state_ts();
 }
 
 void XplodifyPlaylist::add_track(boost::shared_ptr<XplodifyTrack> tr, int pos) {
@@ -192,6 +200,7 @@ void XplodifyPlaylist::add_track(boost::shared_ptr<XplodifyTrack> tr, int pos) {
     track_cache_by_rand::iterator it = t_r.iterator_to(t_r[pos]);
 
     t_r.insert(it, track_entry(tr->get_name(), tr));
+    m_session->update_state_ts();
 }
 
 boost::shared_ptr<XplodifyTrack> XplodifyPlaylist::get_track(int pos, bool remove) {
@@ -282,6 +291,7 @@ void XplodifyPlaylist::tracks_added(
         }
     }
 
+    m_session->update_state_ts();
     return;
 }
 void XplodifyPlaylist::tracks_removed(const int *tracks, int num_tracks) {
@@ -293,6 +303,7 @@ void XplodifyPlaylist::tracks_removed(const int *tracks, int num_tracks) {
         tr.reset();
     }
 
+    m_session->update_state_ts();
     return;
 }
 void XplodifyPlaylist::tracks_moved(const int *tracks, int num_tracks, int new_position) {
@@ -322,6 +333,7 @@ void XplodifyPlaylist::playlist_state_changed(){
 #endif
     }
 
+    m_session->update_state_ts();
     return;
 }
 void XplodifyPlaylist::playlist_update_in_progress(bool done){
@@ -350,6 +362,8 @@ void XplodifyPlaylist::playlist_metadata_updated(){
             it++;
         }
     }
+
+    m_session->update_state_ts();
     return;
 }
 void XplodifyPlaylist::track_created_changed(int position, sp_user *user, int when){
