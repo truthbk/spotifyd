@@ -1,1 +1,14 @@
 README: spotifyd is an attempt at collaborative listening of spotify tracks on the shell, no UI necessary.
+
+Building on Ubuntu 12.04:
+    - apt-get install libevent-dev libboost-dev libboost-system-dev libboost-filesystem-dev libopenal-dev libclalsadrv-dev
+    - build thrift:
+        - follow http://birchroad.wordpress.com/2011/03/15/installing-apache-thrift-in-ubuntu/, including the comments for "precise"
+        - apt-get install libglib2.0-dev python-all-dbg libmono-corlib1.0-cil libmono-system1.0-cil libmono-system-web2.0-cil
+        - dpkg -i ~/pbuilder/result/*deb
+    - get libspotify (or use the one from lib/)
+        - from https://developer.spotify.com/technologies/libspotify/
+        - tar xvfz libspotify*.tar.gz
+        - cd libspotify* && make install prefix=/usr/local
+    - cmake .
+
