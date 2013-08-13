@@ -275,7 +275,7 @@ class XplodifyApp(urwid.Frame):
 
         self._poller = None
         self._state = 0
-        self._lock = threading.Lock()
+        self._mutex = threading.Lock()
         self._stop = threading.Event()
 
         self.widgets = [
@@ -339,8 +339,9 @@ class XplodifyApp(urwid.Frame):
         else:
             self.body = self.overlay
 
-    def poll():
+    def poll(self):
         while not self._stop.is_set():
+            redraw = False
             threading.Event().wait(POLL_IVAL)
             self._mutex.acquire()
             try:
@@ -348,12 +349,16 @@ class XplodifyApp(urwid.Frame):
                 if cur_st > self._state:
                     self._state = cur_st
                     cur_song = self.spoticlient.whats_playing()
-                    if cur_song:
+                    if cur_song and cur_song._name:
                         self.trackwid.original_widget.\
-                            set_text(u"Now playing: "+cur_song)
+                            set_text(u"Now playing: "+cur_song._name)
+                        redraw = True
                     # self.get_playlists()
             finally:
                 self._mutex.release()
+
+            if redraw:
+                self.loop.draw_screen()
 
     def login(self, key):
         username = self.loginview.original_widget.\
@@ -364,7 +369,7 @@ class XplodifyApp(urwid.Frame):
             self.logged = self.spoticlient.login(username, passwd)
         time.sleep(20)
         if self.logged:
-            self.logwid.original_widget.set_text(u"Logged in as "+username) 
+            self.logwid.original_widget.set_text(u"Logged in as "+username)
             logging.debug("Retrieving playlists.")
             self.get_playlists()
             self.mainview.set_focus_column(0)
