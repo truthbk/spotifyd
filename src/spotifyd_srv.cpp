@@ -182,6 +182,7 @@ void XplodifyHandler::loginSession(SpotifyCredential& _return, const SpotifyCred
         _return = cred;
         _return.__set__uuid(uuid_str);
         unlock();
+        update_timestamp();
     }
 }
 void XplodifyHandler::login_timeout(const boost::system::error_code&,
@@ -222,6 +223,8 @@ void XplodifyHandler::login_timeout(const boost::system::error_code&,
     sess->flush();
     sess.reset();
     unlock();
+
+    update_timestamp();
 }
 
 bool XplodifyHandler::isLoggedIn(const SpotifyCredential& cred) {
@@ -280,6 +283,7 @@ void XplodifyHandler::logoutSession(const SpotifyCredential& cred) {
     sess.reset();
     unlock();
 
+    update_timestamp();
     return;
 }
 
@@ -313,6 +317,8 @@ void XplodifyHandler::sendCommand(const SpotifyCredential& cred, const SpotifyCm
         default:
             break;
     }
+
+    update_timestamp();
     return;
 }
 
@@ -331,6 +337,7 @@ void XplodifyHandler::switch_session() {
     //should load track...
     //sp_session_player_load(m_active_session->get_session(), sometrack );
 
+    update_timestamp();
     return;
 }
 
@@ -643,6 +650,7 @@ int XplodifyHandler::music_playback(const sp_audioformat *format,
     if (num_frames > SILENCE_N_SAMPLES) {
         m_active_session->end_of_track();
         pthread_mutex_unlock(&m_audiofifo.mutex);
+        update_timestamp();
         return 0;
     }
 
