@@ -51,6 +51,7 @@ bool SpotifyCredential::operator < (const SpotifyCredential & other) const
 XplodifyHandler::XplodifyHandler()
     : Runnable()
     , Lockable()
+    , LOGIN_TO(1)
     , m_sess_it(m_session_cache.get<0>().begin())
     , m_active_session()
     , m_playback_done(1)
