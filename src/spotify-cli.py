@@ -114,10 +114,30 @@ class spclient(object):
         finally:
             return ret
 
+    """
+    Handler state. This can be potentially different from session
+    state if and when the multi-session server is implemented.
+    Reflects server/handler state.
+    """
     def get_state(self):
         state = None
         try:
             state = self._client.getStateTS(self._credentials)
+        except Exception, e:
+            logging.debug("Exception: %s", e)
+            self._success = False
+
+        return state
+
+    """
+    Handler state. This can be potentially different from handler
+    state if and when the multi-session server is implemented.
+    Reflects user session state..
+    """
+    def get_session_state(self):
+        state = None
+        try:
+            state = self._client.getSessionStateTS(self._credentials)
         except Exception, e:
             logging.debug("Exception: %s", e)
             self._success = False
@@ -273,6 +293,7 @@ class XplodifyApp(urwid.Frame):
 
         self._poller = None
         self._state = 0
+        self._sess_state = 0
         self._mutex = threading.Lock()
         self._stop = threading.Event()
 
@@ -351,7 +372,13 @@ class XplodifyApp(urwid.Frame):
                         self.trackwid.original_widget.\
                             set_text(u"Now playing: "+cur_song._name)
                         redraw = True
-                    # self.get_playlists()
+
+                # no need to do this as often...
+                cur_sess_st = self.spoticlient.get_session_state()
+                if cur_sess_st > self._sess_state:
+                    self._sess_state = cur_sess_st
+                    self.get_playlists()  # typically user's playlists have changed
+                    redraw = True
             finally:
                 self._mutex.release()
 
