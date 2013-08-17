@@ -378,12 +378,14 @@ class XplodifyApp(urwid.Frame):
                 if cur_sess_st > self._sess_state:
                     self._sess_state = cur_sess_st
                     self.get_playlists()  # typically user's playlists have changed
+                    self.reselect_playlist()
                     redraw = True
+            except Exception, e:
+                logging.debug("Error in polling thread. Exception %s", e)
             finally:
                 self._mutex.release()
-
-            if redraw:
-                self.loop.draw_screen()
+                if redraw:
+                    self.loop.draw_screen()
 
     def login(self, key):
         username = self.loginview.original_widget.\
@@ -495,6 +497,13 @@ class XplodifyApp(urwid.Frame):
                         focus_map='reversed'
                     )
                 )
+
+    def reselect_playlist(self):
+        for pl in self._plwalker:
+            if self._active_pl is not None and \
+                    pl.original_widget.el_name == self._active_pl:
+                self.set_track_panel(pl, self._active_pl)
+            return
 
     def clear_pl_panel(self):
         while self._plwalker:
