@@ -278,11 +278,11 @@ class XplodifyApp(urwid.Frame):
         self._playlists = None
         self._active_pl = None
         self._active_pl_button = None
-        self._plwalker = urwid.SimpleFocusListWalker([urwid.Button("(empty)")])
+        self._plwalker = urwid.SimpleFocusListWalker([])
         self._tracks = {}
         self._active_tr_button = None
         self._current_state = SpotifyCmd.PAUSE
-        self._trwalker = urwid.SimpleFocusListWalker([urwid.Button("(empty)")])
+        self._trwalker = urwid.SimpleFocusListWalker([])
         self.plpane = urwid.ListBox(self._plwalker)
         self.trackpane = urwid.ListBox(self._trwalker)
         self.logwid = urwid.AttrWrap(urwid.Text(u"Not Logged In."), "log")
@@ -425,7 +425,13 @@ class XplodifyApp(urwid.Frame):
 
             self.logged = False
 
-    def get_playlists(self, active_pl = None):
+    def adjust_pl_pid(self, pl, pid):
+        for pl in self._plwalker:
+            if pl.original_widget.el_name == pl:
+                pl.original_widget.el_id = pid
+                break
+
+    def get_playlists(self, active_pl=None):
         try:
             self._playlists = list(self.spoticlient.get_playlists())
             logging.debug("Retrieved %d playlists: ", len(self._playlists))
@@ -434,21 +440,41 @@ class XplodifyApp(urwid.Frame):
             logging.debug("Exception: %s", e)
 
         if self._playlists:
-            #empty the playlist listwalker first...
+            """
             while self._plwalker:
                 self._plwalker.pop()
+            """
 
+            existing = [] #names
+            removed = [] #indices
+            for pl in self._plwalker:
+                try:
+                    pos = self._playlists.index(pl.original_widget.el_name)
+                    existing.append(pl.original_widget.el_name)
+                except Exception, e:
+                    removed.append(self._plwalker.index(pl), pl.original_widget.el_name)
+
+            #remove deleted playlists...
+            for i,pl in sorted(removed, reverse=True):
+                del self._tracks[pl]
+                del self._plwalker[i]
+
+            #refresh
             pid = 1
             for pl in self._playlists:
                 try:
-                    self._plwalker.insert(0, urwid.AttrMap(
-                        XplodifyElement(
-                            pid,
-                            pl,
-                            callback=self.set_track_panel,
-                            userdata=pl
-                        ),
-                        None, focus_map='reversed'))
+                    if pl not in existing:
+                        self._plwalker.insert(0, urwid.AttrMap(
+                            XplodifyElement(
+                                pid,
+                                pl,
+                                callback=self.set_track_panel,
+                                userdata=pl
+                            ),
+                            None, focus_map='reversed'))
+                    else:
+                        self.adjust_pl_pid(pl, pid)
+
                     self.get_tracks(pl)
                     pid += 1
                 except Exception, e:
@@ -458,7 +484,7 @@ class XplodifyApp(urwid.Frame):
                 for btn in self._plwalker:
                     if btn.original_widget.el_name == active_pl:
                         pos = self._plwalker.index(btn)
-                        self._plwaker.set_focus(pos)
+                        self._plwalker.set_focus(pos)
                         self.set_track_panel(btn, active_pl)
                         break
             else:
