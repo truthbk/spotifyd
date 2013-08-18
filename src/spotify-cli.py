@@ -267,7 +267,6 @@ class XplodifyApp(urwid.Frame):
         ('key', "F6"), " |<   ",
         ('key', "F7"), " |> / ||   ",
         ('key', "F8"), " >|   ",
-        ('key', "F9"), " Refresh ",
         ('key', "F10"), " logout  ",
         ('key', "F11"), " quit ",
         ])
@@ -578,8 +577,6 @@ class XplodifyApp(urwid.Frame):
             self.toggle_playback()
         elif k == "f8":
             self.playback_cmd(SpotifyCmd.NEXT)
-        elif k == "f9":
-            self.get_playlists()
         elif k == "f10":
             self.logout()
         elif k == "f11":
