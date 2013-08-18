@@ -377,8 +377,8 @@ class XplodifyApp(urwid.Frame):
                 cur_sess_st = self.spoticlient.get_session_state()
                 if cur_sess_st > self._sess_state:
                     self._sess_state = cur_sess_st
-                    self.get_playlists()  # typically user's playlists have changed
-                    self.reselect_playlist()
+                    # typically user's playlists have changed
+                    self.get_playlists(active_pl = self._active_pl)
                     redraw = True
             except Exception, e:
                 logging.debug("Error in polling thread. Exception %s", e)
@@ -394,7 +394,7 @@ class XplodifyApp(urwid.Frame):
             widget_list[1].get_edit_text()
         if not self.logged:
             self.logged = self.spoticlient.login(username, passwd)
-        time.sleep(20)
+        time.sleep(10)
         if self.logged:
             self.logwid.original_widget.set_text(u"Logged in as "+username)
             logging.debug("Retrieving playlists.")
@@ -426,7 +426,7 @@ class XplodifyApp(urwid.Frame):
 
             self.logged = False
 
-    def get_playlists(self):
+    def get_playlists(self, active_pl = None):
         try:
             self._playlists = list(self.spoticlient.get_playlists())
             logging.debug("Retrieved %d playlists: ", len(self._playlists))
@@ -455,7 +455,15 @@ class XplodifyApp(urwid.Frame):
                 except Exception, e:
                     logging.debug("Exception: %s", e)
 
-            self.set_track_panel(None, self._playlists[0])
+            if active_pl:
+                for btn in self._plwalker:
+                    if btn.original_widget.el_name == active_pl:
+                        pos = self._plwalker.index(btn)
+                        self._plwaker.set_focus(pos)
+                        self.set_track_panel(btn, active_pl)
+                        break
+            else:
+                self.set_track_panel(None, self._playlists[0])
 
     def get_tracks(self, playlist):
         try:
@@ -497,13 +505,6 @@ class XplodifyApp(urwid.Frame):
                         focus_map='reversed'
                     )
                 )
-
-    def reselect_playlist(self):
-        for pl in self._plwalker:
-            if self._active_pl is not None and \
-                    pl.original_widget.el_name == self._active_pl:
-                self.set_track_panel(pl, self._active_pl)
-            return
 
     def clear_pl_panel(self):
         while self._plwalker:
