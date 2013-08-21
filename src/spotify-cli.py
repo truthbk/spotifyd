@@ -370,6 +370,7 @@ class XplodifyApp(urwid.Frame):
                     if cur_song and cur_song._name:
                         self.trackwid.original_widget.\
                             set_text(u"Now playing: "+cur_song._name)
+                        self.highlight_track(cur_song._name)
                         redraw = True
 
                 # no need to do this as often...
@@ -415,6 +416,7 @@ class XplodifyApp(urwid.Frame):
             self.clear_pl_panel()
             self.clear_track_panel()
             self.logwid.original_widget.set_text(u"Not Logged in.")
+            self.trackwid.original_widget.set_text(u"Now playing: (none)")
             self.loginview.original_widget.widget_list[0].set_edit_text(u"")
             self.loginview.original_widget.widget_list[1].set_edit_text(u"")
             self.loginview.original_widget.focus_position = 0
@@ -541,6 +543,16 @@ class XplodifyApp(urwid.Frame):
         while self._trwalker:
             self._trwalker.pop()
         self._active_tr_button = None
+
+    def highlight_track(self, track):
+        for tr in self._trwalker:
+            if tr.original_widget.el_name == track:
+                # remove old highlight
+                if self._active_tr_button:
+                    self._active_tr_button.set_attr_map({'playback': None})
+                self._active_tr_button = tr
+                tr.set_attr_map({None: 'playback'})
+                break
 
     def playback_track(self, button, track):
         #remove highlight to old track button
