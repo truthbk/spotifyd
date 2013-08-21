@@ -35,7 +35,8 @@ const sp_playlist_callbacks XplodifyPlaylist::cbs = {
 };
 
 XplodifyPlaylist::XplodifyPlaylist(boost::shared_ptr<XplodifySession> sess) 
-    : m_session(sess)
+    : Lockable()
+    , m_session(sess)
     , m_playlist(NULL)
     , m_loading(true) {
     //EMPTY
@@ -122,24 +123,32 @@ bool XplodifyPlaylist::load_tracks() {
     }
 
     n = sp_playlist_num_tracks(m_playlist);
+    lock();
     for(int i=0 ; i<n ; i++) {
         sp_track * t = sp_playlist_track(m_playlist, i);
 
         track_cache_by_rand& tr_cache_rand = m_track_cache.get<0>();
+        std::pair<track_r_iterator, bool> p;
 
         boost::shared_ptr<XplodifyTrack> tr(new XplodifyTrack(m_session));
         if(tr->load(t)){
             std::string trname(tr->get_name());
-            tr_cache_rand.push_back(track_entry(trname, tr));
+            track_entry tr_entry(trname, tr);
+            p = tr_cache_rand.push_back(tr_entry);
+            if(p.second) {
 #ifdef _DEBUG
-            std::cout << "Track " << tr->get_name() << " loaded for playlist "
-                << get_name() << std::endl;
+                std::cout << "Track " << tr->get_name() << " loaded for playlist "
+                    << get_name() << std::endl;
 #endif
+            } else {
+                m_pending_tracks.push_back(tr);
+            }
         } else {
             m_pending_tracks.push_back(tr);
         }
     }
     m_session->update_state_ts();
+    unlock();
     return true;
 }
 
@@ -347,23 +356,29 @@ void XplodifyPlaylist::playlist_metadata_updated(){
 
     typedef std::vector< boost::shared_ptr<XplodifyTrack> > wvec;
     wvec::iterator it;
+    lock();
     for (it=m_pending_tracks.begin() ; it != m_pending_tracks.end() ; ) {
         boost::shared_ptr<XplodifyTrack> t = *it;
+        std::pair<track_r_iterator, bool> p;
 
         if(t->is_loaded()) {
             std::string trname(t->get_name());
-            tr_cache_rand.push_back(track_entry(trname, t));
+            track_entry tr_entry(trname, t);
+            p = tr_cache_rand.push_back(tr_entry);
+            if(p.second) {
+                it = m_pending_tracks.erase(it);
 #ifdef _DEBUG
-            std::cout << "Track " << t->get_name() << " loaded for playlist "
-                << get_name() << std::endl;
+                std::cout << "Track " << t->get_name() << " loaded for playlist "
+                    << get_name() << std::endl;
 #endif
-            it = m_pending_tracks.erase(it);
+            }
         } else {
             it++;
         }
     }
 
     m_session->update_state_ts();
+    unlock();
     return;
 }
 void XplodifyPlaylist::track_created_changed(int position, sp_user *user, int when){

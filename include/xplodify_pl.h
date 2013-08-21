@@ -26,8 +26,9 @@ class XplodifySession;
 class XplodifyPlaylistContainer;
 
 //NOTE: should this be lockable? I'm not sure Spotify C api enfores thread safety.
-class XplodifyPlaylist : 
-    public boost::enable_shared_from_this<XplodifyPlaylist>
+class XplodifyPlaylist
+    : private Lockable
+    , public boost::enable_shared_from_this<XplodifyPlaylist>
 {
     public:
         XplodifyPlaylist(boost::shared_ptr<XplodifySession> sess);
@@ -124,6 +125,7 @@ class XplodifyPlaylist :
 
         typedef track_cache::nth_index<0>::type track_cache_by_rand;
         typedef track_cache::nth_index<1>::type track_cache_by_name;
+        typedef track_cache_by_rand::iterator track_r_iterator;
 
         static const sp_playlist_callbacks             cbs;
 
