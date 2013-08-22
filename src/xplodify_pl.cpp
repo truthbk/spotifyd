@@ -371,6 +371,8 @@ void XplodifyPlaylist::playlist_metadata_updated(){
                 std::cout << "Track " << t->get_name() << " loaded for playlist "
                     << get_name() << std::endl;
 #endif
+            } else {
+                it++;
             }
         } else {
             it++;
