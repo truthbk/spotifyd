@@ -374,6 +374,7 @@ void XplodifySession::flush() {
     }
 
     pc->flush();
+    pc.reset();
 }
 
 void XplodifySession::start_playback()

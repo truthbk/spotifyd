@@ -284,14 +284,18 @@ void XplodifyHandler::logoutSession(const SpotifyCredential& cred) {
 
     }
 
+    sess->flush();
     err = sp_session_logout(sess->get_session());
 
     if(err == SP_ERROR_OK )
     {
         remove_from_cache(cred._uuid);
     }
-    sess->flush();
-    sess.reset();
+    sp_session_release(sess->get_session());
+
+    if(!get_cache_size()) {
+        m_active_session.reset();
+    }
     unlock();
 
     update_timestamp();

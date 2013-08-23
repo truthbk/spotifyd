@@ -671,9 +671,12 @@ void XplodifyPlaylistContainer::flush() {
 
     while(it != m_pl_cache.get<0>().end() ) {
         boost::shared_ptr<XplodifyPlaylist> pl = it->_playlist;
-        //flush the tracks from the playlist as well...
+#ifdef _DEBUG
+        std::cout << "Flushing " << pl->get_name() << std::endl;
+#endif
         it = c_r.erase(it);
 
+        //flush the tracks from the playlist as well...
         pl->flush();
         pl.reset();
     }

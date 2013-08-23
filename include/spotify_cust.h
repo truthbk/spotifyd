@@ -173,6 +173,11 @@ class XplodifyHandler
             //fix the potentially invalidated iterator.
             m_sess_it = m_session_cache.get<0>().iterator_to(aux_entry);
         }
+        size_t get_cache_size() {
+            sess_map_sequenced& smap = m_session_cache.get<0>();
+
+            return smap.size();
+        }
 
         //no transfer of ownership, we're good with raw pointers.
         typedef std::map<std::string, boost::asio::deadline_timer *> timer_map;
