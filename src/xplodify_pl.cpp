@@ -691,7 +691,8 @@ void XplodifyPlaylistContainer::playlist_added(sp_playlist *pl, int pos){
         return;
     }
 
-    XplodifyPlaylist * xpl = new XplodifyPlaylist(m_session);
+    boost::shared_ptr<XplodifySession> sess(m_session.lock());
+    XplodifyPlaylist * xpl = new XplodifyPlaylist(sess);
     xpl->load(pl);
     if(xpl->is_loaded()) {
         boost::shared_ptr<XplodifyPlaylist> npl(xpl);
@@ -744,7 +745,9 @@ void XplodifyPlaylistContainer::container_loaded(){
 #endif
     for(int i=0 ; i<n ; i++ ) {
         sp_playlist * p = sp_playlistcontainer_playlist( m_plcontainer, i);
-        XplodifyPlaylist * xpl = new XplodifyPlaylist(m_session);
+
+        boost::shared_ptr<XplodifySession> sess(m_session.lock());
+        XplodifyPlaylist * xpl = new XplodifyPlaylist(sess);
         xpl->load(p);
         if(xpl->is_loaded()) {
             boost::shared_ptr<XplodifyPlaylist> npl(xpl);

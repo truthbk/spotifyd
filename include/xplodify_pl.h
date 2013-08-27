@@ -6,6 +6,7 @@
 #include <vector>
 
 #include <boost/shared_ptr.hpp>
+#include <boost/weak_ptr.hpp>
 #include <boost/enable_shared_from_this.hpp>
 
 #include <boost/multi_index_container.hpp>
@@ -212,7 +213,7 @@ class XplodifyPlaylistContainer :
 
         pl_cache                           m_pl_cache;
         sp_playlistcontainer *             m_plcontainer;
-        boost::shared_ptr<XplodifySession> m_session;
+        boost::weak_ptr<XplodifySession>   m_session;
         bool                               m_loading;
 };
 

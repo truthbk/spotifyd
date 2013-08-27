@@ -374,6 +374,9 @@ void XplodifySession::flush() {
     }
 
     pc->flush();
+#if _DEBUG
+    std::cout << "Playlist Container use count: " << pc.use_count() << std::endl;
+#endif
     pc.reset();
 }
 
