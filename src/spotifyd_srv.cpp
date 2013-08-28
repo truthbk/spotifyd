@@ -296,6 +296,9 @@ void XplodifyHandler::logoutSession(const SpotifyCredential& cred) {
     if(!get_cache_size()) {
         m_active_session.reset();
     }
+#ifdef _DEBUG
+    std::cout << "XplodifySession use count: " << sess.use_count()  << std::endl;
+#endif
     unlock();
 
     update_timestamp();
