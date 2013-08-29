@@ -134,6 +134,28 @@ void XplodifyHandler::run()
     }
 }
 
+void XplodifyHandler::remove_from_cache(const std::string& uuid) {
+    bool move_on = false;
+    sess_map_entry aux_entry(*m_sess_it);
+    sess_map_sequenced::iterator sess_it = m_sess_it;
+    if(++sess_it == m_session_cache.get<0>().end()) {
+        sess_it = m_session_cache.get<0>().begin();
+    }
+    if(aux_entry._uuid == uuid) {
+        move_on = true;
+    }
+    sess_map_by_uuid& sess_by_uuid = m_session_cache.get<1>();
+    size_t n = sess_by_uuid.erase(uuid);
+
+    //fix the potentially invalidated iterator.
+    if(n) {
+        if(move_on) {
+            m_sess_it = sess_it;
+        } else {
+            m_sess_it = m_session_cache.get<0>().iterator_to(aux_entry);
+        }
+    }
+}
 
 void XplodifyHandler::loginSession(SpotifyCredential& _return, const SpotifyCredential& cred) {
 
