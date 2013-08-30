@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 
+#include <boost/weak_ptr.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/enable_shared_from_this.hpp>
 
@@ -37,7 +38,7 @@ class XplodifyTrack
         sp_error      get_track_error();
     private:
         friend class XplodifySession;
-        boost::shared_ptr<XplodifySession>    m_sess;
+        boost::weak_ptr<XplodifySession>      m_sess;
         sp_track *                            m_track;
 };
 
