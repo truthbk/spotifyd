@@ -134,7 +134,7 @@ class XplodifyPlaylist
         track_cache_by_rand::iterator                  m_it_idx;
         track_cache_by_name::iterator                  m_it_name;
 
-        boost::shared_ptr<XplodifySession>             m_session;
+        boost::weak_ptr<XplodifySession>             m_session;
         std::vector<
             boost::shared_ptr<XplodifyTrack>
             >                                          m_pending_tracks;

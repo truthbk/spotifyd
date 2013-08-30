@@ -55,11 +55,12 @@ XplodifyPlaylist::remove_track_from_cache(int idx) {
     track_cache_by_rand::const_iterator cit = tr_cache_rand.begin();
 
     cit = cit+idx-1;
+    boost::shared_ptr<XplodifySession> sess(m_session.lock());
     boost::shared_ptr<XplodifyTrack> ret_track(cit->track);
 
     tr_cache_rand.erase(cit);
 
-    m_session->update_state_ts();
+    sess->update_state_ts();
     return ret_track;
 }
 
@@ -73,10 +74,11 @@ XplodifyPlaylist::remove_track_from_cache(std::string& name){
         return boost::shared_ptr<XplodifyTrack>();
     }
     boost::shared_ptr<XplodifyTrack> ret_track(it->track);
+    boost::shared_ptr<XplodifySession> sess(m_session.lock());
 
     tr_cache_name.erase(name);
 
-    m_session->update_state_ts();
+    sess->update_state_ts();
     return ret_track;
 }
 
@@ -101,6 +103,7 @@ bool XplodifyPlaylist::load(sp_playlist * pl) {
 
 void XplodifyPlaylist::flush() {
 
+    boost::shared_ptr<XplodifySession> sess(m_session.lock());
     track_cache_by_rand& t_r = m_track_cache.get<0>();
     std::size_t sz = t_r.size();
 
@@ -108,7 +111,7 @@ void XplodifyPlaylist::flush() {
         boost::shared_ptr<XplodifyTrack> tr = get_track(0, true);
         tr.reset();
     }
-    m_session->update_state_ts();
+    sess->update_state_ts();
 }
 
 bool XplodifyPlaylist::is_loaded() {
@@ -122,6 +125,8 @@ bool XplodifyPlaylist::load_tracks() {
         return false;
     }
 
+    boost::shared_ptr<XplodifySession> sess(m_session.lock());
+
     n = sp_playlist_num_tracks(m_playlist);
     lock();
     for(int i=0 ; i<n ; i++) {
@@ -130,7 +135,7 @@ bool XplodifyPlaylist::load_tracks() {
         track_cache_by_rand& tr_cache_rand = m_track_cache.get<0>();
         std::pair<track_r_iterator, bool> p;
 
-        boost::shared_ptr<XplodifyTrack> tr(new XplodifyTrack(m_session));
+        boost::shared_ptr<XplodifyTrack> tr(new XplodifyTrack(sess));
         if(tr->load(t)){
             std::string trname(tr->get_name());
             track_entry tr_entry(trname, tr);
@@ -147,19 +152,20 @@ bool XplodifyPlaylist::load_tracks() {
             m_pending_tracks.push_back(tr);
         }
     }
-    m_session->update_state_ts();
+    sess->update_state_ts();
     unlock();
     return true;
 }
 
 bool XplodifyPlaylist::unload() {
 
+    boost::shared_ptr<XplodifySession> sess(m_session.lock());
     sp_playlist_remove_callbacks(m_playlist, const_cast<sp_playlist_callbacks *>(&cbs), this);
     m_track_cache.get<0>().clear();
     m_loading = false;
     m_playlist = NULL;
 
-    m_session->update_state_ts();
+    sess->update_state_ts();
     return true;
 }
 
@@ -193,10 +199,11 @@ void XplodifyPlaylist::add_track(boost::shared_ptr<XplodifyTrack> tr) {
         return;
     }
 
+    boost::shared_ptr<XplodifySession> sess(m_session.lock());
     track_cache_by_rand& t_r = m_track_cache.get<0>();
     //push_back() delivers better performance than insert.
     t_r.push_back(track_entry(tr->get_name(), tr));
-    m_session->update_state_ts();
+    sess->update_state_ts();
 }
 
 void XplodifyPlaylist::add_track(boost::shared_ptr<XplodifyTrack> tr, int pos) {
@@ -204,12 +211,14 @@ void XplodifyPlaylist::add_track(boost::shared_ptr<XplodifyTrack> tr, int pos) {
         return;
     }
 
+    boost::shared_ptr<XplodifySession> sess(m_session.lock());
+
     //get iterator...
     track_cache_by_rand& t_r = m_track_cache.get<0>();
     track_cache_by_rand::iterator it = t_r.iterator_to(t_r[pos]);
 
     t_r.insert(it, track_entry(tr->get_name(), tr));
-    m_session->update_state_ts();
+    sess->update_state_ts();
 }
 
 boost::shared_ptr<XplodifyTrack> XplodifyPlaylist::get_track(int pos, bool remove) {
@@ -280,9 +289,11 @@ XplodifyPlaylist * XplodifyPlaylist::get_playlist_from_udata(
 }
 
 void XplodifyPlaylist::tracks_added(
-        sp_track *const *tracks, int num_tracks, 
+        sp_track * const *tracks, int num_tracks, 
         int position) {
-    if(m_session) {
+#if 0
+    boost::shared_ptr<XplodifySession> sess(m_session.lock());
+    if(!sess) {
         return;
     }
 
@@ -293,17 +304,26 @@ void XplodifyPlaylist::tracks_added(
     cit = cit+position-1;
 
     for(int i=0 ; i<num_tracks ; i++) {
-        boost::shared_ptr<XplodifyTrack> tr(new XplodifyTrack(m_session));
+        boost::shared_ptr<XplodifyTrack> tr(new XplodifyTrack(sess));
+        std::pair<track_r_iterator, bool> p;
         if(tr->load(tracks[i])){
-            tr_cache_rand.insert(cit, track_entry(tr->get_name(), tr));
-            cit++;
+            std::string trname(tr->get_name());
+            if(!trname.empty()) {
+                p = tr_cache_rand.insert(cit, track_entry(trname, tr));
+                if(p.second) {
+                    cit++;
+                }
+            }
         }
     }
 
-    m_session->update_state_ts();
+    sess->update_state_ts();
+#endif
     return;
 }
 void XplodifyPlaylist::tracks_removed(const int *tracks, int num_tracks) {
+
+    boost::shared_ptr<XplodifySession> sess(m_session.lock());
 
     //Assuming *tracks is ordered : CHECK THIS!
     for(int i=0 ; i<num_tracks ; i++) {
@@ -312,7 +332,7 @@ void XplodifyPlaylist::tracks_removed(const int *tracks, int num_tracks) {
         tr.reset();
     }
 
-    m_session->update_state_ts();
+    sess->update_state_ts();
     return;
 }
 void XplodifyPlaylist::tracks_moved(const int *tracks, int num_tracks, int new_position) {
@@ -325,6 +345,8 @@ void XplodifyPlaylist::playlist_renamed() {
 }
 void XplodifyPlaylist::playlist_state_changed(){
 
+    boost::shared_ptr<XplodifySession> sess(m_session.lock());
+
     //Has the state changed cause we're done loading?
 #ifdef _DEBUG
     std::cout << "Playlist state changed" << std::endl;
@@ -334,7 +356,7 @@ void XplodifyPlaylist::playlist_state_changed(){
         if(m_loading) {
             m_loading = false;
             //we should now create shared_ptr and insert into cache.
-            m_session->get_pl_container()->add_playlist(this);
+            sess->get_pl_container()->add_playlist(this);
         }
         load_tracks();
 #ifdef _DEBUG
@@ -342,7 +364,7 @@ void XplodifyPlaylist::playlist_state_changed(){
 #endif
     }
 
-    m_session->update_state_ts();
+    sess->update_state_ts();
     return;
 }
 void XplodifyPlaylist::playlist_update_in_progress(bool done){
@@ -352,6 +374,7 @@ void XplodifyPlaylist::playlist_update_in_progress(bool done){
 void XplodifyPlaylist::playlist_metadata_updated(){
     //If playlist metadata has been updated, we first check
     //for pending tracks that are ready....
+    boost::shared_ptr<XplodifySession> sess(m_session.lock());
     track_cache_by_rand& tr_cache_rand = m_track_cache.get<0>();
 
     typedef std::vector< boost::shared_ptr<XplodifyTrack> > wvec;
@@ -379,7 +402,7 @@ void XplodifyPlaylist::playlist_metadata_updated(){
         }
     }
 
-    m_session->update_state_ts();
+    sess->update_state_ts();
     unlock();
     return;
 }
