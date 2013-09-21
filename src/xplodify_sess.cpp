@@ -15,6 +15,7 @@
 #include "Spotify.h"
 
 #include "spotify_cust.h"
+#include "xplodify_plc.h"
 #include "xplodify_pl.h"
 #include "xplodify_sess.h"
 

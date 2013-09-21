@@ -18,13 +18,8 @@
 
 #include "xplodify_track.h"
 
-extern "C" {
-	#include <libspotify/api.h>
-}
-
 //forward declarations
 class XplodifySession;
-class XplodifyPlaylistContainer;
 
 //NOTE: should this be lockable? I'm not sure Spotify C api enfores thread safety.
 class XplodifyPlaylist
@@ -146,75 +141,5 @@ class XplodifyPlaylist
 
 };
 
-//NOTE: should this be lockable? I'm not sure Spotify C api enfores thread safety.
-class XplodifyPlaylistContainer : 
-    public boost::enable_shared_from_this<XplodifyPlaylistContainer>
-{
-    public:
-        XplodifyPlaylistContainer(boost::shared_ptr<XplodifySession> sess);
-        ~XplodifyPlaylistContainer();
-
-        bool    load(sp_playlistcontainer * plc);
-        bool    unload();
-        void    flush();
-        void    add_playlist(XplodifyPlaylist * pl);
-        void    add_playlist(boost::shared_ptr<XplodifyPlaylist> pl);
-        void    add_playlist(boost::shared_ptr<XplodifyPlaylist> pl, int pos);
-        size_t  get_num_playlists();
-        boost::shared_ptr<XplodifyPlaylist> get_playlist(size_t idx);
-        boost::shared_ptr<XplodifyPlaylist> get_playlist(std::string name);
-
-        static XplodifyPlaylistContainer * get_plcontainer_from_udata(
-                sp_playlistcontainer * plc, void * userdata);
-    protected:
-        void playlist_added(sp_playlist *pl, int pos);
-        void playlist_removed(sp_playlist *pl, int pos);
-        void playlist_moved(sp_playlist *pl, int pos, int newpos);
-        void container_loaded();
-    private:
-        static void SP_CALLCONV cb_playlist_added(
-                sp_playlistcontainer *pc, sp_playlist *pl, int pos, void *userdata);
-        static void SP_CALLCONV cb_playlist_removed(
-                sp_playlistcontainer *pc, sp_playlist *pl, int pos, void *userdata);
-        static void SP_CALLCONV cb_playlist_moved(
-                sp_playlistcontainer *pc, sp_playlist *pl, int pos, int newpos, void *userdata);
-        static void SP_CALLCONV cb_container_loaded(
-                sp_playlistcontainer * pc, void *userdata);
-
-
-//Possibly a multi-index-container is overkill given the relatively small number 
-//of playlists, but that's just how we roll..
-        struct pl_entry {
-            std::string _plname;
-
-            boost::shared_ptr<XplodifyPlaylist> _playlist;
-
-            pl_entry( const std::string &plname, boost::shared_ptr<XplodifyPlaylist> pl ) 
-                : _plname(plname)
-                , _playlist(pl)
-            {
-                return;
-            }
-        };
-
-        //maybe tagging would make code more readable, but I'm not a fan. Leaving out for now.
-        typedef boost::multi_index_container<
-            pl_entry,
-            boost::multi_index::indexed_by<
-                boost::multi_index::random_access<>,
-                boost::multi_index::hashed_unique< 
-                    BOOST_MULTI_INDEX_MEMBER(pl_entry, std::string, _plname) >
-            > > pl_cache;
-
-        typedef pl_cache::nth_index<0>::type pl_cache_by_rand;
-        typedef pl_cache::nth_index<1>::type pl_cache_by_name;
-
-        static const sp_playlistcontainer_callbacks cbs;
-
-        pl_cache                           m_pl_cache;
-        sp_playlistcontainer *             m_plcontainer;
-        boost::weak_ptr<XplodifySession>   m_session;
-        bool                               m_loading;
-};
 
 #endif
