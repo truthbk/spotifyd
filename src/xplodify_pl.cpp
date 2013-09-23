@@ -37,6 +37,7 @@ const sp_playlist_callbacks XplodifyPlaylist::cbs = {
 
 XplodifyPlaylist::XplodifyPlaylist(boost::shared_ptr<XplodifySession> sess) 
     : Lockable()
+    , Cacheable()
     , m_session(sess)
     , m_playlist(NULL)
     , m_loading(true) {
@@ -564,3 +565,14 @@ void SP_CALLCONV XplodifyPlaylist::cb_subscribers_changed(
 }
 
 
+void XplodifyPlaylist::cache(void) {
+    //TODO
+    return;
+}
+void XplodifyPlaylist::uncache(void){
+    //TODO
+    return;
+}
+bool XplodifyPlaylist::is_cached(void){
+    return m_cached;
+}

@@ -17,6 +17,7 @@
 #include <boost/multi_index/hashed_index.hpp>
 
 #include "xplodify_track.h"
+#include "cacheable.h"
 
 //forward declarations
 class XplodifySession;
@@ -24,6 +25,7 @@ class XplodifySession;
 //NOTE: should this be lockable? I'm not sure Spotify C api enfores thread safety.
 class XplodifyPlaylist
     : private Lockable
+    , public Cacheable
     , public boost::enable_shared_from_this<XplodifyPlaylist>
 {
     public:
@@ -44,9 +46,14 @@ class XplodifyPlaylist
         boost::shared_ptr<XplodifyTrack> get_track(int pos, bool remove=false);
         boost::shared_ptr<XplodifyTrack> get_track(std::string name, bool remove=false);
         boost::shared_ptr<XplodifyTrack> get_next_track();
-
         static XplodifyPlaylist * get_playlist_from_udata(
                 sp_playlist * pl, void * userdata);
+
+        //Cacheable purely virtual methods
+        void cache(void);
+        void uncache(void);
+        bool is_cached(void);
+
     protected:
         void tracks_added(
                 sp_track *const *tracks, int num_tracks, 

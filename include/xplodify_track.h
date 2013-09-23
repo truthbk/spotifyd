@@ -10,6 +10,7 @@
 #include <boost/enable_shared_from_this.hpp>
 
 #include "xplodify_sess.h"
+#include "cacheable.h"
 
 extern "C" {
 	#include <libspotify/api.h>
@@ -17,6 +18,7 @@ extern "C" {
 
 
 class XplodifyTrack
+    : public Cacheable
 {
     public:
         XplodifyTrack(boost::shared_ptr<XplodifySession> sess);
@@ -36,10 +38,15 @@ class XplodifyTrack
         int           get_popularity();
         void          set_starred(bool star);
         sp_error      get_track_error();
-    private:
-        friend class XplodifySession;
-        boost::weak_ptr<XplodifySession>      m_sess;
-        sp_track *                            m_track;
+
+        //Cacheable purely virtual methods
+        void cache(void);
+        void uncache(void);
+        bool is_cached(void);
+            private:
+                friend class XplodifySession;
+                boost::weak_ptr<XplodifySession>      m_sess;
+                sp_track *                            m_track;
 };
 
 #endif

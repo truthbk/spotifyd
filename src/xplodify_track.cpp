@@ -15,8 +15,9 @@ extern "C" {
 //TODO: exceptions.
 
 XplodifyTrack::XplodifyTrack(boost::shared_ptr<XplodifySession> sess) 
-    : m_sess(sess) 
-    , m_track(NULL){
+    : Cacheable()
+    , m_sess(sess) 
+    , m_track(NULL) {
         //empty
 }
 
@@ -119,5 +120,17 @@ void XplodifyTrack::set_starred(bool star){
 
 sp_error XplodifyTrack::get_track_error(){
     return sp_track_error(m_track);
+}
+
+void XplodifyTrack::cache(void) {
+    //TODO
+    return;
+}
+void XplodifyTrack::uncache(void){
+    //TODO
+    return;
+}
+bool XplodifyTrack::is_cached(void){
+    return m_cached;
 }
 
