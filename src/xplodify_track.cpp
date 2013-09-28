@@ -17,7 +17,14 @@ extern "C" {
 XplodifyTrack::XplodifyTrack(boost::shared_ptr<XplodifySession> sess) 
     : Cacheable()
     , m_sess(sess) 
-    , m_track(NULL) {
+    , m_track(NULL)
+    , m_name()
+    , m_index(0)
+    , m_duration(0)
+    , m_num_artists(0)
+    , m_disc(0)
+    , m_popularity(0)
+    , m_starred(0){
         //empty
 }
 
@@ -57,29 +64,41 @@ bool XplodifyTrack::is_streamable(){
 
     return true;
 }
-std::string XplodifyTrack::get_name(){
+std::string XplodifyTrack::get_name(bool cache){
     if(!m_track) {
         return std::string();
     }
+    if(cache && is_cached()) {
+        return m_name;
+    }
     return std::string(sp_track_name(m_track));
 }
-int XplodifyTrack::get_index(){
+int XplodifyTrack::get_index(bool cache){
     if(!m_track) {
         return 0;
+    }
+    if(cache && is_cached()) {
+        return m_index;
     }
     return sp_track_index(m_track);
 
 }
-int XplodifyTrack::get_duration(){
+int XplodifyTrack::get_duration(bool cache){
     if(!m_track) {
         return 0;
+    }
+    if(cache && is_cached()) {
+        return m_duration;
     }
     return sp_track_duration(m_track);
 
 }
-int XplodifyTrack::get_num_artists(){
+int XplodifyTrack::get_num_artists(bool cache){
     if(!m_track) {
         return 0;
+    }
+    if(cache && is_cached()) {
+        return m_num_artists;
     }
     return sp_track_num_artists(m_track);
 }
@@ -90,23 +109,32 @@ std::string XplodifyTrack::get_artist(int idx){
     return std::string(sp_artist_name(sp_track_artist(m_track, idx)));
 }
 
-bool XplodifyTrack::is_starred(){
+bool XplodifyTrack::is_starred(bool cache){
     if(!m_track) {
         return false;
+    }
+    if(cache && is_cached()) {
+        return m_starred;
     }
     boost::shared_ptr<XplodifySession> sess(m_sess.lock());
     return sp_track_is_starred(sess->get_sp_session(), m_track);
 }
 
-int XplodifyTrack::get_disc(){
+int XplodifyTrack::get_disc(bool cache){
     if(!m_track) {
         return 0;
     }
+    if(cache && is_cached()) {
+        return m_disc;
+    }
     return sp_track_disc(m_track);
 }
-int XplodifyTrack::get_popularity(){
+int XplodifyTrack::get_popularity(bool cache){
     if(!m_track) {
         return 0;
+    }
+    if(cache && is_cached()) {
+        return m_popularity;
     }
     return sp_track_popularity(m_track);
 }
@@ -124,6 +152,17 @@ sp_error XplodifyTrack::get_track_error(){
 
 void XplodifyTrack::cache(void) {
     //TODO
+    if (is_cached()) {
+        return;
+    }
+    m_name = get_name(false);
+    m_duration = get_duration(false);
+    m_num_artists = get_num_artists(false);
+    m_disc = get_disc(false);
+    m_popularity = get_popularity(false);
+    m_starred = is_starred(false);
+
+    m_cached = true;
     return;
 }
 void XplodifyTrack::uncache(void){

@@ -28,14 +28,14 @@ class XplodifyTrack
         void          unload();
         bool          is_loaded();
         bool          is_streamable();
-        std::string   get_name();
-        int           get_index();
-        int           get_duration();
-        int           get_num_artists();
+        std::string   get_name(bool cache=false);
+        int           get_index(bool cache=false);
+        int           get_duration(bool cache=false);
+        int           get_num_artists(bool cache=false);
         std::string   get_artist(int idx);
-        bool          is_starred();
-        int           get_disc();
-        int           get_popularity();
+        bool          is_starred(bool cache=false);
+        int           get_disc(bool cache=false);
+        int           get_popularity(bool cache=false);
         void          set_starred(bool star);
         sp_error      get_track_error();
 
@@ -43,10 +43,20 @@ class XplodifyTrack
         void cache(void);
         void uncache(void);
         bool is_cached(void);
-            private:
-                friend class XplodifySession;
-                boost::weak_ptr<XplodifySession>      m_sess;
-                sp_track *                            m_track;
+    private:
+        friend class XplodifySession;
+
+        boost::weak_ptr<XplodifySession>      m_sess;
+        sp_track *                            m_track;
+
+        std::string                           m_name;
+        int                                   m_index;
+        int                                   m_duration;
+        int                                   m_num_artists;
+        int                                   m_disc;
+        int                                   m_popularity;
+        bool                                  m_starred;
+
 };
 
 #endif
