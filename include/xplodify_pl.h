@@ -38,8 +38,8 @@ class XplodifyPlaylist
         void flush();
         bool load_tracks();
         bool is_loaded();
-        std::string get_name();
-        size_t get_num_tracks();
+        std::string get_name(bool cache=false);
+        size_t get_num_tracks(bool cache=false);
         void   add_track(boost::shared_ptr<XplodifyTrack> tr);
         void   add_track(boost::shared_ptr<XplodifyTrack> tr, int pos);
         boost::shared_ptr<XplodifyTrack> get_track_at(size_t idx);
@@ -136,12 +136,16 @@ class XplodifyPlaylist
         track_cache_by_rand::iterator                  m_it_idx;
         track_cache_by_name::iterator                  m_it_name;
 
-        boost::weak_ptr<XplodifySession>             m_session;
+        boost::weak_ptr<XplodifySession>               m_session;
         std::vector<
             boost::shared_ptr<XplodifyTrack>
             >                                          m_pending_tracks;
         sp_playlist *                                  m_playlist;
         bool                                           m_loading;
+
+
+        std::string                                    m_name;
+        size_t                                         m_num_tracks;
 
         //LOAD_WAIT
         enum { LOAD_WAIT_MS = 200 };

@@ -151,7 +151,7 @@ sp_error XplodifyTrack::get_track_error(){
 }
 
 void XplodifyTrack::cache(void) {
-    //TODO
+
     if (is_cached()) {
         return;
     }
@@ -166,7 +166,8 @@ void XplodifyTrack::cache(void) {
     return;
 }
 void XplodifyTrack::uncache(void){
-    //TODO
+
+    m_cached = true;
     return;
 }
 bool XplodifyTrack::is_cached(void){

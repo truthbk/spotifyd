@@ -40,7 +40,9 @@ XplodifyPlaylist::XplodifyPlaylist(boost::shared_ptr<XplodifySession> sess)
     , Cacheable()
     , m_session(sess)
     , m_playlist(NULL)
-    , m_loading(true) {
+    , m_loading(true) 
+    , m_name()
+    , m_num_tracks(){
     //EMPTY
 }
 XplodifyPlaylist::~XplodifyPlaylist() {
@@ -172,16 +174,22 @@ bool XplodifyPlaylist::unload() {
 }
 
 //when we put in Exceptions this will be a lot cleaner.
-std::string XplodifyPlaylist::get_name() {
+std::string XplodifyPlaylist::get_name(bool cache) {
     if(!m_playlist) {
         return std::string("");
+    }
+    if(cache && is_cached()) {
+        return m_name;
     }
 
     return std::string(sp_playlist_name(m_playlist));
 }
 
-size_t XplodifyPlaylist::get_num_tracks(){
+size_t XplodifyPlaylist::get_num_tracks(bool cache){
     track_cache_by_rand& t_r = m_track_cache.get<0>();
+    if(cache && is_cached()) {
+        return m_num_tracks;
+    }
 
     return t_r.size();
 }
@@ -566,11 +574,20 @@ void SP_CALLCONV XplodifyPlaylist::cb_subscribers_changed(
 
 
 void XplodifyPlaylist::cache(void) {
-    //TODO
+
+    if (is_cached()) {
+        return;
+    }
+
+    m_name = get_name();
+    m_num_tracks = get_num_tracks();
+
+    m_cached = true;
     return;
 }
 void XplodifyPlaylist::uncache(void){
-    //TODO
+
+    m_cached = false;
     return;
 }
 bool XplodifyPlaylist::is_cached(void){
