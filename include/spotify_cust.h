@@ -53,7 +53,7 @@ const uint8_t g_appkey[] = {
 
 const size_t g_appkey_size = sizeof(g_appkey);
 
-#define SP_TMPDIR "/tmp/spotifyd"
+#define SP_CACHEDIR "~/.spotifyd/"
 
 
 //Forward declaration
@@ -116,7 +116,7 @@ class XplodifyHandler
         void audio_fifo_stats(sp_audio_buffer_stats *stats);
         void audio_fifo_flush_now(void);
         void update_timestamp(void);
-        std::string get_tmpdir();
+        std::string get_cachedir();
 
 
     protected:
@@ -203,7 +203,7 @@ class XplodifyHandler
 
         int                                     m_playback_done;
         int                                     m_notify_events;
-        std::string                             m_sp_tmpdir;
+        std::string                             m_sp_cachedir;
         std::time_t                             m_ts;
 
         //SILENCE NUM SAMPLES THRESHOLD

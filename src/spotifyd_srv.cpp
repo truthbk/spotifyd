@@ -57,13 +57,9 @@ XplodifyHandler::XplodifyHandler()
     , m_active_session()
     , m_playback_done(1)
     , m_notify_events(0)
+    , m_sp_cachedir(SP_CACHEDIR)
     , m_ts(std::time(NULL))
 {
-    //tmp dir name
-    int pid = getpid();
-    std::stringstream sst;
-    sst << SP_TMPDIR << "-" << pid;
-    m_sp_tmpdir = sst.str();
 
     enum audio_arch arch;
 #ifdef _OSX
@@ -764,8 +760,8 @@ void XplodifyHandler::update_timestamp(void) {
     unlock();
 }
 
-std::string XplodifyHandler::get_tmpdir() {
-    return m_sp_tmpdir;
+std::string XplodifyHandler::get_cachedir() {
+    return m_sp_cachedir;
 }
 
 int main(int argc, char **argv) {
@@ -784,7 +780,7 @@ int main(int argc, char **argv) {
     TSimpleServer server(processor, serverTransport, transportFactory, protocolFactory);
 
     //make tmp dir
-    boost::filesystem::path dir(sHandler->get_tmpdir());
+    boost::filesystem::path dir(sHandler->get_cachedir());
     if(!boost::filesystem::create_directory(dir)) {
         //TODO: proper cleanup
         exit(1);

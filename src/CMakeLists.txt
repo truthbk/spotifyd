@@ -4,6 +4,12 @@ set(ThriftGen_SRCS
 	${CMAKE_CURRENT_SOURCE_DIR}/gen-cpp/spotify_types.cpp
 	)
 
+set(ThriftGen_IPC_SRCS
+	${CMAKE_CURRENT_SOURCE_DIR}/gen-cpp/SpotifyIPC.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/gen-cpp/spotify_ipc_constants.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/gen-cpp/spotify_ipc_types.cpp
+	)
+
 set(ThriftPyGen_SRCS
 	${CMAKE_CURRENT_SOURCE_DIR}/gen-py/__init__.py
 	${CMAKE_CURRENT_SOURCE_DIR}/gen-py/spotify/__init__.py
@@ -25,6 +31,7 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/gen-cpp)
 
 #build thrift lib
 add_library(SpotifydThrift ${ThriftGen_SRCS})
+add_library(SpotifydIPCThrift ${ThriftGen_IPC_SRCS})
 
 #build audio lib
 if(APPLE)
@@ -44,9 +51,9 @@ endif(APPLE)
 
 add_executable(spotifyd ${Spotifyd_SRCS})
 if(UNIX AND NOT APPLE)
-	target_link_libraries(spotifyd SpotifydThrift spotaudio ${Boost_LIBRARIES} ${ALSA_LIBRARIES} ${Spotify_LIB} ${Thrift_LIBS} ${LibEvent_LIBS} ${LIBRT_LIBRARIES})
+	target_link_libraries(spotifyd SpotifydThrift SpotifydIPCThrift spotaudio ${Boost_LIBRARIES} ${ALSA_LIBRARIES} ${Spotify_LIB} ${Thrift_LIBS} ${LibEvent_LIBS} ${LIBRT_LIBRARIES})
 elseif(APPLE)
-	target_link_libraries(spotifyd SpotifydThrift spotaudio ${Boost_LIBRARIES} ${Spotify_LIB} ${Thrift_LIBS} ${LibEvent_LIBS} ${COREAUDIO} ${AUDIOUNIT} ${AUDIOTOOLBOX} ${OPENAL_LIBRARY})
+	target_link_libraries(spotifyd SpotifydThrift SpotifydIPCThrift spotaudio ${Boost_LIBRARIES} ${Spotify_LIB} ${Thrift_LIBS} ${LibEvent_LIBS} ${COREAUDIO} ${AUDIOUNIT} ${AUDIOTOOLBOX} ${OPENAL_LIBRARY})
 endif()
 
 add_custom_command(
@@ -54,6 +61,14 @@ add_custom_command(
 	COMMAND   thrift
 	ARGS      -r --gen cpp -o ${CMAKE_CURRENT_SOURCE_DIR}
 	${PROJECT_SOURCE_DIR}/thrift/spotify.thrift
+	COMMENT   "thrift2cpp"
+	)
+
+add_custom_command(
+	OUTPUT    ${ThriftGen_IPC_SRCS}
+	COMMAND   thrift
+	ARGS      -r --gen cpp -o ${CMAKE_CURRENT_SOURCE_DIR}
+	${PROJECT_SOURCE_DIR}/thrift/spotify_ipc.thrift
 	COMMENT   "thrift2cpp"
 	)
 
