@@ -764,9 +764,24 @@ std::string XplodifyHandler::get_cachedir() {
     return m_sp_cachedir;
 }
 
+#define SRV_BASE_PORT 9090
 int main(int argc, char **argv) {
-    int port = 9090;
+    int const port = SRV_BASE_PORT;
+    int const child_port = SRV_BASE_PORT + 1;
+    pid_t master_pid, slave_pid;
     enum audio_arch arch;
+
+    master_pid = fork();
+    if(!master_pid) { //MASTER CHILD process
+        //TODO Boost service.
+        exit(0);
+    }
+
+    slave_pid = fork();
+    if(!slave_pid) { //SLAVE CHILD process
+        //TODO> Boost service.
+        exit(0);
+    }
 
     //XplodifyHandler
     boost::shared_ptr<XplodifyHandler> sHandler(new XplodifyHandler());
@@ -797,7 +812,7 @@ int main(int argc, char **argv) {
 #endif
     set_audio(arch),
 
-    sHandler->start();
+        sHandler->start();
     server.serve();
 
     //TODO: proper cleanup

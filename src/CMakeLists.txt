@@ -61,7 +61,7 @@ add_custom_command(
 	COMMAND   thrift
 	ARGS      -r --gen cpp -o ${CMAKE_CURRENT_SOURCE_DIR}
 	${PROJECT_SOURCE_DIR}/thrift/spotify.thrift
-	COMMENT   "thrift2cpp"
+	COMMENT   "thrift2cpp SRV"
 	)
 
 add_custom_command(
@@ -69,7 +69,7 @@ add_custom_command(
 	COMMAND   thrift
 	ARGS      -r --gen cpp -o ${CMAKE_CURRENT_SOURCE_DIR}
 	${PROJECT_SOURCE_DIR}/thrift/spotify_ipc.thrift
-	COMMENT   "thrift2cpp"
+	COMMENT   "thrift2cpp IPC"
 	)
 
 add_custom_command(
@@ -77,7 +77,7 @@ add_custom_command(
 	COMMAND   thrift
 	ARGS      -r --gen py -o ${CMAKE_CURRENT_SOURCE_DIR}
 	${PROJECT_SOURCE_DIR}/thrift/spotify.thrift
-	COMMENT   "thrift2py"
+	COMMENT   "thrift2py SRV"
 	)
 
 add_custom_target(
