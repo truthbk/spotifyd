@@ -84,3 +84,13 @@ add_custom_target(
 	run ALL
 	DEPENDS ${ThriftPyGen_SRCS}
 	)
+
+# Gather list of all .xml and .conf files in "/config"
+file(GLOB ThriftHeaderFiles ${CMAKE_CURRENT_SOURCE_DIR}/gen-cpp/*.h)
+
+foreach(HeaderFile ${ThriftHeaderFiles})
+	add_custom_command(TARGET SpotifydThrift POST_BUILD
+		COMMAND ${CMAKE_COMMAND} -E
+		copy ${HeaderFile} ${CMAKE_CURRENT_SOURCE_DIR}/../include/
+		COMMENT   "Copying Thrift header file: ${HeaderFile}" )
+endforeach()

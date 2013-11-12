@@ -4,8 +4,8 @@
  * DO NOT EDIT UNLESS YOU ARE SURE THAT YOU KNOW WHAT YOU ARE DOING
  *  @generated
  */
-#ifndef spotify_TYPES_H
-#define spotify_TYPES_H
+#ifndef spotify_ipc_TYPES_H
+#define spotify_ipc_TYPES_H
 
 #include <thrift/Thrift.h>
 #include <thrift/TApplicationException.h>
