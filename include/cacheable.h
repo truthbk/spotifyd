@@ -4,7 +4,11 @@
 class Cacheable {
     public:
         Cacheable() 
-            : m_cached(false) {
+            : m_cached(false) 
+        {
+        }
+        virtual ~Cacheable()
+        {
         }
         virtual void cache(void) = 0;
         virtual void uncache(void) = 0;
