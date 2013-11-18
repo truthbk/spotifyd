@@ -85,7 +85,7 @@ class XplodifyHandler
         , public Runnable
         , private Lockable {
     public:
-        XplodifyHandler();
+        XplodifyHandler(bool multisession=false);
         void loginSession(SpotifyCredential& _return, const SpotifyCredential& cred);
         bool isLoggedIn(const SpotifyCredential& cred);
         int64_t getStateTS(const SpotifyCredential& cred);
@@ -207,6 +207,7 @@ class XplodifyHandler
         int                                     m_notify_events;
         std::string                             m_sp_cachedir;
         std::time_t                             m_ts;
+        const bool                              m_multi;
 
         //SILENCE NUM SAMPLES THRESHOLD
         enum { SILENCE_N_SAMPLES = 8192 };

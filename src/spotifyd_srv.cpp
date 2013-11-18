@@ -14,12 +14,15 @@
 #include <boost/uuid/uuid_io.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/filesystem.hpp>
+#include <boost/program_options.hpp>
 
 #include <iostream>
 #include <cstring>
+#include <cerrno>
 #include <string>
 
 #include <sys/types.h>
+#include <sys/wait.h>
 #include <unistd.h>
 
 #include "Spotify.h"
@@ -49,7 +52,7 @@ bool SpotifyCredential::operator < (const SpotifyCredential & other) const
 }
 
 
-XplodifyHandler::XplodifyHandler()
+XplodifyHandler::XplodifyHandler(bool multisession)
     : Runnable()
     , Lockable()
     , LOGIN_TO(1)
@@ -59,6 +62,7 @@ XplodifyHandler::XplodifyHandler()
     , m_notify_events(0)
     , m_sp_cachedir(SP_CACHEDIR)
     , m_ts(std::time(NULL))
+    , m_multi(multisession)
 {
 
     enum audio_arch arch;
@@ -764,27 +768,54 @@ std::string XplodifyHandler::get_cachedir() {
     return m_sp_cachedir;
 }
 
-#define SRV_BASE_PORT 9090
+namespace {
+    const uint32_t SRV_BASE_PORT=9090;
+}
+
 int main(int argc, char **argv) {
-    int const port = SRV_BASE_PORT;
-    int const child_port = SRV_BASE_PORT + 1;
+    uint32_t port, child_port;
+    bool multi = false;
+
     pid_t master_pid, slave_pid;
     enum audio_arch arch;
 
-    master_pid = fork();
-    if(!master_pid) { //MASTER CHILD process
-        //TODO Boost service.
-        exit(0);
+    namespace po = boost::program_options; 
+    po::options_description desc("Options"); 
+    desc.add_options() 
+        ("help", "Print help messages") 
+        ("port", po::value<uint32_t>(&port)->default_value(SRV_BASE_PORT),"base port for server") 
+        ("multi", "server mode: multi session enabled."); 
+
+    po::variables_map vm;
+    po::store(po::parse_command_line(argc, argv, desc), vm);
+    po::notify(vm);
+
+    if(vm.count("help")) {
+        std::cout << desc << std::endl;
+        return 1;
     }
 
-    slave_pid = fork();
-    if(!slave_pid) { //SLAVE CHILD process
-        //TODO> Boost service.
-        exit(0);
+    if(vm.count("multi")) {
+        multi = true;
+        child_port = port + 1;
+    }
+
+    if(multi) {
+        master_pid = fork();
+        if(!master_pid) { //MASTER CHILD process
+            //TODO Boost service.
+            exit(0);
+        }
+
+        slave_pid = fork();
+        if(!slave_pid) { //SLAVE CHILD process
+            //TODO> Boost service.
+            exit(0);
+        }
     }
 
     //XplodifyHandler
-    boost::shared_ptr<XplodifyHandler> sHandler(new XplodifyHandler());
+    boost::shared_ptr<XplodifyHandler> sHandler(new XplodifyHandler(multi));
 
     //THRIFT Server
     boost::shared_ptr<TProcessor> processor(new SpotifyProcessor(sHandler));
@@ -810,12 +841,23 @@ int main(int argc, char **argv) {
 #elif HAS_AUDIOTOOLKIT
     arch = AUDIOTOOLKIT;
 #endif
-    set_audio(arch),
+    set_audio(arch);
 
-        sHandler->start();
+    sHandler->start();
     server.serve();
 
     //TODO: proper cleanup
+    int status;
+    pid_t done;
+
+    if(!(done = waitpid(master_pid, &status, 0))) {
+        std::cerr << strerror(errno) << std::endl;
+        return -1;
+    }
+    if(!(done = waitpid(slave_pid, &status, 0))) {
+        std::cerr << strerror(errno) << std::endl;
+        return -1;
+    }
 
     return 0;
 }
