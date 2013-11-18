@@ -21,7 +21,7 @@ OPTION(DEBUG "Activate debug flags" OFF)
 set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
 
 find_package(LibEvent REQUIRED)
-find_package(Boost COMPONENTS system filesystem REQUIRED)
+find_package(Boost COMPONENTS system filesystem program_options REQUIRED)
 find_package(Thrift REQUIRED)
 find_package(Spotify REQUIRED)
 if(UNIX AND NOT APPLE)
