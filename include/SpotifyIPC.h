@@ -26,6 +26,7 @@ class SpotifyIPCIf {
   virtual void selectTrackById(const int32_t track_id) = 0;
   virtual void play() = 0;
   virtual void stop() = 0;
+  virtual void terminate_proc() = 0;
 };
 
 class SpotifyIPCIfFactory {
@@ -90,6 +91,9 @@ class SpotifyIPCNull : virtual public SpotifyIPCIf {
     return;
   }
   void stop() {
+    return;
+  }
+  void terminate_proc() {
     return;
   }
 };
@@ -813,6 +817,43 @@ class SpotifyIPC_stop_pargs {
 
 };
 
+
+class SpotifyIPC_terminate_proc_args {
+ public:
+
+  SpotifyIPC_terminate_proc_args() {
+  }
+
+  virtual ~SpotifyIPC_terminate_proc_args() throw() {}
+
+
+  bool operator == (const SpotifyIPC_terminate_proc_args & /* rhs */) const
+  {
+    return true;
+  }
+  bool operator != (const SpotifyIPC_terminate_proc_args &rhs) const {
+    return !(*this == rhs);
+  }
+
+  bool operator < (const SpotifyIPC_terminate_proc_args & ) const;
+
+  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+};
+
+
+class SpotifyIPC_terminate_proc_pargs {
+ public:
+
+
+  virtual ~SpotifyIPC_terminate_proc_pargs() throw() {}
+
+
+  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+};
+
 class SpotifyIPCClient : virtual public SpotifyIPCIf {
  public:
   SpotifyIPCClient(boost::shared_ptr< ::apache::thrift::protocol::TProtocol> prot) :
@@ -859,6 +900,8 @@ class SpotifyIPCClient : virtual public SpotifyIPCIf {
   void send_play();
   void stop();
   void send_stop();
+  void terminate_proc();
+  void send_terminate_proc();
  protected:
   boost::shared_ptr< ::apache::thrift::protocol::TProtocol> piprot_;
   boost::shared_ptr< ::apache::thrift::protocol::TProtocol> poprot_;
@@ -885,6 +928,7 @@ class SpotifyIPCProcessor : public ::apache::thrift::TDispatchProcessor {
   void process_selectTrackById(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext);
   void process_play(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext);
   void process_stop(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext);
+  void process_terminate_proc(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext);
  public:
   SpotifyIPCProcessor(boost::shared_ptr<SpotifyIPCIf> iface) :
     iface_(iface) {
@@ -899,6 +943,7 @@ class SpotifyIPCProcessor : public ::apache::thrift::TDispatchProcessor {
     processMap_["selectTrackById"] = &SpotifyIPCProcessor::process_selectTrackById;
     processMap_["play"] = &SpotifyIPCProcessor::process_play;
     processMap_["stop"] = &SpotifyIPCProcessor::process_stop;
+    processMap_["terminate_proc"] = &SpotifyIPCProcessor::process_terminate_proc;
   }
 
   virtual ~SpotifyIPCProcessor() {}
@@ -1024,6 +1069,15 @@ class SpotifyIPCMultiface : virtual public SpotifyIPCIf {
       ifaces_[i]->stop();
     }
     ifaces_[i]->stop();
+  }
+
+  void terminate_proc() {
+    size_t sz = ifaces_.size();
+    size_t i = 0;
+    for (; i < (sz - 1); ++i) {
+      ifaces_[i]->terminate_proc();
+    }
+    ifaces_[i]->terminate_proc();
   }
 
 };
