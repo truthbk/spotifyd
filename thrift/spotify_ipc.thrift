@@ -21,4 +21,5 @@ service SpotifyIPC {
 
 	oneway void play();
 	oneway void stop();
+	oneway void terminate_proc();
 }
