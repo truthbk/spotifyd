@@ -774,7 +774,7 @@ namespace {
 
 int main(int argc, char **argv) {
     uint32_t port, child_port;
-    bool multi = false;
+    bool multi = true;
 
     pid_t master_pid, slave_pid;
     enum audio_arch arch;
@@ -784,7 +784,7 @@ int main(int argc, char **argv) {
     desc.add_options() 
         ("help", "Print help messages") 
         ("port", po::value<uint32_t>(&port)->default_value(SRV_BASE_PORT),"base port for server") 
-        ("multi", "server mode: multi session enabled."); 
+        ("mono", "server mode: mono session enabled."); 
 
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -795,8 +795,8 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    if(vm.count("multi")) {
-        multi = true;
+    if(vm.count("mono")) {
+        multi = false;
         child_port = port + 1;
     }
 
