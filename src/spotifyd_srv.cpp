@@ -65,21 +65,6 @@ XplodifyHandler::XplodifyHandler(bool multisession)
     , m_multi(multisession)
 {
 
-    enum audio_arch arch;
-#ifdef _OSX
-#ifdef HAS_OPENAL
-    arch = OPENAL_ARCH;
-#elif HAS_AUDIOTOOLKIT
-    arch = AUDIOTOOLKIT;
-#endif
-#else
-#ifdef _LINUX
-    arch = ALSA;
-#endif
-#endif
-    set_audio(arch);
-    audio_init(&m_audiofifo);
-
 }
 
 
@@ -342,8 +327,10 @@ void XplodifyHandler::sendCommand(const SpotifyCredential& cred, const SpotifyCm
             break;
         case SpotifyCmd::PAUSE:
             sess->stop_playback();
+#if 0
             audio_fifo_flush_now();
             audio_fifo_set_reset(audio_fifo(), 1);
+#endif
             break;
         case SpotifyCmd::NEXT:
         case SpotifyCmd::PREV:
@@ -657,10 +644,6 @@ sp_playlistcontainer * XplodifyHandler::getPlaylistContainer(SpotifyCredential& 
 }
 
 
-audio_fifo_t * XplodifyHandler::audio_fifo() {
-    return &m_audiofifo;
-}
-
 void XplodifyHandler::set_playback_done(bool done)
 {
     lock();
@@ -676,87 +659,6 @@ void XplodifyHandler::notify_main_thread(void)
     unlock();
 }
 
-int XplodifyHandler::music_playback(const sp_audioformat *format,
-	const void *frames, int num_frames)
-{
-    size_t s;
-    audio_fifo_data_t *afd;
-
-    if (num_frames == 0)
-    {
-        return 0; // Audio discontinuity, do nothing
-    }
-
-    //we're receiving synthetic "end of track" silence...
-    if (num_frames > SILENCE_N_SAMPLES) {
-        m_active_session->end_of_track();
-        pthread_mutex_unlock(&m_audiofifo.mutex);
-        update_timestamp();
-        return 0;
-    }
-
-    pthread_mutex_lock(&m_audiofifo.mutex);
-
-    /* Buffer one second of audio, no more */
-    if (m_audiofifo.qlen > format->sample_rate)
-    {
-#ifdef _DEBUG
-        std::cout << "[INFO] Frames in audio_queue: " << m_audiofifo.qlen << std::endl;
-#endif
-        pthread_mutex_unlock(&m_audiofifo.mutex);
-        return 0;
-    } 
-
-    //buffer underrun
-    if( m_audiofifo.prev_qlen && !m_audiofifo.qlen) 
-    {
-        m_audiofifo.reset = 1;
-#ifdef _DEBUG
-        std::cout << "[WARNING] Buffer underrun detected." << std::endl;
-#endif
-    }
-
-    s = num_frames * sizeof(int16_t) * format->channels;
-
-    //dont want to malloc, change this to new....
-    afd = (audio_fifo_data_t *) malloc(sizeof(audio_fifo_data_t) + s);
-    memcpy(afd->samples, frames, s);
-
-    afd->nsamples = num_frames;
-    afd->rate = format->sample_rate;
-    afd->channels = format->channels;
-
-    TAILQ_INSERT_TAIL(&m_audiofifo.q, afd, link);
-    m_audiofifo.prev_qlen = m_audiofifo.qlen;
-    m_audiofifo.qlen += num_frames;
-
-#ifdef _DEBUG
-    std::cout << "[INFO] Frames fed: " << num_frames << std::endl;
-    std::cout << "[INFO] Frames in audio_queue: " << m_audiofifo.qlen << std::endl;
-#endif
-
-    pthread_cond_signal(&m_audiofifo.cond);
-    pthread_mutex_unlock(&m_audiofifo.mutex);
-
-    return num_frames;
-}
-
-void XplodifyHandler::audio_fifo_stats(sp_audio_buffer_stats *stats)
-{
-
-    pthread_mutex_lock(&m_audiofifo.mutex);
-
-    stats->samples = m_audiofifo.qlen;
-    stats->stutter = 0; //how do we calculate this?
-
-    pthread_cond_signal(&m_audiofifo.cond);
-    pthread_mutex_unlock(&m_audiofifo.mutex);
-
-}
-
-void XplodifyHandler::audio_fifo_flush_now(void) {
-    audio_fifo_flush(audio_fifo());
-}
 
 void XplodifyHandler::update_timestamp(void) {
     lock();
@@ -777,7 +679,6 @@ int main(int argc, char **argv) {
     bool multi = true;
 
     pid_t master_pid, slave_pid;
-    enum audio_arch arch;
 
     namespace po = boost::program_options; 
     po::options_description desc("Options"); 
@@ -831,17 +732,6 @@ int main(int argc, char **argv) {
         //TODO: proper cleanup
         exit(1);
     }
-
-
-    //configure audio architecture
-#ifdef HAS_ALSA
-    arch = ALSA;
-#elif HAS_OPENAL
-    arch = OPENAL_ARCH;
-#elif HAS_AUDIOTOOLKIT
-    arch = AUDIOTOOLKIT;
-#endif
-    set_audio(arch);
 
     sHandler->start();
     server.serve();

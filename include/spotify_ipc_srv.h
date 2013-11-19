@@ -6,10 +6,6 @@
 
 #include "SpotifyIPC.h"
 
-extern "C" {
-	#include <libspotify/api.h>
-	#include "audio.h"
-}
 
 class XplodifyIPCServer
     : virtual public SpotifyIPCIf
@@ -31,6 +27,13 @@ class XplodifyIPCServer
         void play();
         void stop();
 
+        void set_playback_done(bool done);
+        int  music_playback(const sp_audioformat * format, 
+                const void * frames, int num_frames);
+        void audio_fifo_stats(sp_audio_buffer_stats *stats);
+        void audio_fifo_flush_now(void);
+        void update_timestamp(void);
+
     protected:
         //implementing runnable
         void run();
@@ -43,6 +46,12 @@ class XplodifyIPCServer
         std::string                             m_sp_cachedir;
         std::time_t                             m_ts;
         const bool                              m_multi;
+
+        audio_fifo_t *                          audio_fifo();
+
+        //libspotify wrapped
+        audio_fifo_t                            m_audiofifo;
+
 
 }
 

@@ -167,10 +167,6 @@ class XplodifyHandler
         //callbacks rely very heavily on it.
 
         sp_playlistcontainer *                  getPlaylistContainer(SpotifyCredential& cred);
-        audio_fifo_t *                          audio_fifo();
-
-        //libspotify wrapped
-        audio_fifo_t                            m_audiofifo;
 
         //proper members
         sess_map_sequenced::iterator            m_sess_it;
