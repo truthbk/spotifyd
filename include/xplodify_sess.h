@@ -36,6 +36,8 @@ class XplodifySession
             return m_session;
         };
         int init_session(const uint8_t * appkey, size_t appkey_size);
+        int init_session(const uint8_t * appkey, size_t appkey_size, 
+                sp_session_callbacks * sess_cb);
 
         int get_playback_done(void){
             return m_playback_done;

@@ -128,6 +128,31 @@ int XplodifySession::init_session(const uint8_t * appkey, size_t appkey_size) {
     //check errors, blah....
     return 0;
 }
+int XplodifySession::init_session(const uint8_t * appkey, size_t appkey_size, 
+        sp_session_callbacks * sess_cb){
+    sp_error err;
+
+    m_spconfig.api_version = SPOTIFY_API_VERSION;
+    m_spconfig.cache_location =  m_handler->get_cachedir().c_str();
+    m_spconfig.settings_location = m_handler->get_cachedir().c_str();
+    m_spconfig.application_key = appkey;
+    m_spconfig.application_key_size = appkey_size; // Set in main()
+    m_spconfig.user_agent = "spotifyd";
+    m_spconfig.userdata = this; //we'll use this in callbacks
+
+    //get callbacks ready
+    memcpy(&session_callbacks, sess_cb, sizeof(session_callbacks));
+
+    m_spconfig.callbacks = &session_callbacks;
+
+    err = sp_session_create( &m_spconfig, &m_session );
+    if( err != SP_ERROR_OK) {
+        return -1;
+    }
+
+    //check errors, blah....
+    return 0;
+}
 
 void XplodifySession::login( const std::string& username
                           , const std::string& passwd
