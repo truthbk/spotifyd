@@ -26,6 +26,7 @@ class XplodifyIPCServer
         void selectTrackById(const int32_t track_id);
         void play();
         void stop();
+        void terminate_proc();
 
         void set_playback_done(bool done);
         int  music_playback(const sp_audioformat * format, 
