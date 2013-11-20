@@ -47,6 +47,7 @@ class XplodifyIPCServer
         std::string                             m_sp_cachedir;
         std::time_t                             m_ts;
         const bool                              m_multi;
+        bool                                    m_master;
 
         audio_fifo_t *                          audio_fifo();
 

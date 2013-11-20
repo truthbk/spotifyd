@@ -60,14 +60,30 @@ XplodifyIPCServer::XplodifyIPCServer()
 
 bool XplodifyIPCServer::set_master() {
     //TODO: method body
+    m_master = true;
     return;
 }
 bool XplodifyIPCServer::set_slave() {
     //TODO: method body
+    m_master = false;
     return;
 }
 void XplodifyIPCServer::login(const SpotifyIPCCredential& cred) {
     //TODO: method body
+
+    m_session = XplodifySession::create(NULL);
+    if(m_session->init_session(g_appkey, g_appkey_size )) {
+        //can't continue....
+#ifdef _DEBUG
+        std::cout << "Unexpected error creating session. "<< std::endl;
+#endif
+        m_session.reset();
+        return;
+    }
+
+    m_session->login(cred._username, cred._passwd);
+
+
     return;
 }
 bool XplodifyIPCServer::logout() {
