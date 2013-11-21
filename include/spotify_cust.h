@@ -23,6 +23,7 @@
 
 #include "lockable.h"
 #include "runnable.h"
+#include "spotify_handler.h"
 
 #include "spotify_data.h"
 
@@ -57,7 +58,8 @@ class XplodifySession;
 class XplodifyHandler 
         : virtual public SpotifyIf
         , public Runnable
-        , private Lockable {
+        , private Lockable 
+        , private SpotifyHandler {
     public:
         XplodifyHandler(bool multisession=false);
         void loginSession(SpotifyCredential& _return, const SpotifyCredential& cred);
@@ -85,16 +87,11 @@ class XplodifyHandler
 			const SpotifyTrack& track);
         void whats_playing(SpotifyTrack& _return);
 
+        //SpotifyHandler purely virtual methods
         void notify_main_thread(void);
         void set_playback_done(bool done);
-        int  music_playback(const sp_audioformat * format, 
-                const void * frames, int num_frames);
-        void audio_fifo_stats(sp_audio_buffer_stats *stats);
-        void audio_fifo_flush_now(void);
         void update_timestamp(void);
         std::string get_cachedir();
-
-
     protected:
         //implementing runnable
         void run();
@@ -151,7 +148,6 @@ class XplodifyHandler
         typedef std::map<std::string, boost::asio::deadline_timer *> timer_map;
         timer_map m_timers;
         boost::asio::io_service m_io;
-        const size_t LOGIN_TO;
 
 
         void remove_from_cache(const std::string& uuid);
@@ -165,22 +161,12 @@ class XplodifyHandler
 
         //we also need to be able to search by sp_session, that's quite important; 
         //callbacks rely very heavily on it.
-
         sp_playlistcontainer *                  getPlaylistContainer(SpotifyCredential& cred);
 
         //proper members
         sess_map_sequenced::iterator            m_sess_it;
-
         boost::shared_ptr<XplodifySession>      m_active_session;
-
-        int                                     m_playback_done;
-        int                                     m_notify_events;
-        std::string                             m_sp_cachedir;
-        std::time_t                             m_ts;
         const bool                              m_multi;
-
-        //SILENCE NUM SAMPLES THRESHOLD
-        enum { SILENCE_N_SAMPLES = 8192 };
 
 };
 #endif

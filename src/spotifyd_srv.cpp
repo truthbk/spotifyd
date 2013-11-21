@@ -55,13 +55,9 @@ bool SpotifyCredential::operator < (const SpotifyCredential & other) const
 XplodifyHandler::XplodifyHandler(bool multisession)
     : Runnable()
     , Lockable()
-    , LOGIN_TO(1)
+    , SpotifyHandler()
     , m_sess_it(m_session_cache.get<0>().begin())
     , m_active_session()
-    , m_playback_done(1)
-    , m_notify_events(0)
-    , m_sp_cachedir(SP_CACHEDIR)
-    , m_ts(std::time(NULL))
     , m_multi(multisession)
 {
 

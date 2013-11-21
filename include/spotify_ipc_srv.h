@@ -10,7 +10,8 @@
 class XplodifyIPCServer
     : virtual public SpotifyIPCIf
     , public Runnable
-    , private Lockable {
+    , private Lockable 
+    , private SpotifyHandler {
 {
     public:
         XplodifyIPCServer();
@@ -28,12 +29,14 @@ class XplodifyIPCServer
         void stop();
         void terminate_proc();
 
+        void notify_main_thread(void) = 0 ;
         void set_playback_done(bool done);
         int  music_playback(const sp_audioformat * format, 
                 const void * frames, int num_frames);
         void audio_fifo_stats(sp_audio_buffer_stats *stats);
         void audio_fifo_flush_now(void);
         void update_timestamp(void);
+        std::string get_cachedir();
 
     protected:
         //implementing runnable
