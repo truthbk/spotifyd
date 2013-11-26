@@ -59,7 +59,7 @@ class XplodifyHandler
         : virtual public SpotifyIf
         , public Runnable
         , private Lockable 
-        , private SpotifyHandler {
+        , public SpotifyHandler {
     public:
         XplodifyHandler(bool multisession=false);
         void loginSession(SpotifyCredential& _return, const SpotifyCredential& cred);
@@ -88,6 +88,11 @@ class XplodifyHandler
         void whats_playing(SpotifyTrack& _return);
 
         //SpotifyHandler purely virtual methods
+        int  music_playback(const sp_audioformat * format, 
+                const void * frames, int num_frames);
+        void audio_fifo_stats(sp_audio_buffer_stats *stats);
+        void audio_fifo_flush_now(void);
+
         void notify_main_thread(void);
         void set_playback_done(bool done);
         void update_timestamp(void);
@@ -147,8 +152,6 @@ class XplodifyHandler
         //no transfer of ownership, we're good with raw pointers.
         typedef std::map<std::string, boost::asio::deadline_timer *> timer_map;
         timer_map m_timers;
-        boost::asio::io_service m_io;
-
 
         void remove_from_cache(const std::string& uuid);
         void login_timeout(const boost::system::error_code&,

@@ -4,6 +4,10 @@
 //Boost.
 #include <boost/shared_ptr.hpp>
 
+#include "lockable.h"
+#include "runnable.h"
+#include "spotify_handler.h"
+
 #include "SpotifyIPC.h"
 
 
@@ -11,8 +15,8 @@ class XplodifyIPCServer
     : virtual public SpotifyIPCIf
     , public Runnable
     , private Lockable 
-    , private SpotifyHandler {
-{
+    , public SpotifyHandler {
+
     public:
         XplodifyIPCServer();
 
@@ -29,7 +33,7 @@ class XplodifyIPCServer
         void stop();
         void terminate_proc();
 
-        void notify_main_thread(void) = 0 ;
+        void notify_main_thread(void);
         void set_playback_done(bool done);
         int  music_playback(const sp_audioformat * format, 
                 const void * frames, int num_frames);
@@ -43,14 +47,16 @@ class XplodifyIPCServer
         void run();
 
     private:
-        boost::shared_ptr<XplodifySession>      m_session;
+        void login_timeout(const boost::system::error_code&);
 
+        boost::shared_ptr<XplodifySession>      m_session;
         int                                     m_playback_done;
         int                                     m_notify_events;
         std::string                             m_sp_cachedir;
         std::time_t                             m_ts;
         const bool                              m_multi;
         bool                                    m_master;
+        boost::asio::deadline_timer             m_timer;
 
         audio_fifo_t *                          audio_fifo();
 
@@ -58,6 +64,6 @@ class XplodifyIPCServer
         audio_fifo_t                            m_audiofifo;
 
 
-}
+};
 
 #endif //_SPOTIFY_CUST_HH

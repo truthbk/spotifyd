@@ -597,6 +597,20 @@ void XplodifyHandler::whats_playing(SpotifyTrack& _return) {
     return;
 }
 
+int XplodifyHandler::music_playback(const sp_audioformat * format, 
+        const void * frames, int num_frames) {
+    //EMPTY FOR NOW: complying with interface
+    return 0;
+}
+void XplodifyHandler::audio_fifo_stats(sp_audio_buffer_stats *stats) {
+    //EMPTY FOR NOW: complying with interface
+    return;
+}
+void XplodifyHandler::audio_fifo_flush_now(void) {
+    //EMPTY FOR NOW: complying with interface
+    return;
+}
+
 boost::shared_ptr<XplodifySession> XplodifyHandler::get_session(const std::string& uuid) {
 
     sess_map_by_uuid& sess_by_uuid = m_session_cache.get<1>();

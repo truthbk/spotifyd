@@ -425,9 +425,7 @@ void XplodifySession::stop_playback()
 }
 
 void XplodifySession::get_audio_buffer_stats(sp_audio_buffer_stats * stats) {
-#if 0
     m_handler->audio_fifo_stats(stats);
-#endif
     return;
 }
 
@@ -454,9 +452,7 @@ int XplodifySession::music_delivery(sp_session *sess, const sp_audioformat *form
 {
 
     int n_frames=0;
-#if 0
     n_frames = m_handler->music_playback(format, frames, num_frames);
-#endif
     return n_frames;
 }
 

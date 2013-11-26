@@ -9,6 +9,7 @@
 
 #include "lockable.h"
 
+#include "spotify_handler.h"
 #include "Spotify.h"
 
 extern "C" {
@@ -149,7 +150,7 @@ class XplodifySession
         sp_session_config       m_spconfig;
 
         //pointer to notify handler of stuff
-        XplodifyHandler * const  m_handler;
+        SpotifyHandler * const  m_handler;
 
         std::string             m_uuid;
         bool                    m_loggedin;

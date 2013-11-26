@@ -31,8 +31,8 @@ class SpotifyHandler {
         virtual void set_playback_done(bool done) = 0 ;
         virtual int  music_playback(const sp_audioformat * format, 
                 const void * frames, int num_frames) = 0 ;
-#if 0
         virtual void audio_fifo_stats(sp_audio_buffer_stats *stats) = 0 ;
+#if 0
         virtual void audio_fifo_flush_now(void) = 0 ;
 #endif
         virtual void update_timestamp(void) = 0 ;
