@@ -58,8 +58,7 @@ class XplodifySession;
 class XplodifyHandler 
         : virtual public SpotifyIf
         , public Runnable
-        , private Lockable 
-        , public SpotifyHandler {
+        , private Lockable {
     public:
         XplodifyHandler(bool multisession=false);
         void loginSession(SpotifyCredential& _return, const SpotifyCredential& cred);
@@ -87,20 +86,17 @@ class XplodifyHandler
 			const SpotifyTrack& track);
         void whats_playing(SpotifyTrack& _return);
 
-        //SpotifyHandler purely virtual methods
-        int  music_playback(const sp_audioformat * format, 
-                const void * frames, int num_frames);
-        void audio_fifo_stats(sp_audio_buffer_stats *stats);
-        void audio_fifo_flush_now(void);
-
-        void notify_main_thread(void);
-        void set_playback_done(bool done);
-        void update_timestamp(void);
-        std::string get_cachedir();
-    protected:
-        //implementing runnable
-        void run();
     private:
+        SpotifyHandler sh;
+
+        //Session login timers...
+        //no transfer of ownership, we're good with raw pointers.
+        typedef std::map<std::string, boost::asio::deadline_timer *> timer_map;
+        timer_map m_timers;
+
+        const bool m_multi;
+
+#if 0
         struct sess_map_entry {
             std::string _uuid;
             std::uintptr_t _sessintptr;
@@ -149,13 +145,8 @@ class XplodifyHandler
             return smap.size();
         }
 
-        //no transfer of ownership, we're good with raw pointers.
-        typedef std::map<std::string, boost::asio::deadline_timer *> timer_map;
-        timer_map m_timers;
-
         void remove_from_cache(const std::string& uuid);
-        void login_timeout(const boost::system::error_code&,
-                std::string uuid);
+
         boost::shared_ptr<XplodifySession> get_session(const std::string& uuid);
         boost::shared_ptr<XplodifySession> get_session(const sp_session * sps);
         boost::shared_ptr<XplodifySession> getActiveSession(void);
@@ -169,7 +160,7 @@ class XplodifyHandler
         //proper members
         sess_map_sequenced::iterator            m_sess_it;
         boost::shared_ptr<XplodifySession>      m_active_session;
-        const bool                              m_multi;
+#endif
 
 };
 #endif

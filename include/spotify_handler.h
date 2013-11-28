@@ -15,7 +15,11 @@ extern "C" {
     #include "audio.h"
 }
 
-class SpotifyHandler {
+class SpotifyHandler 
+    : public Runnable
+    , private Lockable
+    //should it inherit from shared_from_this?
+{
     public:
         SpotifyHandler() 
             : LOGIN_TO(1)
@@ -27,6 +31,16 @@ class SpotifyHandler {
         virtual ~SpotifyHandler() {
         }
 
+        virtual std::string login(SpotifyCredential& cred) = 0;
+        virtual bool login_status(std::string uuid) = 0;
+        virtual int64_t get_session_state(std::string uuid) = 0;
+        virtual std::string logout(std::string uuid) = 0;
+        virtual std::vector< std::string > get_playlists(string uuid) = 0;
+        virtual std::vector< std::string > get_tracks(string uuid, int pid) = 0;
+        virtual bool select_playlist(std::string uuid, int pid) = 0;
+        virtual bool select_playlist(std::string uuid, std::string pname) = 0;
+        virtual bool select_track(std::string uuid, int tid) = 0;
+        virtual bool select_track(std::string uuid, std::string tname) = 0;
         virtual void notify_main_thread(void) = 0 ;
         virtual void set_playback_done(bool done) = 0 ;
         virtual int  music_playback(const sp_audioformat * format, 
@@ -39,6 +53,9 @@ class SpotifyHandler {
         virtual std::string get_cachedir() = 0 ;
 
     protected:
+        //implementing runnable
+        void run();
+
         const size_t                            LOGIN_TO;
         int                                     m_playback_done;
         int                                     m_notify_events;
@@ -48,6 +65,16 @@ class SpotifyHandler {
 
         //SILENCE NUM SAMPLES THRESHOLD
         enum { SILENCE_N_SAMPLES = 8192 };
+
+    private:
+        boost::shared_ptr<XplodifySession> get_active_session(void);
+        void set_active_session(boost::shared_ptr<XplodifySession> session);
+
+        void login_timeout(const boost::system::error_code&,
+                std::string uuid);
+
+        boost::shared_ptr<XplodifySession>      m_active_session;
+
 };
 
 #endif //_SPOTIFY_HANDLER_H
