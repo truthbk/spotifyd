@@ -37,11 +37,11 @@ extern "C" {
 class XplodifySession;
 
 
-// This baby here, the XplodifyHandler, was originally conceived as a singleton. The 
+// This baby here, the XplodifyServer, was originally conceived as a singleton. The 
 // main idea behind that decision was the fact that we are only supposed to have a 
 // single audio queue. Although perhaps fundamentally correct, because singleton's are
 // very often a bad decision which may bring nast consequences eventually, I rather leave 
-// that decision to the coder - if he decides to to implement several  XplodifyHandler, 
+// that decision to the coder - if he decides to to implement several  XplodifyServer, 
 // instances.... then he will be responsible for his actions ;)
 //
 // The Handler manages incoming thrift requests and most of the logic.
@@ -49,18 +49,18 @@ class XplodifySession;
 // randomly play music from each of their 'selected' playlists. 
 //
 // For example: if Joe is listening to his Hip Hop playist, and Jane is listening
-// to her oldies playlists. We *do not* want several instances of the XplodifyHandler
+// to her oldies playlists. We *do not* want several instances of the XplodifyServer
 // created. We don't need them either. The Handler will randomly select tracks from
 // each of the users registered. The Audio Queue must be a singleton, and so we 
 // can make the entire handler singleton. One instance is enough to handler all
 // incoming requests.
 //
-class XplodifyHandler 
+class XplodifyServer 
         : virtual public SpotifyIf
         , public Runnable
         , private Lockable {
     public:
-        XplodifyHandler(bool multisession=false);
+        XplodifyServer(bool multisession=false);
         void loginSession(SpotifyCredential& _return, const SpotifyCredential& cred);
         bool isLoggedIn(const SpotifyCredential& cred);
         int64_t getStateTS(const SpotifyCredential& cred);

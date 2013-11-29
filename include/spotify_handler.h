@@ -16,9 +16,6 @@ extern "C" {
 }
 
 class SpotifyHandler 
-    : public Runnable
-    , private Lockable
-    //should it inherit from shared_from_this?
 {
     public:
         SpotifyHandler() 
@@ -31,10 +28,10 @@ class SpotifyHandler
         virtual ~SpotifyHandler() {
         }
 
-        virtual void login(const std::string& username, const::string& passwd) = 0;
-        virtual void login(const std::string& token) = 0;
+        virtual std::string login(const std::string& username, const::string& passwd) = 0;
+        virtual std::string login(const std::string& token) = 0;
         virtual bool login_status(std::string uuid) = 0;
-        virtual std::string logout(std::string uuid) = 0;
+        virtual void logout(std::string uuid) = 0;
         virtual std::vector< std::string > get_playlists(string uuid) = 0;
         virtual std::vector< std::string > get_tracks(string uuid, int pid) = 0;
         virtual bool select_playlist(std::string uuid, int pid) = 0;
@@ -44,22 +41,18 @@ class SpotifyHandler
         virtual void play() = 0;
         virtual void stop() = 0;
 
-        virtual void notify_main_thread(void) = 0 ;
-        virtual void set_playback_done(bool done) = 0 ;
+        virtual void notify_main_thread(void) = 0;
+        virtual void set_playback_done(bool done) = 0;
         virtual int  music_playback(const sp_audioformat * format, 
-                const void * frames, int num_frames) = 0 ;
-        virtual void audio_fifo_stats(sp_audio_buffer_stats *stats) = 0 ;
-#if 0
+                const void * frames, int num_frames) = 0;
+        virtual void audio_fifo_stats(sp_audio_buffer_stats *stats) = 0;
         virtual void audio_fifo_flush_now(void) = 0 ;
-#endif
+
         virtual int64_t get_session_state(std::string uuid) = 0;
-        virtual void update_timestamp(void) = 0 ;
-        virtual std::string get_cachedir() = 0 ;
+        virtual void update_timestamp(void) = 0;
+        virtual std::string get_cachedir() = 0;
 
     protected:
-        //implementing runnable
-        void run();
-
         const size_t                            LOGIN_TO;
         int                                     m_playback_done;
         int                                     m_notify_events;

@@ -52,7 +52,7 @@ bool SpotifyCredential::operator < (const SpotifyCredential & other) const
 }
 
 
-XplodifyHandler::XplodifyHandler(bool multisession)
+XplodifyServer::XplodifyServer(bool multisession)
     : Runnable()
     , Lockable()
     , SpotifyHandler()
@@ -64,7 +64,7 @@ XplodifyHandler::XplodifyHandler(bool multisession)
 }
 
 
-void XplodifyHandler::run() 
+void XplodifyServer::run() 
 {
     int next_timeout = 0;
 
@@ -116,7 +116,7 @@ void XplodifyHandler::run()
     }
 }
 
-void XplodifyHandler::remove_from_cache(const std::string& uuid) {
+void XplodifyServer::remove_from_cache(const std::string& uuid) {
     bool move_on = false;
     sess_map_entry aux_entry(*m_sess_it);
     sess_map_sequenced::iterator sess_it = m_sess_it;
@@ -139,58 +139,38 @@ void XplodifyHandler::remove_from_cache(const std::string& uuid) {
     }
 }
 
-void XplodifyHandler::loginSession(SpotifyCredential& _return, const SpotifyCredential& cred) {
+void XplodifyServer::loginSession(SpotifyCredential& _return, const SpotifyCredential& cred) {
 
     sp_error err;
 #ifdef _DEBUG
     printf("initiatingSession\n");
 #endif
+    std::string uuid_str = sh.login(cred._username, cred._password);
 
+#if 0
     boost::shared_ptr< XplodifySession > sess = get_session(cred._uuid);
     if(!sess) {
-        sess = XplodifySession::create(this);
-        if(sess->init_session(g_appkey, g_appkey_size )) {
-            //can't continue....
-#ifdef _DEBUG
-            std::cout << "Unexpected error creating session. "<< std::endl;
-#endif
-            sess.reset();
-            return;
-        }
-
-        sess->login(cred._username, cred._passwd);
-
-
-        lock();
-        //generate UUID
-        const boost::uuids::uuid uuid = boost::uuids::random_generator()();
-        const std::string uuid_str = boost::lexical_cast<std::string>(uuid);
-
-        sess->set_uuid(uuid_str);
+        //THIS IS MULTISESSION STUFF.... MUST BE MOVED TO HANDLER
         m_session_cache.get<1>().insert(sess_map_entry( uuid_str, 
                     const_cast<const sp_session *>(sess->get_session()), sess ));
+#endif
+
 #ifdef _DEBUG
         std::cout << "starting timer for session: "<< uuid_str <<"\n";
 #endif
         //no transfer of ownership, we're good with raw pointers.
         boost::asio::deadline_timer * t = new boost::asio::deadline_timer(m_io);
         t->expires_from_now(boost::posix_time::seconds(LOGIN_TO));
-        t->async_wait(boost::bind(&XplodifyHandler::login_timeout,
+        t->async_wait(boost::bind(&XplodifyServer::login_timeout,
                     this, boost::asio::placeholders::error, uuid_str));
 
         m_timers.insert(std::pair< std::string, boost::asio::deadline_timer *>(uuid_str, t));
 
-        if(!getActiveSession()) {
-            setActiveSession(sess);
-        }
-
         _return = cred;
         _return.__set__uuid(uuid_str);
-        unlock();
-        update_timestamp();
     }
 }
-void XplodifyHandler::login_timeout(const boost::system::error_code&,
+void XplodifyServer::login_timeout(const boost::system::error_code&,
         std::string uuid) {
 #ifdef _DEBUG
     std::cout << "Event timeout for login: " << uuid << " Checking status...\n";
@@ -232,7 +212,7 @@ void XplodifyHandler::login_timeout(const boost::system::error_code&,
     update_timestamp();
 }
 
-bool XplodifyHandler::isLoggedIn(const SpotifyCredential& cred) {
+bool XplodifyServer::isLoggedIn(const SpotifyCredential& cred) {
 
     boost::shared_ptr< XplodifySession > 
         sess = get_session(cred._uuid);
@@ -243,7 +223,7 @@ bool XplodifyHandler::isLoggedIn(const SpotifyCredential& cred) {
     return sess->get_logged_in();
 }
 
-int64_t XplodifyHandler::getStateTS(const SpotifyCredential& cred) {
+int64_t XplodifyServer::getStateTS(const SpotifyCredential& cred) {
     int64_t ts;
     boost::shared_ptr< XplodifySession > 
         sess = get_session(cred._uuid);
@@ -258,7 +238,7 @@ int64_t XplodifyHandler::getStateTS(const SpotifyCredential& cred) {
     return ts;
 }
 
-int64_t XplodifyHandler::getSessionStateTS(const SpotifyCredential& cred) {
+int64_t XplodifyServer::getSessionStateTS(const SpotifyCredential& cred) {
 
     boost::shared_ptr< XplodifySession > 
         sess = get_session(cred._uuid);
@@ -269,7 +249,7 @@ int64_t XplodifyHandler::getSessionStateTS(const SpotifyCredential& cred) {
     return sess->get_state_ts();
 }
 
-void XplodifyHandler::logoutSession(const SpotifyCredential& cred) {
+void XplodifyServer::logoutSession(const SpotifyCredential& cred) {
 
     sp_error err;
     bool switched = false;
@@ -309,7 +289,7 @@ void XplodifyHandler::logoutSession(const SpotifyCredential& cred) {
     return;
 }
 
-void XplodifyHandler::sendCommand(const SpotifyCredential& cred, const SpotifyCmd::type cmd) {
+void XplodifyServer::sendCommand(const SpotifyCredential& cred, const SpotifyCmd::type cmd) {
     std::cout << "sendCommand" << std::endl;
 
     boost::shared_ptr<XplodifySession> sess = get_session(cred._uuid);
@@ -347,7 +327,7 @@ void XplodifyHandler::sendCommand(const SpotifyCredential& cred, const SpotifyCm
 }
 
 //change session, allow it to be played.
-void XplodifyHandler::switch_session() {
+void XplodifyServer::switch_session() {
     sp_session_player_unload(m_active_session->get_session());
 
     //Currently just round-robin.
@@ -366,7 +346,7 @@ void XplodifyHandler::switch_session() {
 }
 
 
-void XplodifyHandler::search(SpotifyPlaylist& _return, const SpotifyCredential& cred,
+void XplodifyServer::search(SpotifyPlaylist& _return, const SpotifyCredential& cred,
 		const SpotifySearch& criteria) {
     // Your implementation goes here
     printf("search\n");
@@ -376,7 +356,7 @@ void XplodifyHandler::search(SpotifyPlaylist& _return, const SpotifyCredential& 
     }
 }
 
-void XplodifyHandler::getPlaylists(SpotifyPlaylistList& _return, const SpotifyCredential& cred) 
+void XplodifyServer::getPlaylists(SpotifyPlaylistList& _return, const SpotifyCredential& cred) 
 {
     boost::shared_ptr<XplodifySession> sess = get_session(cred._uuid);
     if(!sess) {
@@ -402,7 +382,7 @@ void XplodifyHandler::getPlaylists(SpotifyPlaylistList& _return, const SpotifyCr
 
 }
 
-void XplodifyHandler::getPlaylist(SpotifyPlaylist& _return, const SpotifyCredential& cred,
+void XplodifyServer::getPlaylist(SpotifyPlaylist& _return, const SpotifyCredential& cred,
         const int32_t plist_id) {
     // Your implementation goes here
     boost::shared_ptr<XplodifySession> sess = get_session(cred._uuid);
@@ -445,7 +425,7 @@ void XplodifyHandler::getPlaylist(SpotifyPlaylist& _return, const SpotifyCredent
     return;
 }
 
-void XplodifyHandler::getPlaylistByName(
+void XplodifyServer::getPlaylistByName(
         SpotifyPlaylist& _return, const SpotifyCredential& cred,
         const std::string& name) {
 
@@ -502,7 +482,7 @@ void XplodifyHandler::getPlaylistByName(
     return;
 }
 
-void XplodifyHandler::selectPlaylist(const SpotifyCredential& cred, const std::string& playlist) {
+void XplodifyServer::selectPlaylist(const SpotifyCredential& cred, const std::string& playlist) {
 
     boost::shared_ptr<XplodifySession> sess = get_session(cred._uuid);
     if(!sess) {
@@ -512,7 +492,7 @@ void XplodifyHandler::selectPlaylist(const SpotifyCredential& cred, const std::s
     sess->set_active_playlist(playlist);
 
 }
-void XplodifyHandler::selectPlaylistById(const SpotifyCredential& cred, const int32_t plist_id) {
+void XplodifyServer::selectPlaylistById(const SpotifyCredential& cred, const int32_t plist_id) {
     // Your implementation goes here
     printf("selectPlaylist\n");
     boost::shared_ptr< XplodifySession > sess = get_session(cred._uuid);
@@ -523,7 +503,7 @@ void XplodifyHandler::selectPlaylistById(const SpotifyCredential& cred, const in
     sess->set_active_playlist(plist_id);
 }
 
-void XplodifyHandler::selectTrack(const SpotifyCredential& cred, const std::string& track) {
+void XplodifyServer::selectTrack(const SpotifyCredential& cred, const std::string& track) {
 
     //TODO
     boost::shared_ptr< XplodifySession > sess = get_session(cred._uuid);
@@ -539,7 +519,7 @@ void XplodifyHandler::selectTrack(const SpotifyCredential& cred, const std::stri
     return;
 
 }
-void XplodifyHandler::selectTrackById(const SpotifyCredential& cred, const int32_t track_id) {
+void XplodifyServer::selectTrackById(const SpotifyCredential& cred, const int32_t track_id) {
 
     //TODO
     boost::shared_ptr< XplodifySession > sess = get_session(cred._uuid);
@@ -551,7 +531,7 @@ void XplodifyHandler::selectTrackById(const SpotifyCredential& cred, const int32
     return;
 }
 
-bool XplodifyHandler::merge2playlist(const SpotifyCredential& cred, const std::string& pl,
+bool XplodifyServer::merge2playlist(const SpotifyCredential& cred, const std::string& pl,
 		const SpotifyPlaylist& tracks) {
     boost::shared_ptr< XplodifySession > sess = get_session(cred._uuid);
     if(!sess) {
@@ -562,7 +542,7 @@ bool XplodifyHandler::merge2playlist(const SpotifyCredential& cred, const std::s
     return true;
 }
 
-bool XplodifyHandler::add2playlist(const SpotifyCredential& cred, const std::string& pl,
+bool XplodifyServer::add2playlist(const SpotifyCredential& cred, const std::string& pl,
 		const SpotifyTrack& track) {
     boost::shared_ptr< XplodifySession > sess = get_session(cred._uuid);
     if(!sess) {
@@ -573,7 +553,7 @@ bool XplodifyHandler::add2playlist(const SpotifyCredential& cred, const std::str
     return true;
 }
 
-void XplodifyHandler::whats_playing(SpotifyTrack& _return) {
+void XplodifyServer::whats_playing(SpotifyTrack& _return) {
 
     if(!m_active_session) {
         return;
@@ -597,21 +577,21 @@ void XplodifyHandler::whats_playing(SpotifyTrack& _return) {
     return;
 }
 
-int XplodifyHandler::music_playback(const sp_audioformat * format, 
+int XplodifyServer::music_playback(const sp_audioformat * format, 
         const void * frames, int num_frames) {
     //EMPTY FOR NOW: complying with interface
     return 0;
 }
-void XplodifyHandler::audio_fifo_stats(sp_audio_buffer_stats *stats) {
+void XplodifyServer::audio_fifo_stats(sp_audio_buffer_stats *stats) {
     //EMPTY FOR NOW: complying with interface
     return;
 }
-void XplodifyHandler::audio_fifo_flush_now(void) {
+void XplodifyServer::audio_fifo_flush_now(void) {
     //EMPTY FOR NOW: complying with interface
     return;
 }
 
-boost::shared_ptr<XplodifySession> XplodifyHandler::get_session(const std::string& uuid) {
+boost::shared_ptr<XplodifySession> XplodifyServer::get_session(const std::string& uuid) {
 
     sess_map_by_uuid& sess_by_uuid = m_session_cache.get<1>();
 
@@ -623,7 +603,7 @@ boost::shared_ptr<XplodifySession> XplodifyHandler::get_session(const std::strin
     return sit->session;
 }
 
-boost::shared_ptr<XplodifySession> XplodifyHandler::get_session(const sp_session * sps) {
+boost::shared_ptr<XplodifySession> XplodifyServer::get_session(const sp_session * sps) {
 
     sess_map_by_sessptr& sessByPtr = m_session_cache.get<2>();
 
@@ -635,16 +615,16 @@ boost::shared_ptr<XplodifySession> XplodifyHandler::get_session(const sp_session
     return sit->session;
 }
 
-boost::shared_ptr<XplodifySession> XplodifyHandler::getActiveSession(void) {
+boost::shared_ptr<XplodifySession> XplodifyServer::getActiveSession(void) {
     return m_active_session;
 }
-void XplodifyHandler::setActiveSession(boost::shared_ptr<XplodifySession> session) {
+void XplodifyServer::setActiveSession(boost::shared_ptr<XplodifySession> session) {
     m_active_session = session;
 }
 
 //we also need to be able to search by sp_session, that's quite important; callbacks rely very heavily
 //on it.
-sp_playlistcontainer * XplodifyHandler::getPlaylistContainer(SpotifyCredential& cred) {
+sp_playlistcontainer * XplodifyServer::getPlaylistContainer(SpotifyCredential& cred) {
     boost::shared_ptr<XplodifySession> sess = get_session(cred._uuid);
     if(!sess) {
 	return NULL;
@@ -654,14 +634,14 @@ sp_playlistcontainer * XplodifyHandler::getPlaylistContainer(SpotifyCredential& 
 }
 
 
-void XplodifyHandler::set_playback_done(bool done)
+void XplodifyServer::set_playback_done(bool done)
 {
     lock();
     m_playback_done = done;
     unlock();
 }
 
-void XplodifyHandler::notify_main_thread(void)
+void XplodifyServer::notify_main_thread(void)
 {
     lock();
     m_notify_events = 1;
@@ -670,13 +650,13 @@ void XplodifyHandler::notify_main_thread(void)
 }
 
 
-void XplodifyHandler::update_timestamp(void) {
+void XplodifyServer::update_timestamp(void) {
     lock();
     m_ts = std::time(NULL);
     unlock();
 }
 
-std::string XplodifyHandler::get_cachedir() {
+std::string XplodifyServer::get_cachedir() {
     return m_sp_cachedir;
 }
 
@@ -725,8 +705,8 @@ int main(int argc, char **argv) {
         }
     }
 
-    //XplodifyHandler
-    boost::shared_ptr<XplodifyHandler> sHandler(new XplodifyHandler(multi));
+    //XplodifyServer
+    boost::shared_ptr<XplodifyServer> sHandler(new XplodifyServer(multi));
 
     //THRIFT Server
     boost::shared_ptr<TProcessor> processor(new SpotifyProcessor(sHandler));
