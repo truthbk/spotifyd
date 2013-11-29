@@ -31,9 +31,9 @@ class SpotifyHandler
         virtual ~SpotifyHandler() {
         }
 
-        virtual std::string login(SpotifyCredential& cred) = 0;
+        virtual void login(const std::string& username, const::string& passwd) = 0;
+        virtual void login(const std::string& token) = 0;
         virtual bool login_status(std::string uuid) = 0;
-        virtual int64_t get_session_state(std::string uuid) = 0;
         virtual std::string logout(std::string uuid) = 0;
         virtual std::vector< std::string > get_playlists(string uuid) = 0;
         virtual std::vector< std::string > get_tracks(string uuid, int pid) = 0;
@@ -41,6 +41,9 @@ class SpotifyHandler
         virtual bool select_playlist(std::string uuid, std::string pname) = 0;
         virtual bool select_track(std::string uuid, int tid) = 0;
         virtual bool select_track(std::string uuid, std::string tname) = 0;
+        virtual void play() = 0;
+        virtual void stop() = 0;
+
         virtual void notify_main_thread(void) = 0 ;
         virtual void set_playback_done(bool done) = 0 ;
         virtual int  music_playback(const sp_audioformat * format, 
@@ -49,6 +52,7 @@ class SpotifyHandler
 #if 0
         virtual void audio_fifo_flush_now(void) = 0 ;
 #endif
+        virtual int64_t get_session_state(std::string uuid) = 0;
         virtual void update_timestamp(void) = 0 ;
         virtual std::string get_cachedir() = 0 ;
 
