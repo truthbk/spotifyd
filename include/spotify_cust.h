@@ -61,7 +61,9 @@ class XplodifyServer
         , private Lockable {
     public:
         XplodifyServer(bool multisession=false);
-        void loginSession(SpotifyCredential& _return, const SpotifyCredential& cred);
+        void check_in(SpotifyCredential& _return, const SpotifyCredential& cred);
+        bool check_out(const SpotifyCredential& cred);
+        bool loginSession(const SpotifyCredential& cred);
         bool isLoggedIn(const SpotifyCredential& cred);
         int64_t getStateTS(const SpotifyCredential& cred);
         int64_t getSessionStateTS(const SpotifyCredential& cred);
@@ -97,59 +99,6 @@ class XplodifyServer
         const bool m_multi;
 
 #if 0
-        struct sess_map_entry {
-            std::string _uuid;
-            std::uintptr_t _sessintptr;
-            int _ptrlow32;
-
-            boost::shared_ptr<XplodifySession> session;
-
-            sess_map_entry( const std::string &uuid, uintptr_t sintptr
-                    , boost::shared_ptr<XplodifySession> sess ) 
-                : _uuid(uuid)
-                , _sessintptr(sintptr)
-                  //lower 32 bits for greater entropy.
-                , _ptrlow32( static_cast<int>(_sessintptr))
-                , session(sess)
-            {
-                return;
-            }
-            sess_map_entry( const std::string &uuid, const sp_session * sp
-                    , boost::shared_ptr<XplodifySession> sess ) 
-                : _uuid(uuid)
-                , _sessintptr(reinterpret_cast<std::uintptr_t>(sp))
-                , session(sess)
-            {
-            }
-        };
-
-        //maybe tagging would make code more readable, but I'm not a fan. Leaving out for now.
-        typedef boost::multi_index_container<
-            sess_map_entry,
-            boost::multi_index::indexed_by<
-                boost::multi_index::sequenced<>,
-                boost::multi_index::hashed_unique< 
-                    BOOST_MULTI_INDEX_MEMBER(sess_map_entry, std::string, _uuid) >,
-                boost::multi_index::hashed_unique< 
-                    BOOST_MULTI_INDEX_MEMBER(sess_map_entry, std::uintptr_t, _sessintptr) >
-            > > sess_map;
-
-        typedef sess_map::nth_index<0>::type sess_map_sequenced;
-        typedef sess_map::nth_index<1>::type sess_map_by_uuid;
-        typedef sess_map::nth_index<2>::type sess_map_by_sessptr;
-        sess_map m_session_cache;
-
-        size_t get_cache_size() {
-            sess_map_sequenced& smap = m_session_cache.get<0>();
-
-            return smap.size();
-        }
-
-        void remove_from_cache(const std::string& uuid);
-
-        boost::shared_ptr<XplodifySession> get_session(const std::string& uuid);
-        boost::shared_ptr<XplodifySession> get_session(const sp_session * sps);
-        boost::shared_ptr<XplodifySession> getActiveSession(void);
         void setActiveSession(boost::shared_ptr<XplodifySession> session);
 
 

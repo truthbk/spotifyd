@@ -66,54 +66,11 @@ XplodifyServer::XplodifyServer(bool multisession)
 
 void XplodifyServer::run() 
 {
-    int next_timeout = 0;
-
-    while(!m_done)
-    {
-        if (next_timeout == 0) {
-            while(!m_notify_events && !m_playback_done) {
-                cond_wait();
-            }
-        } else {
-            struct timespec ts;
-
-#if _POSIX_TIMERS > 0
-            clock_gettime(CLOCK_REALTIME, &ts);
-#else
-            struct timeval tv;
-            gettimeofday(&tv, NULL);
-            TIMEVAL_TO_TIMESPEC(&tv, &ts);
-#endif
-            ts.tv_sec += next_timeout / 1000;
-            ts.tv_nsec += (next_timeout % 1000) * 1000000;
-            
-            cond_timedwait(&ts);
-        }
-
-        m_notify_events = 0;
-        unlock();
-
-        if (m_playback_done) {
-            //track_ended();
-            m_playback_done = 0;
-        }
-
-        do {
-            //protecting iterator
-            lock();
-            sess_map_sequenced::iterator sit = m_session_cache.get<0>().begin();
-            for( ; sit != m_session_cache.get<0>().end() ; sit++ ) {
-                //should we make sure next_timeout is 0?
-                sp_session_process_events(sit->session->get_session(), &next_timeout);
-            }
-            unlock();
-        } while (next_timeout == 0);
-
+    //process timer events?
+#if 0
         m_io.poll();
         m_io.reset();
-
-        lock();
-    }
+#endif
 }
 
 void XplodifyServer::remove_from_cache(const std::string& uuid) {
@@ -139,22 +96,22 @@ void XplodifyServer::remove_from_cache(const std::string& uuid) {
     }
 }
 
-void XplodifyServer::loginSession(SpotifyCredential& _return, const SpotifyCredential& cred) {
+void XplodifyServer::check_in(SpotifyCredential& _return, const SpotifyCredential& cred) {
+    std::string uuid_str = sh.check_in();
+    _return = cred;
+    _return.__set__uuid(uuid_str); //Empty string is a failure to check in.
+}
 
-    sp_error err;
-#ifdef _DEBUG
-    printf("initiatingSession\n");
-#endif
-    std::string uuid_str = sh.login(cred._username, cred._password);
+bool XplodifyServer::check_out(const SpotifyCredential& cred) {
+    //TODO
+    return true;
+}
 
-#if 0
-    boost::shared_ptr< XplodifySession > sess = get_session(cred._uuid);
-    if(!sess) {
-        //THIS IS MULTISESSION STUFF.... MUST BE MOVED TO HANDLER
-        m_session_cache.get<1>().insert(sess_map_entry( uuid_str, 
-                    const_cast<const sp_session *>(sess->get_session()), sess ));
-#endif
+bool XplodifyServer::loginSession(const SpotifyCredential& cred) {
 
+    bool logging_in = sh.login(cred._uuid, cred._username, cred._password);
+
+    if(logging_in) {
 #ifdef _DEBUG
         std::cout << "starting timer for session: "<< uuid_str <<"\n";
 #endif
@@ -162,13 +119,12 @@ void XplodifyServer::loginSession(SpotifyCredential& _return, const SpotifyCrede
         boost::asio::deadline_timer * t = new boost::asio::deadline_timer(m_io);
         t->expires_from_now(boost::posix_time::seconds(LOGIN_TO));
         t->async_wait(boost::bind(&XplodifyServer::login_timeout,
-                    this, boost::asio::placeholders::error, uuid_str));
+                    this, boost::asio::placeholders::error, cred._uuid));
 
         m_timers.insert(std::pair< std::string, boost::asio::deadline_timer *>(uuid_str, t));
 
-        _return = cred;
-        _return.__set__uuid(uuid_str);
     }
+    return logging_in;
 }
 void XplodifyServer::login_timeout(const boost::system::error_code&,
         std::string uuid) {
@@ -188,39 +144,33 @@ void XplodifyServer::login_timeout(const boost::system::error_code&,
     }
 
     //check session status...
-    boost::shared_ptr< XplodifySession > sess = get_session(uuid);
-    if(!sess) {
-        return;
-    }
+    bool logged = sh.login_status(uuid);
 
-    if(sess->get_logged_in()) {
+    if(logged) {
 #ifdef _DEBUG
         std::cout << "Session: " << uuid << " Succesfully logged in ...\n";
 #endif
         return;
     }
 
+#if 0
     //not logged in, cleanup.
     lock();
 
+    sh.check_out(uuid);
     remove_from_cache(uuid);
 
     sess->flush();
     sess.reset();
     unlock();
+#endif
 
     update_timestamp();
 }
 
 bool XplodifyServer::isLoggedIn(const SpotifyCredential& cred) {
 
-    boost::shared_ptr< XplodifySession > 
-        sess = get_session(cred._uuid);
-
-    if(!sess)
-        return false;
-
-    return sess->get_logged_in();
+    return sh.login_status(cred._uuid);
 }
 
 int64_t XplodifyServer::getStateTS(const SpotifyCredential& cred) {
@@ -251,39 +201,6 @@ int64_t XplodifyServer::getSessionStateTS(const SpotifyCredential& cred) {
 
 void XplodifyServer::logoutSession(const SpotifyCredential& cred) {
 
-    sp_error err;
-    bool switched = false;
-
-    boost::shared_ptr<XplodifySession> sess = get_session(cred._uuid);
-    if(!sess) {
-        return;
-    }
-
-    lock();
-    if(sess == m_active_session) 
-    {
-        //stop track move onto next session.
-        switch_session();
-        switched = true;
-
-    }
-
-    sess->flush();
-    err = sp_session_logout(sess->get_session());
-
-    if(err == SP_ERROR_OK )
-    {
-        remove_from_cache(cred._uuid);
-    }
-    sp_session_release(sess->get_session());
-
-    if(!get_cache_size()) {
-        m_active_session.reset();
-    }
-#ifdef _DEBUG
-    std::cout << "XplodifySession use count: " << sess.use_count()  << std::endl;
-#endif
-    unlock();
 
     update_timestamp();
     return;
@@ -321,25 +238,6 @@ void XplodifyServer::sendCommand(const SpotifyCredential& cred, const SpotifyCmd
         default:
             break;
     }
-
-    update_timestamp();
-    return;
-}
-
-//change session, allow it to be played.
-void XplodifyServer::switch_session() {
-    sp_session_player_unload(m_active_session->get_session());
-
-    //Currently just round-robin.
-    m_sess_it++;
-    if (m_sess_it == m_session_cache.get<0>().end())
-    {
-        m_sess_it = m_session_cache.get<0>().begin();
-    }
-
-    m_active_session = m_sess_it->session;
-    //should load track...
-    //sp_session_player_load(m_active_session->get_session(), sometrack );
 
     update_timestamp();
     return;
