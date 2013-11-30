@@ -17,14 +17,10 @@ extern "C" {
 
 class XplodifyHandler
     : public SpotifyHandler
-    , public Runnable
-    , public Lockable
 {
     public:
         XplodifyHandler()
-            : SpotifyHandler()
-            , Runnable()
-            , Lockable(){
+            : SpotifyHandler() {
         }
         virtual ~XplodifyHandler() {
         }
@@ -56,6 +52,62 @@ class XplodifyHandler
     protected:
         //implementing runnable
         virtual void run();
+        virtual void switch_session();
+
+    private:
+        struct sess_map_entry {
+            std::string _uuid;
+            std::uintptr_t _sessintptr;
+            int _ptrlow32;
+
+            boost::shared_ptr<XplodifySession> session;
+
+            sess_map_entry( const std::string &uuid, uintptr_t sintptr
+                    , boost::shared_ptr<XplodifySession> sess ) 
+                : _uuid(uuid)
+                , _sessintptr(sintptr)
+                  //lower 32 bits for greater entropy.
+                , _ptrlow32( static_cast<int>(_sessintptr))
+                , session(sess)
+            {
+                return;
+            }
+            sess_map_entry( const std::string &uuid, const sp_session * sp
+                    , boost::shared_ptr<XplodifySession> sess ) 
+                : _uuid(uuid)
+                , _sessintptr(reinterpret_cast<std::uintptr_t>(sp))
+                , session(sess)
+            {
+            }
+        };
+
+        //maybe tagging would make code more readable, but I'm not a fan. Leaving out for now.
+        typedef boost::multi_index_container<
+            sess_map_entry,
+            boost::multi_index::indexed_by<
+                boost::multi_index::sequenced<>,
+                boost::multi_index::hashed_unique< 
+                    BOOST_MULTI_INDEX_MEMBER(sess_map_entry, std::string, _uuid) >,
+                boost::multi_index::hashed_unique< 
+                    BOOST_MULTI_INDEX_MEMBER(sess_map_entry, std::uintptr_t, _sessintptr) >
+            > > sess_map;
+
+        typedef sess_map::nth_index<0>::type sess_map_sequenced;
+        typedef sess_map::nth_index<1>::type sess_map_by_uuid;
+        typedef sess_map::nth_index<2>::type sess_map_by_sessptr;
+        sess_map m_session_cache;
+
+        size_t get_cache_size() {
+            sess_map_sequenced& smap = m_session_cache.get<0>();
+
+            return smap.size();
+        }
+
+        void remove_from_cache(const std::string& uuid);
+
+        boost::shared_ptr<XplodifySession> get_session(const std::string& uuid);
+        boost::shared_ptr<XplodifySession> get_session(const sp_session * sps);
+        boost::shared_ptr<XplodifySession> getActiveSession(void);
 };
 
 #endif //_XPLODIFY_HANDLER

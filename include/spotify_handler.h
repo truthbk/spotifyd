@@ -16,10 +16,14 @@ extern "C" {
 }
 
 class SpotifyHandler 
+    : public Runnable
+    , public Lockable
 {
     public:
         SpotifyHandler() 
-            : LOGIN_TO(1)
+            : Runnable()
+            , Lockable(){
+            , LOGIN_TO(1)
             , m_playback_done(1)
             , m_notify_events(0)
             , m_sp_cachedir(SP_CACHEDIR)
@@ -28,8 +32,11 @@ class SpotifyHandler
         virtual ~SpotifyHandler() {
         }
 
-        virtual std::string login(const std::string& username, const::string& passwd) = 0;
-        virtual std::string login(const std::string& token) = 0;
+        virtual std::string check_in() = 0;
+        virtual std::string check_out(const std::string& uuid) = 0;
+        virtual bool XplodifyHandler::login(const std::string& uuid, 
+                const std::string& username, const::string& passwd) = 0;
+        virtual bool login(const std::string& uuid, const std::string& token) = 0;
         virtual bool login_status(std::string uuid) = 0;
         virtual void logout(std::string uuid) = 0;
         virtual std::vector< std::string > get_playlists(string uuid) = 0;
@@ -53,6 +60,9 @@ class SpotifyHandler
         virtual std::string get_cachedir() = 0;
 
     protected:
+        //implementing runnable
+        virtual void run() = 0;
+
         const size_t                            LOGIN_TO;
         int                                     m_playback_done;
         int                                     m_notify_events;
@@ -66,7 +76,6 @@ class SpotifyHandler
     private:
         boost::shared_ptr<XplodifySession> get_active_session(void);
         void set_active_session(boost::shared_ptr<XplodifySession> session);
-
         void login_timeout(const boost::system::error_code&,
                 std::string uuid);
 
