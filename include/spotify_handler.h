@@ -74,8 +74,8 @@ class SpotifyHandler
         enum { SILENCE_N_SAMPLES = 8192 };
 
     private:
-        boost::shared_ptr<XplodifySession> get_active_session(void);
-        void set_active_session(boost::shared_ptr<XplodifySession> session);
+        virtual boost::shared_ptr<XplodifySession> get_active_session(void) = 0;
+        virtual void set_active_session(boost::shared_ptr<XplodifySession> session) = 0;
         void login_timeout(const boost::system::error_code&,
                 std::string uuid);
 

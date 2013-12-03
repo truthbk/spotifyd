@@ -95,7 +95,9 @@ class XplodifyHandler
         typedef sess_map::nth_index<0>::type sess_map_sequenced;
         typedef sess_map::nth_index<1>::type sess_map_by_uuid;
         typedef sess_map::nth_index<2>::type sess_map_by_sessptr;
-        sess_map m_session_cache;
+
+        sess_map                     m_session_cache;
+        sess_map_sequenced::iterator m_sess_it;
 
         size_t get_cache_size() {
             sess_map_sequenced& smap = m_session_cache.get<0>();
@@ -107,7 +109,6 @@ class XplodifyHandler
 
         boost::shared_ptr<XplodifySession> get_session(const std::string& uuid);
         boost::shared_ptr<XplodifySession> get_session(const sp_session * sps);
-        boost::shared_ptr<XplodifySession> getActiveSession(void);
 };
 
 #endif //_XPLODIFY_HANDLER

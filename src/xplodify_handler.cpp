@@ -57,12 +57,9 @@ bool XplodifyHandler::check_out(const std::string& uuid){
     if(sess == m_active_session) {
         logout(uuid);
     }
-#if 0
-    if(err == SP_ERROR_OK )
-    {
-        remove_from_cache(cred._uuid);
-    }
-#endif
+
+    remove_from_cache(uuid);
+    return true;
 }
 
 //Returning true means login process has been initiated, not succesful.
@@ -111,9 +108,9 @@ bool XplodifyHandler::logout(std::string uuid){
     sp_error err;
     bool switched = false;
 
-    boost::shared_ptr<XplodifySession> sess = get_session(cred._uuid);
+    boost::shared_ptr<XplodifySession> sess = get_session(uuid);
     if(!sess) {
-        return;
+        return false;
     }
 
     lock();
@@ -134,41 +131,219 @@ bool XplodifyHandler::logout(std::string uuid){
     std::cout << "XplodifySession use count: " << sess.use_count()  << std::endl;
 #endif
     unlock();
+    return true;
 }
-std::vector< std::string > XplodifyHandler::get_playlists(string uuid){
+
+std::vector< boost::shared_ptr<XplodifyPlaylist> > XplodifyHandler::get_playlists(string uuid){
+    std::vector< std::string > pls;
+
+    boost::shared_ptr<XplodifySession> sess = get_session(uuid);
+    if(!sess) {
+        return pls;
+    }
+
+    //TODO: !!Important!! what if cached?
+    boost::shared_ptr<XplodifyPlaylistContainer> pc = sess->get_pl_container();
+    if(!pc) {
+        return pls;
+    }
+
+    int n =  pc->get_num_playlists();
+    for (int i = 0; i<n; ++i) {
+        boost::shared_ptr<xplodifyplaylist> pl = pc->get_playlist(i);
+        pls.push_back(pl);
+    }
+
+    return pls;
 }
-std::vector< std::string > XplodifyHandler::get_tracks(string uuid, int pid){
+std::vector< boost::shared<SpotifyTrack> > XplodifyHandler::get_tracks(string uuid, int pid){
+    std::vector<boost::shared<SpotifyTrack> > playlist;
+
+    boost::shared_ptr<XplodifySession> sess = get_session(uuid);
+    if(!sess) {
+        return playlist;
+    }
+
+    boost::shared_ptr<XplodifyPlaylistContainer> pc = sess->get_pl_container();
+    if(!pc) {
+        return playlist;
+    }
+
+    boost::shared_ptr<XplodifyPlaylist> pl = pc->get_playlist(pid);
+
+    if(!pl) {
+        return playlist;
+    }
+
+    for(unsigned int j = 0 ; j < pl->get_num_tracks() ; j++ ) {
+        boost::shared_ptr<XplodifyTrack> tr = pl->get_track_at(j);
+#ifdef _DEBUG
+        if(!tr->is_loaded()) {
+            std::cout << "Track at index: "<<  j << " is loading" << std::endl;
+        }
+#endif
+        playlist.push_back(tr);
+    }
+
+    return playlist;
 }
+
 bool XplodifyHandler::select_playlist(std::string uuid, int pid){
+    boost::shared_ptr< XplodifySession > sess = get_session(uuid);
+    if(!sess) {
+        return;
+    }
+
+    sess->set_active_playlist(pid);
+    return true;
 }
+
 bool XplodifyHandler::select_playlist(std::string uuid, std::string pname){
+    boost::shared_ptr<XplodifySession> sess = get_session(uuid);
+    if(!sess) {
+        return false;
+    }
+
+    sess->set_active_playlist(pname);
+    return true;
 }
 bool XplodifyHandler::select_track(std::string uuid, int tid){
+    boost::shared_ptr< XplodifySession > sess = get_session(uuid);
+    if(!sess) {
+        return false;
+    }
+#if 0
+#ifdef _DEBUG
+    std::cout << "Selecting track " << track << " for session with uuid: " 
+        << sess->m_uuid << std::endl;
+#endif
+#endif
+    sess->set_track(tid);
+    return true;
 }
 bool XplodifyHandler::select_track(std::string uuid, std::string tname){
+    boost::shared_ptr< XplodifySession > sess = get_session(uuid);
+    if(!sess) {
+        return false;
+    }
+#if 0
+#ifdef _DEBUG
+    std::cout << "Selecting track " << track << " for session with uuid: " 
+        << sess->m_uuid << std::endl;
+#endif
+#endif
+    sess->set_track(tname);
+    return true;
+
 }
 void XplodifyHandler::play(){
+    m_active_session->start_playback();
 }
 void XplodifyHandler::stop(){
+    m_active_session->stop_playback();
 }
 
 void XplodifyHandler::notify_main_thread(void){
+    lock();
+    m_notify_events = 1;
+    cond_signal();
+    unlock();
 }
+
 void XplodifyHandler::set_playback_done(bool done){
+    lock();
+    m_playback_done = done;
+    unlock();
 }
+
 int  XplodifyHandler::music_playback(const sp_audioformat * format, 
         const void * frames, int num_frames) {
+    size_t s;
+    audio_fifo_data_t *afd;
+
+    if (num_frames == 0)
+    {
+        return 0; // Audio discontinuity, do nothing
+    }
+
+    //we're receiving synthetic "end of track" silence...
+    if (num_frames > SILENCE_N_SAMPLES) {
+        m_active_session->end_of_track();
+        pthread_mutex_unlock(&m_audiofifo.mutex);
+        update_timestamp();
+        return 0;
+    }
+
+    pthread_mutex_lock(&m_audiofifo.mutex);
+
+    /* Buffer one second of audio, no more */
+    if (m_audiofifo.qlen > format->sample_rate)
+    {
+#ifdef _DEBUG
+        std::cout << "[INFO] Frames in audio_queue: " << m_audiofifo.qlen << std::endl;
+#endif
+        pthread_mutex_unlock(&m_audiofifo.mutex);
+        return 0;
+    }
+
+    //buffer underrun
+    if( m_audiofifo.prev_qlen && !m_audiofifo.qlen) 
+    {
+        m_audiofifo.reset = 1;
+#ifdef _DEBUG
+        std::cout << "[WARNING] Buffer underrun detected." << std::endl;
+#endif
+    }
+
+    s = num_frames * sizeof(int16_t) * format->channels;
+
+    //dont want to malloc, change this to new....
+    afd = (audio_fifo_data_t *) malloc(sizeof(audio_fifo_data_t) + s);
+    memcpy(afd->samples, frames, s);
+    afd->nsamples = num_frames;
+    afd->rate = format->sample_rate;
+    afd->channels = format->channels;
+
+    TAILQ_INSERT_TAIL(&m_audiofifo.q, afd, link);
+    m_audiofifo.prev_qlen = m_audiofifo.qlen;
+    m_audiofifo.qlen += num_frames;
+
+#ifdef _DEBUG
+    std::cout << "[INFO] Frames fed: " << num_frames << std::endl;
+    std::cout << "[INFO] Frames in audio_queue: " << m_audiofifo.qlen << std::endl;
+#endif
+    pthread_cond_signal(&m_audiofifo.cond);
+    pthread_mutex_unlock(&m_audiofifo.mutex);
+    return num_frames;
 }
+
 void XplodifyHandler::audio_fifo_stats(sp_audio_buffer_stats *stats){
+    pthread_mutex_lock(&m_audiofifo.mutex);
+
+    stats->samples = m_audiofifo.qlen;
+    stats->stutter = 0; //how do we calculate this?
+
+    pthread_cond_signal(&m_audiofifo.cond);
+    pthread_mutex_unlock(&m_audiofifo.mutex);
+    return;
 }
+
 void XplodifyHandler::audio_fifo_flush_now(void){
+    audio_fifo_flush(audio_fifo());
+    return;
 }
 
 int64_t XplodifyHandler::get_session_state(std::string uuid){
 }
+
 void XplodifyHandler::update_timestamp(void){
+    lock();
+    m_ts = std::time(NULL);
+    unlock();
 }
+
 std::string XplodifyHandler::get_cachedir(){
+    return m_sp_cachedir;
 }
 
 void XplodifyHandler::run(){
@@ -237,4 +412,54 @@ void XplodifyHandler::switch_session() {
 
     update_timestamp();
     return;
+}
+
+boost::shared_ptr<XplodifySession> XplodifyHandler::get_session(const std::string& uuid) {
+
+    sess_map_by_uuid& sess_by_uuid = m_session_cache.get<1>();
+
+    sess_map_by_uuid::iterator sit = sess_by_uuid.find(uuid);
+    if( sit == m_session_cache.get<1>().end() ) {
+        return boost::shared_ptr<XplodifySession>();
+    }
+
+    return sit->session;
+}
+
+boost::shared_ptr<XplodifySession> XplodifyHandler::get_session(const sp_session * sps) {
+
+    sess_map_by_sessptr& sessByPtr = m_session_cache.get<2>();
+
+    sess_map_by_sessptr::iterator sit = sessByPtr.find(reinterpret_cast<uintptr_t>(sps));
+    if( sit == m_session_cache.get<2>().end() ) {
+        return boost::shared_ptr<XplodifySession>();
+    }
+
+    return sit->session;
+}
+boost::shared_ptr<XplodifySession> XplodifyHandler::get_active_session(void) {
+    return m_active_session;
+}
+
+void XplodifyHandler::remove_from_cache(const std::string& uuid) {
+    bool move_on = false;
+    sess_map_entry aux_entry(*m_sess_it);
+    sess_map_sequenced::iterator sess_it = m_sess_it;
+    if(++sess_it == m_session_cache.get<0>().end()) {
+        sess_it = m_session_cache.get<0>().begin();
+    }
+    if(aux_entry._uuid == uuid) {
+        move_on = true;
+    }
+    sess_map_by_uuid& sess_by_uuid = m_session_cache.get<1>();
+    size_t n = sess_by_uuid.erase(uuid);
+
+    //fix the potentially invalidated iterator.
+    if(n) {
+        if(move_on) {
+            m_sess_it = sess_it;
+        } else {
+            m_sess_it = m_session_cache.get<0>().iterator_to(aux_entry);
+        }
+    }
 }

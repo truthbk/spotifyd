@@ -88,8 +88,12 @@ class XplodifyServer
 			const SpotifyTrack& track);
         void whats_playing(SpotifyTrack& _return);
 
+    protected:
+        //runnable, to process timer events...
+        void run();
+
     private:
-        SpotifyHandler sh;
+        SpotifyHandler m_sh;
 
         //Session login timers...
         //no transfer of ownership, we're good with raw pointers.
@@ -97,19 +101,6 @@ class XplodifyServer
         timer_map m_timers;
 
         const bool m_multi;
-
-#if 0
-        void setActiveSession(boost::shared_ptr<XplodifySession> session);
-
-
-        //we also need to be able to search by sp_session, that's quite important; 
-        //callbacks rely very heavily on it.
-        sp_playlistcontainer *                  getPlaylistContainer(SpotifyCredential& cred);
-
-        //proper members
-        sess_map_sequenced::iterator            m_sess_it;
-        boost::shared_ptr<XplodifySession>      m_active_session;
-#endif
 
 };
 #endif
