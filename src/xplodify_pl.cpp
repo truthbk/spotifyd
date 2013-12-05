@@ -141,6 +141,7 @@ bool XplodifyPlaylist::load_tracks() {
 
         boost::shared_ptr<XplodifyTrack> tr(new XplodifyTrack(sess));
         if(tr->load(t)){
+            tr->cache();
             std::string trname(tr->get_name());
             track_entry tr_entry(trname, tr);
             p = tr_cache_rand.push_back(tr_entry);

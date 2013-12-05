@@ -163,13 +163,14 @@ void XplodifyPlaylistContainer::playlist_added(sp_playlist *pl, int pos){
     }
 
     boost::shared_ptr<XplodifySession> sess(m_session.lock());
-    XplodifyPlaylist * xpl = new XplodifyPlaylist(sess);
-    xpl->load(pl);
-    if(xpl->is_loaded()) {
+    boost::shared_ptr<XplodifyPlaylist> npl(new XplodifyPlaylist(sess));
+    npl->load(pl);
+    if(npl->is_loaded()) {
         boost::shared_ptr<XplodifyPlaylist> npl(xpl);
 #ifdef _DEBUG
         std::cout << "Playlist " << npl->get_name() << " loaded into plc." << std::endl;
 #endif
+        npl->cache();
         add_playlist(npl, pos);
     }
 
@@ -218,13 +219,13 @@ void XplodifyPlaylistContainer::container_loaded(){
         sp_playlist * p = sp_playlistcontainer_playlist( m_plcontainer, i);
 
         boost::shared_ptr<XplodifySession> sess(m_session.lock());
-        XplodifyPlaylist * xpl = new XplodifyPlaylist(sess);
-        xpl->load(p);
-        if(xpl->is_loaded()) {
-            boost::shared_ptr<XplodifyPlaylist> npl(xpl);
+        boost::shared_ptr<XplodifyPlaylist> npl(new XplodifyPlaylist(sess));
+        npl->load(p);
+        if(npl->is_loaded()) {
 #ifdef _DEBUG
             std::cout << "Playlist " << npl->get_name() << " loaded into plc." << std::endl;
 #endif
+            npl->cache();
             add_playlist(npl);
         }
     }

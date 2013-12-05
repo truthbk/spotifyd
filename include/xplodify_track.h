@@ -32,7 +32,7 @@ class XplodifyTrack
         int           get_index(bool cache=false);
         int           get_duration(bool cache=false);
         int           get_num_artists(bool cache=false);
-        std::string   get_artist(int idx);
+        std::string   get_artist(int idx, bool cache=false);
         bool          is_starred(bool cache=false);
         int           get_disc(bool cache=false);
         int           get_popularity(bool cache=false);
@@ -53,6 +53,7 @@ class XplodifyTrack
         int                                   m_index;
         int                                   m_duration;
         int                                   m_num_artists;
+        std::vector<std::string>              m_artists;
         int                                   m_disc;
         int                                   m_popularity;
         bool                                  m_starred;

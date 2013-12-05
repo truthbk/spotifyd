@@ -22,6 +22,7 @@ XplodifyTrack::XplodifyTrack(boost::shared_ptr<XplodifySession> sess)
     , m_index(0)
     , m_duration(0)
     , m_num_artists(0)
+    , m_artists()
     , m_disc(0)
     , m_popularity(0)
     , m_starred(0){
@@ -102,9 +103,16 @@ int XplodifyTrack::get_num_artists(bool cache){
     }
     return sp_track_num_artists(m_track);
 }
-std::string XplodifyTrack::get_artist(int idx){
+//If idx>m_num_artists return first artist.
+std::string XplodifyTrack::get_artist(int idx, bool cache){
     if(!m_track) {
         return std::string();
+    }
+    if(idx >= m_num_artists) {
+        idx=0;
+    }
+    if(cache && is_cached()){
+        return m_artists[idx];
     }
     return std::string(sp_artist_name(sp_track_artist(m_track, idx)));
 }
@@ -161,6 +169,10 @@ void XplodifyTrack::cache(void) {
     m_disc = get_disc(false);
     m_popularity = get_popularity(false);
     m_starred = is_starred(false);
+
+    for(int i=0 ; i<m_num_artists : i++) {
+        m_artists.push_back(get_artist(i, false));
+    }
 
     m_cached = true;
     return;
