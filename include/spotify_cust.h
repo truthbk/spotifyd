@@ -23,7 +23,7 @@
 
 #include "lockable.h"
 #include "runnable.h"
-#include "spotify_handler.h"
+#include "xplodify_handler.h"
 
 #include "spotify_data.h"
 
@@ -93,7 +93,7 @@ class XplodifyServer
         void run();
 
     private:
-        SpotifyHandler m_sh;
+        XplodifyHandler m_sh;
 
         //Session login timers...
         //no transfer of ownership, we're good with raw pointers.
