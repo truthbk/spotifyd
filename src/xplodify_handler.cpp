@@ -17,12 +17,22 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
-#include "Spotify.h"
-
+#include "xplodify_handler.h"
 #include "xplodify_sess.h"
 #include "xplodify_plc.h"
 #include "xplodify_pl.h"
-#include "spotify_cust.h"
+
+#include "Spotify.h"
+
+XplodifyHandler::XplodifyHandler()
+    : SpotifyHandler() 
+    , m_sess_it(m_session_cache.get<0>().begin()) {
+    //EMPTY.
+}
+
+XplodifyHandler::~XplodifyHandler() {
+    //EMPTY.
+}
 
 std::string XplodifyHandler::check_in(){
     boost::shared_ptr< XplodifySession > sess = XplodifySession::create(this);
@@ -150,7 +160,7 @@ std::vector< boost::shared_ptr<XplodifyPlaylist> > XplodifyHandler::get_playlist
 
     int n =  pc->get_num_playlists();
     for (int i = 0; i<n; ++i) {
-        boost::shared_ptr<xplodifyplaylist> pl = pc->get_playlist(i);
+        boost::shared_ptr<XplodifyPlaylist> pl = pc->get_playlist(i);
         pls.push_back(pl);
     }
 

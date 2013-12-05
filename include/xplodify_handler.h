@@ -1,36 +1,29 @@
-#ifndef _SPOTIFY_HANDLER_H
-#define _SPOTIFY_HANDLER_H
+#ifndef _XPLODIFY_HANDLER_H
+#define _XPLODIFY_HANDLER_H
 
 #include <cstdint>
 #include <ctime>
-
 #include <boost/asio.hpp>
 #include <boost/bind.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 
+#include "spotify_handler.h"
 #include "spotify_data.h"
 
-extern "C" {
-    #include <libspotify/api.h>
-    #include "audio.h"
-}
 
 class XplodifyHandler
     : public SpotifyHandler
 {
     public:
-        XplodifyHandler()
-            : SpotifyHandler() {
-        }
-        virtual ~XplodifyHandler() {
-        }
+        XplodifyHandler();
+        virtual ~XplodifyHandler();
 
-        virtual void login(const std::string& username, const::string& passwd);
+        virtual void login(const std::string& username, const std::string& passwd);
         virtual void login(const std::string& token);
         virtual bool login_status(std::string uuid);
         virtual std::string logout(std::string uuid);
-        virtual std::vector< std::string > get_playlists(string uuid);
-        virtual std::vector< std::string > get_tracks(string uuid, int pid);
+        virtual std::vector< std::string > get_playlists(std::string uuid);
+        virtual std::vector< std::string > get_tracks(std::string uuid, int pid);
         virtual bool select_playlist(std::string uuid, int pid);
         virtual bool select_playlist(std::string uuid, std::string pname);
         virtual bool select_track(std::string uuid, int tid);

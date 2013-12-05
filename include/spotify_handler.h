@@ -8,12 +8,18 @@
 #include <boost/bind.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 
+#include "runnable.h"
+#include "lockable.h"
 #include "spotify_data.h"
+
 
 extern "C" {
     #include <libspotify/api.h>
     #include "audio.h"
-}
+};
+
+//Forward declaration.
+class XplodifySession;
 
 class SpotifyHandler 
     : public Runnable
@@ -22,7 +28,7 @@ class SpotifyHandler
     public:
         SpotifyHandler() 
             : Runnable()
-            , Lockable(){
+            , Lockable()
             , LOGIN_TO(1)
             , m_playback_done(1)
             , m_notify_events(0)
@@ -34,13 +40,13 @@ class SpotifyHandler
 
         virtual std::string check_in() = 0;
         virtual std::string check_out(const std::string& uuid) = 0;
-        virtual bool XplodifyHandler::login(const std::string& uuid, 
-                const std::string& username, const::string& passwd) = 0;
+        virtual bool login(const std::string& uuid, 
+                const std::string& username, const std::string& passwd) = 0;
         virtual bool login(const std::string& uuid, const std::string& token) = 0;
         virtual bool login_status(std::string uuid) = 0;
         virtual void logout(std::string uuid) = 0;
-        virtual std::vector< std::string > get_playlists(string uuid) = 0;
-        virtual std::vector< std::string > get_tracks(string uuid, int pid) = 0;
+        virtual std::vector< std::string > get_playlists(std::string uuid) = 0;
+        virtual std::vector< std::string > get_tracks(std::string uuid, int pid) = 0;
         virtual bool select_playlist(std::string uuid, int pid) = 0;
         virtual bool select_playlist(std::string uuid, std::string pname) = 0;
         virtual bool select_track(std::string uuid, int tid) = 0;
