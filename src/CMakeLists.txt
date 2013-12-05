@@ -21,6 +21,7 @@ set(ThriftPyGen_SRCS
 set(Spotifyd_SRCS
 	spotifyd_srv.cpp
 	spotify_ipc_srv.cpp
+	xplodify_handler.cpp
 	xplodify_sess.cpp
 	xplodify_plc.cpp
 	xplodify_pl.cpp
