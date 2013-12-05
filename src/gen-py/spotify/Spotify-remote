@@ -23,7 +23,9 @@ if len(sys.argv) <= 1 or sys.argv[1] == '--help':
   print 'Usage: ' + sys.argv[0] + ' [-h host[:port]] [-u url] [-f[ramed]] function [arg1 [arg2...]]'
   print ''
   print 'Functions:'
-  print '  SpotifyCredential loginSession(SpotifyCredential cred)'
+  print '  SpotifyCredential check_in(SpotifyCredential cred)'
+  print '  bool check_out(SpotifyCredential cred)'
+  print '  bool loginSession(SpotifyCredential cred)'
   print '  bool isLoggedIn(SpotifyCredential cred)'
   print '  i64 getStateTS(SpotifyCredential cred)'
   print '  i64 getSessionStateTS(SpotifyCredential cred)'
@@ -91,7 +93,19 @@ protocol = TBinaryProtocol.TBinaryProtocol(transport)
 client = Spotify.Client(protocol)
 transport.open()
 
-if cmd == 'loginSession':
+if cmd == 'check_in':
+  if len(args) != 1:
+    print 'check_in requires 1 args'
+    sys.exit(1)
+  pp.pprint(client.check_in(eval(args[0]),))
+
+elif cmd == 'check_out':
+  if len(args) != 1:
+    print 'check_out requires 1 args'
+    sys.exit(1)
+  pp.pprint(client.check_out(eval(args[0]),))
+
+elif cmd == 'loginSession':
   if len(args) != 1:
     print 'loginSession requires 1 args'
     sys.exit(1)
