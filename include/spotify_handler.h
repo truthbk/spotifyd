@@ -20,6 +20,8 @@ extern "C" {
 
 //Forward declaration.
 class XplodifySession;
+class XplodifyPlaylist;
+class XplodifyTrack;
 
 class SpotifyHandler 
     : public Runnable
@@ -33,24 +35,31 @@ class SpotifyHandler
             , m_playback_done(1)
             , m_notify_events(0)
             , m_sp_cachedir(SP_CACHEDIR)
-            , m_ts(std::time(NULL)) {
+            , m_ts(std::time(NULL))
+            , m_active_session() {
         }
         virtual ~SpotifyHandler() {
         }
 
         virtual std::string check_in() = 0;
-        virtual std::string check_out(const std::string& uuid) = 0;
+        virtual bool check_out(const std::string& uuid) = 0;
         virtual bool login(const std::string& uuid, 
                 const std::string& username, const std::string& passwd) = 0;
         virtual bool login(const std::string& uuid, const std::string& token) = 0;
         virtual bool login_status(std::string uuid) = 0;
-        virtual void logout(std::string uuid) = 0;
-        virtual std::vector< std::string > get_playlists(std::string uuid) = 0;
-        virtual std::vector< std::string > get_tracks(std::string uuid, int pid) = 0;
+        virtual bool logout(std::string uuid) = 0;
+        virtual std::vector< 
+            boost::shared_ptr<XplodifyPlaylist> > get_playlists(std::string uuid) = 0;
+        virtual std::vector< 
+            boost::shared_ptr<XplodifyTrack> > get_tracks(std::string uuid, int pid) = 0;
+        virtual std::vector< 
+            boost::shared_ptr<XplodifyTrack> > get_tracks(
+                    std::string uuid, const std::string& name) = 0;
         virtual bool select_playlist(std::string uuid, int pid) = 0;
         virtual bool select_playlist(std::string uuid, std::string pname) = 0;
         virtual bool select_track(std::string uuid, int tid) = 0;
         virtual bool select_track(std::string uuid, std::string tname) = 0;
+        virtual boost::shared_ptr<XplodifyTrack> whats_playing(std::string uuid) = 0;
         virtual void play() = 0;
         virtual void stop() = 0;
 
@@ -80,8 +89,12 @@ class SpotifyHandler
         enum { SILENCE_N_SAMPLES = 8192 };
 
     private:
-        virtual boost::shared_ptr<XplodifySession> get_active_session(void) = 0;
-        virtual void set_active_session(boost::shared_ptr<XplodifySession> session) = 0;
+        virtual boost::shared_ptr<XplodifySession> get_active_session(void){
+            return m_active_session;
+        };
+        virtual void set_active_session(boost::shared_ptr<XplodifySession> session){
+            m_active_session = session;
+        };
         void login_timeout(const boost::system::error_code&,
                 std::string uuid);
 

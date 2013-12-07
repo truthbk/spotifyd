@@ -26,8 +26,16 @@
 
 XplodifyHandler::XplodifyHandler()
     : SpotifyHandler() 
-    , m_sess_it(m_session_cache.get<0>().begin()) {
-    //EMPTY.
+    , m_sess_it(m_session_cache.get<0>().begin()) 
+{
+    //check temp dir.
+    boost::filesystem::path dir(spserver->get_cachedir());
+    if(!boost::filesystem::exists(dir)) {
+        if(!boost::filesystem::create_directories(dir)) {
+            //TODO: cleanup
+            exit(1);
+        }
+    }
 }
 
 XplodifyHandler::~XplodifyHandler() {
@@ -166,7 +174,7 @@ std::vector< boost::shared_ptr<XplodifyPlaylist> > XplodifyHandler::get_playlist
 
     return pls;
 }
-std::vector< boost::shared<SpotifyTrack> > XplodifyHandler::get_tracks(string uuid, int pid){
+std::vector< boost::shared_ptr<SpotifyTrack> > XplodifyHandler::get_tracks(string uuid, int pid){
     std::vector<boost::shared<SpotifyTrack> > playlist;
 
     boost::shared_ptr<XplodifySession> sess = get_session(uuid);
@@ -196,6 +204,36 @@ std::vector< boost::shared<SpotifyTrack> > XplodifyHandler::get_tracks(string uu
     }
 
     return playlist;
+}
+std::vector< boost::shared_ptr<XplodifyTrack> > XplodifyHandler::get_tracks(
+        std::string uuid, const std::string& name){
+    boost::shared_ptr<XplodifySession> sess = get_session(uuid);
+    if(!sess) {
+        return playlist;
+    }
+
+    boost::shared_ptr<XplodifyPlaylistContainer> pc = sess->get_pl_container();
+    if(!pc) {
+        return playlist;
+    }
+    boost::shared_ptr<XplodifyPlaylist> pl = pc->get_playlist(name);
+
+    if(!pl) {
+        return playlist;
+    }
+
+    for(unsigned int j = 0 ; j < pl->get_num_tracks() ; j++ ) {
+        boost::shared_ptr<XplodifyTrack> tr = pl->get_track_at(j);
+#ifdef _DEBUG
+        if(!tr->is_loaded()) {
+            std::cout << "Track at index: "<<  j << " is loading" << std::endl;
+        }
+#endif
+        playlist.push_back(tr);
+    }
+
+    return playlist;
+
 }
 
 bool XplodifyHandler::select_playlist(std::string uuid, int pid){
@@ -246,6 +284,17 @@ bool XplodifyHandler::select_track(std::string uuid, std::string tname){
     return true;
 
 }
+boost::shared_ptr<SpotifyTrack> XplodifyHandler::whats_playing(std::string uuid) {
+    //TODO: check if uuid is indeed checked-in
+    if(!exists_in_cache(uuid) || !m_active_session) {
+        return boost::shared_ptr<XplodifyTrack>();
+    }
+
+    boost::shared_ptr<XplodifyTrack> tr( m_active_session->get_track());
+    return tr;
+
+}
+
 void XplodifyHandler::play(){
     m_active_session->start_playback();
 }
@@ -472,4 +521,15 @@ void XplodifyHandler::remove_from_cache(const std::string& uuid) {
             m_sess_it = m_session_cache.get<0>().iterator_to(aux_entry);
         }
     }
+}
+
+void XplodifyHandler::exists_in_cache(const std::string& uuid) {
+
+    sess_map_by_uuid& sess_by_uuid = m_session_cache.get<1>();
+    sess_map_by_uuid::iterator sit = sess_by_uuid.find(uuid);
+    if( sit == m_session_cache.get<1>().end() ) {
+        return false;
+    }
+
+    return true;
 }

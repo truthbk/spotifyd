@@ -18,16 +18,25 @@ class XplodifyHandler
         XplodifyHandler();
         virtual ~XplodifyHandler();
 
-        virtual void login(const std::string& username, const std::string& passwd);
-        virtual void login(const std::string& token);
+        virtual std::string check_in();
+        virtual bool check_out(const std::string& uuid);
+        virtual bool login(const std::string& uuid, 
+                const std::string& username, const std::string& passwd);
+        virtual bool login(const std::string& uuid, const std::string& token);
         virtual bool login_status(std::string uuid);
-        virtual std::string logout(std::string uuid);
-        virtual std::vector< std::string > get_playlists(std::string uuid);
-        virtual std::vector< std::string > get_tracks(std::string uuid, int pid);
+        virtual bool logout(std::string uuid);
+        virtual std::vector< 
+            boost::shared_ptr<XplodifyPlaylist> > get_playlists(std::string uuid);
+        virtual std::vector< 
+            boost::shared_ptr<XplodifyTrack> > get_tracks(std::string uuid, int pid);
+        virtual std::vector< 
+            boost::shared_ptr<XplodifyTrack> > get_tracks(
+                    std::string uuid, const std::string& name);
         virtual bool select_playlist(std::string uuid, int pid);
         virtual bool select_playlist(std::string uuid, std::string pname);
         virtual bool select_track(std::string uuid, int tid);
         virtual bool select_track(std::string uuid, std::string tname);
+        virtual boost::shared_ptr<XplodifyTrack> whats_playing(std::string uuid);
         virtual void play();
         virtual void stop();
 
@@ -99,6 +108,7 @@ class XplodifyHandler
         }
 
         void remove_from_cache(const std::string& uuid);
+        bool exists_in_cache(const std::string& uuid);
 
         boost::shared_ptr<XplodifySession> get_session(const std::string& uuid);
         boost::shared_ptr<XplodifySession> get_session(const sp_session * sps);
