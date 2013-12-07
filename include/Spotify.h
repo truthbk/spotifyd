@@ -33,7 +33,7 @@ class SpotifyIf {
   virtual void selectTrackById(const SpotifyCredential& cred, const int32_t track_id) = 0;
   virtual bool merge2playlist(const SpotifyCredential& cred, const std::string& pl, const SpotifyPlaylist& tracks) = 0;
   virtual bool add2playlist(const SpotifyCredential& cred, const std::string& pl, const SpotifyTrack& track) = 0;
-  virtual void whats_playing(SpotifyTrack& _return) = 0;
+  virtual void whats_playing(SpotifyTrack& _return, const SpotifyCredential& cred) = 0;
 };
 
 class SpotifyIfFactory {
@@ -124,7 +124,7 @@ class SpotifyNull : virtual public SpotifyIf {
     bool _return = false;
     return _return;
   }
-  void whats_playing(SpotifyTrack& /* _return */) {
+  void whats_playing(SpotifyTrack& /* _return */, const SpotifyCredential& /* cred */) {
     return;
   }
 };
@@ -1839,6 +1839,10 @@ class Spotify_add2playlist_presult {
 
 };
 
+typedef struct _Spotify_whats_playing_args__isset {
+  _Spotify_whats_playing_args__isset() : cred(false) {}
+  bool cred;
+} _Spotify_whats_playing_args__isset;
 
 class Spotify_whats_playing_args {
  public:
@@ -1848,9 +1852,18 @@ class Spotify_whats_playing_args {
 
   virtual ~Spotify_whats_playing_args() throw() {}
 
+  SpotifyCredential cred;
 
-  bool operator == (const Spotify_whats_playing_args & /* rhs */) const
+  _Spotify_whats_playing_args__isset __isset;
+
+  void __set_cred(const SpotifyCredential& val) {
+    cred = val;
+  }
+
+  bool operator == (const Spotify_whats_playing_args & rhs) const
   {
+    if (!(cred == rhs.cred))
+      return false;
     return true;
   }
   bool operator != (const Spotify_whats_playing_args &rhs) const {
@@ -1871,6 +1884,7 @@ class Spotify_whats_playing_pargs {
 
   virtual ~Spotify_whats_playing_pargs() throw() {}
 
+  const SpotifyCredential* cred;
 
   uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
 
@@ -2001,8 +2015,8 @@ class SpotifyClient : virtual public SpotifyIf {
   bool add2playlist(const SpotifyCredential& cred, const std::string& pl, const SpotifyTrack& track);
   void send_add2playlist(const SpotifyCredential& cred, const std::string& pl, const SpotifyTrack& track);
   bool recv_add2playlist();
-  void whats_playing(SpotifyTrack& _return);
-  void send_whats_playing();
+  void whats_playing(SpotifyTrack& _return, const SpotifyCredential& cred);
+  void send_whats_playing(const SpotifyCredential& cred);
   void recv_whats_playing(SpotifyTrack& _return);
  protected:
   boost::shared_ptr< ::apache::thrift::protocol::TProtocol> piprot_;
@@ -2255,13 +2269,13 @@ class SpotifyMultiface : virtual public SpotifyIf {
     return ifaces_[i]->add2playlist(cred, pl, track);
   }
 
-  void whats_playing(SpotifyTrack& _return) {
+  void whats_playing(SpotifyTrack& _return, const SpotifyCredential& cred) {
     size_t sz = ifaces_.size();
     size_t i = 0;
     for (; i < (sz - 1); ++i) {
-      ifaces_[i]->whats_playing(_return);
+      ifaces_[i]->whats_playing(_return, cred);
     }
-    ifaces_[i]->whats_playing(_return);
+    ifaces_[i]->whats_playing(_return, cred);
     return;
   }
 

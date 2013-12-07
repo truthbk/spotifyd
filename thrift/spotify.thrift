@@ -66,6 +66,6 @@ service Spotify {
         bool merge2playlist(1: SpotifyCredential cred, 2: string pl, 3: SpotifyPlaylist tracks); //MERGE multiple tracks to PL
         bool add2playlist(1: SpotifyCredential cred, 2: string pl, 3: SpotifyTrack track); //MERGE single track to PL
 
-        SpotifyTrack whats_playing();
+        SpotifyTrack whats_playing(1: SpotifyCredential cred);
 
 }

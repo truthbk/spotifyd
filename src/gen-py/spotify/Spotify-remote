@@ -41,7 +41,7 @@ if len(sys.argv) <= 1 or sys.argv[1] == '--help':
   print '  void selectTrackById(SpotifyCredential cred, i32 track_id)'
   print '  bool merge2playlist(SpotifyCredential cred, string pl, SpotifyPlaylist tracks)'
   print '  bool add2playlist(SpotifyCredential cred, string pl, SpotifyTrack track)'
-  print '  SpotifyTrack whats_playing()'
+  print '  SpotifyTrack whats_playing(SpotifyCredential cred)'
   print ''
   sys.exit(0)
 
@@ -202,10 +202,10 @@ elif cmd == 'add2playlist':
   pp.pprint(client.add2playlist(eval(args[0]),args[1],eval(args[2]),))
 
 elif cmd == 'whats_playing':
-  if len(args) != 0:
-    print 'whats_playing requires 0 args'
+  if len(args) != 1:
+    print 'whats_playing requires 1 args'
     sys.exit(1)
-  pp.pprint(client.whats_playing())
+  pp.pprint(client.whats_playing(eval(args[0]),))
 
 else:
   print 'Unrecognized method %s' % cmd
