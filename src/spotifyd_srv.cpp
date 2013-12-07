@@ -13,7 +13,6 @@
 #include <boost/uuid/uuid_generators.hpp>
 #include <boost/uuid/uuid_io.hpp>
 #include <boost/lexical_cast.hpp>
-#include <boost/filesystem.hpp>
 #include <boost/program_options.hpp>
 
 #include <iostream>
@@ -55,11 +54,9 @@ bool SpotifyCredential::operator < (const SpotifyCredential & other) const
 XplodifyServer::XplodifyServer(bool multisession)
     : Runnable()
     , Lockable()
-    , SpotifyHandler()
-    , m_sess_it(m_session_cache.get<0>().begin())
-    , m_active_session()
-    , m_multi(multisession)
-{
+    , LOGIN_TO(1)
+    , m_ts(std::time(NULL))
+    , m_multi(multisession) {
 }
 
 
@@ -84,11 +81,11 @@ bool XplodifyServer::check_out(const SpotifyCredential& cred) {
 
 bool XplodifyServer::loginSession(const SpotifyCredential& cred) {
 
-    bool logging_in = m_sh.login(cred._uuid, cred._username, cred._password);
+    bool logging_in = m_sh.login(cred._uuid, cred._username, cred._passwd);
 
     if(logging_in) {
 #ifdef _DEBUG
-        std::cout << "starting timer for session: "<< uuid_str <<"\n";
+        std::cout << "starting timer for session: "<< cred._uuid <<"\n";
 #endif
         //no transfer of ownership, we're good with raw pointers.
         boost::asio::deadline_timer * t = new boost::asio::deadline_timer(m_io);
@@ -96,11 +93,18 @@ bool XplodifyServer::loginSession(const SpotifyCredential& cred) {
         t->async_wait(boost::bind(&XplodifyServer::login_timeout,
                     this, boost::asio::placeholders::error, cred._uuid));
 
-        m_timers.insert(std::pair< std::string, boost::asio::deadline_timer *>(uuid_str, t));
+        m_timers.insert(std::pair< std::string, boost::asio::deadline_timer *>(cred._uuid, t));
 
     }
     return logging_in;
 }
+
+void XplodifyHandler::update_timestamp(void){
+    lock();
+    m_ts = std::time(NULL);
+    unlock();
+}
+
 void XplodifyServer::login_timeout(const boost::system::error_code&,
         std::string uuid) {
 #ifdef _DEBUG
@@ -148,31 +152,24 @@ bool XplodifyServer::isLoggedIn(const SpotifyCredential& cred) {
     return m_sh.login_status(cred._uuid);
 }
 
+#if 0
 int64_t XplodifyServer::getStateTS(const SpotifyCredential& cred) {
     int64_t ts;
-    boost::shared_ptr< XplodifySession > 
-        sess = get_session(cred._uuid);
 
-    if(!sess)
-        return false;
-
-    lock();
-    ts = m_ts;
-    unlock();
-
+    ts = m_sh.get_session_state(cred._uuid);
     return ts;
 }
+#endif
 
+#if 0
 int64_t XplodifyServer::getSessionStateTS(const SpotifyCredential& cred) {
 
-    boost::shared_ptr< XplodifySession > 
-        sess = get_session(cred._uuid);
+    int64_t ts;
 
-    if(!sess)
-        return false;
-
-    return sess->get_state_ts();
+    ts = m_sh.get_session_state(cred._uuid);
+    return ts;
 }
+#endif
 
 void XplodifyServer::logoutSession(const SpotifyCredential& cred) {
 
@@ -184,6 +181,7 @@ void XplodifyServer::logoutSession(const SpotifyCredential& cred) {
 void XplodifyServer::sendCommand(const SpotifyCredential& cred, const SpotifyCmd::type cmd) {
     std::cout << "sendCommand" << std::endl;
 
+#if 0
     boost::shared_ptr<XplodifySession> sess = get_session(cred._uuid);
     if(!sess) {
         return;
@@ -216,6 +214,7 @@ void XplodifyServer::sendCommand(const SpotifyCredential& cred, const SpotifyCmd
 
     update_timestamp();
     return;
+#endif
 }
 
 
@@ -223,18 +222,20 @@ void XplodifyServer::search(SpotifyPlaylist& _return, const SpotifyCredential& c
 		const SpotifySearch& criteria) {
     // Your implementation goes here
     printf("search\n");
+#if 0
     boost::shared_ptr<XplodifySession> sess = get_session(cred._uuid);
     if(!sess) {
         return;
     }
+#endif
 }
 
 void XplodifyServer::getPlaylists(SpotifyPlaylistList& _return, const SpotifyCredential& cred) 
 {
 
-    std::vector< boost::shared_ptr<XplodifyPlaylist> > playlists(sh.get_playlists(cred._uuid));
+    std::vector< boost::shared_ptr<XplodifyPlaylist> > playlists(m_sh.get_playlists(cred._uuid));
     for(int i=0 ; i<playlists.size() ; i++) {
-        std::string plstr(pls[i]->get_name(true));
+        std::string plstr(playlists[i]->get_name(true));
         _return.insert(plstr);
     }
 
@@ -245,9 +246,9 @@ void XplodifyServer::getPlaylists(SpotifyPlaylistList& _return, const SpotifyCre
 void XplodifyServer::getPlaylist(SpotifyPlaylist& _return, const SpotifyCredential& cred,
         const int32_t plist_id) {
 
-    std::vector< boost::shared_ptr<XplodifyPlaylist> > tracks(sh.get_tracks(cred._uuid, plist_id));
+    std::vector< boost::shared_ptr<XplodifyTrack> > tracks(m_sh.get_tracks(cred._uuid, plist_id));
 
-    for(unsigned int j = 0 ; j < tracks.size() ; j++ ) {
+    for(unsigned int i = 0 ; i < tracks.size() ; i++ ) {
         boost::shared_ptr<XplodifyTrack> tr = tracks[i];
 
         int duration = tr->get_duration(true); //millisecs?
@@ -271,55 +272,24 @@ void XplodifyServer::getPlaylistByName(
         SpotifyPlaylist& _return, const SpotifyCredential& cred,
         const std::string& name) {
 
-#ifdef _DEBUG
-    std::cout << "getPlaylistByName: " << name << "\n";
-#endif
+    std::vector< boost::shared_ptr<XplodifyTrack> > tracks(m_sh.get_tracks(cred._uuid, name));
 
-    boost::shared_ptr<XplodifySession> sess = get_session(cred._uuid);
-    if(!sess) {
-        return;
+    for(unsigned int i = 0 ; i < tracks.size() ; i++ ) {
+        boost::shared_ptr<XplodifyTrack> tr = tracks[i];
+
+        int duration = tr->get_duration(true); //millisecs?
+        SpotifyTrack spt;
+
+        spt.__set__id( tr->get_index(true) );
+        spt.__set__name( tr->get_name(true) );
+        spt.__set__artist( tr->get_artist(0, true) ); //first artist (this sucks).
+        spt.__set__minutes( duration / 60000 );
+        spt.__set__seconds( (duration / 1000) % 60 );
+        spt.__set__popularity( tr->get_popularity(true) );
+        spt.__set__starred( tr->is_starred(true) );
+        spt.__set__genre( "unknown" );
+        _return.push_back(spt);
     }
-
-
-    boost::shared_ptr<XplodifyPlaylistContainer> pc = sess->get_pl_container();
-    if(!pc) {
-        return;
-    }
-
-    boost::shared_ptr<XplodifyPlaylist> pl = pc->get_playlist(name);
-    if(!pl) {
-        return;
-    }
-
-    for(unsigned int j = 0 ; j < pl->get_num_tracks() ; j++ ) {
-        boost::shared_ptr<XplodifyTrack> tr = pl->get_track_at(j);
-        if(tr->is_loaded()) {
-            int duration = tr->get_duration(true); //millisecs?
-            //boost::shared_ptr<SpotifyTrack> spt(new SpotifyTrack());
-            SpotifyTrack spt;
-
-            spt.__set__id( tr->get_index(true) );
-            spt.__set__name( tr->get_name(true) );
-            spt.__set__artist( tr->get_artist(0, true) ); //first artist (this sucks).
-            spt.__set__minutes( duration / 60000 );
-            spt.__set__seconds( (duration / 1000) % 60 );
-            spt.__set__popularity( tr->get_popularity(true) );
-            spt.__set__starred( tr->is_starred(true) );
-            spt.__set__genre( "unknown" );
-            _return.push_back(spt);
-        }
-#ifdef _DEBUG
-        else {
-            std::cout << "Track at index:  "<<  j << " is loading" << std::endl;
-        }
-#endif
-    }
-#ifdef _DEBUG
-    SpotifyPlaylist::const_iterator it;
-    for(it = _return.begin() ; it != _return.end() ; it++) {
-        std::cout << (*it)._name << "\n";
-    }
-#endif
 
     return;
 }
@@ -345,56 +315,36 @@ void XplodifyServer::selectTrackById(const SpotifyCredential& cred, const int32_
 }
 
 bool XplodifyServer::merge2playlist(const SpotifyCredential& cred, const std::string& pl,
-		const SpotifyPlaylist& tracks) {
-    boost::shared_ptr< XplodifySession > sess = get_session(cred._uuid);
-    if(!sess) {
-        return false;
-    }
+        const SpotifyPlaylist& tracks) {
     // Your implementation goes here
     printf("merge2playlist\n");
     return true;
 }
 
 bool XplodifyServer::add2playlist(const SpotifyCredential& cred, const std::string& pl,
-		const SpotifyTrack& track) {
-    boost::shared_ptr< XplodifySession > sess = get_session(cred._uuid);
-    if(!sess) {
-        return false;
-    }
+        const SpotifyTrack& track) {
     // Your implementation goes here
     printf("add2playlist\n");
     return true;
 }
 
-void XplodifyServer::whats_playing(SpotifyTrack& _return) {
-
-    if(!m_active_session) {
-        return;
-    }
-    boost::shared_ptr<XplodifyTrack> tr( m_active_session->get_track());
+void XplodifyServer::whats_playing(SpotifyTrack& _return, const SpotifyCredential& cred ) {
+    boost::shared_ptr<XplodifyTrack> tr = m_sh.whats_playing(cred._uuid);
     if(!tr) {
         return;
     }
 
-    int duration = tr->get_duration(); 
-
-    _return.__set__id( tr->get_index() );
-    _return.__set__name( tr->get_name() );
-    _return.__set__artist( tr->get_artist(0) ); //first artist (this sucks).
+    int duration = tr->get_duration(true); //millisecs?
+    _return.__set__id( tr->get_index(true) );
+    _return.__set__name( tr->get_name(true) );
+    _return.__set__artist( tr->get_artist(0, true) ); //first artist (this sucks).
     _return.__set__minutes( duration / 60000 );
     _return.__set__seconds( (duration / 1000) % 60 );
-    _return.__set__popularity( tr->get_popularity() );
-    _return.__set__starred( tr->is_starred() );
+    _return.__set__popularity( tr->get_popularity(true) );
+    _return.__set__starred( tr->is_starred(true) );
     _return.__set__genre( "unknown" );
 
     return;
-}
-
-boost::shared_ptr<XplodifySession> XplodifyServer::getActiveSession(void) {
-    return m_active_session;
-}
-void XplodifyServer::setActiveSession(boost::shared_ptr<XplodifySession> session) {
-    m_active_session = session;
 }
 
 
@@ -454,12 +404,6 @@ int main(int argc, char **argv) {
 
     TSimpleServer server(processor, serverTransport, transportFactory, protocolFactory);
 
-    //make tmp dir
-    boost::filesystem::path dir(spserver->get_cachedir());
-    if(!boost::filesystem::create_directory(dir)) {
-        //TODO: proper cleanup
-        exit(1);
-    }
 
     spserver->start();
     server.serve();

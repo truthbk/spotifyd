@@ -72,33 +72,43 @@ class XplodifyServer
         void switch_session();
 
         void search(SpotifyPlaylist& _return, const SpotifyCredential& cred,
-			const SpotifySearch& criteria);
+                const SpotifySearch& criteria);
         void getPlaylists(SpotifyPlaylistList& _return, const SpotifyCredential& cred);
         void getPlaylist(SpotifyPlaylist& _return, const SpotifyCredential& cred,
-			const int32_t plist_id);
+                const int32_t plist_id);
         void getPlaylistByName(SpotifyPlaylist& _return, const SpotifyCredential& cred,
-			const std::string& name);
+                const std::string& name);
         void selectPlaylist(const SpotifyCredential& cred, const std::string& playlist);
         void selectPlaylistById(const SpotifyCredential& cred, const int32_t plist_id);
         void selectTrack(const SpotifyCredential& cred, const std::string& track);
         void selectTrackById(const SpotifyCredential& cred, const int32_t track_id);
         bool merge2playlist(const SpotifyCredential& cred, const std::string& pl,
-			const SpotifyPlaylist& tracks);
+                const SpotifyPlaylist& tracks);
         bool add2playlist(const SpotifyCredential& cred, const std::string& pl,
-			const SpotifyTrack& track);
-        void whats_playing(SpotifyTrack& _return);
+                const SpotifyTrack& track);
+        void whats_playing(SpotifyTrack& _return, const SpotifyCredential& cred );
 
     protected:
         //runnable, to process timer events...
         void run();
 
+        const size_t                            LOGIN_TO;
+
     private:
+        void update_timestamp(void);
+        void login_timeout(const boost::system::error_code&,
+                std::string uuid);
+
+
         XplodifyHandler m_sh;
 
         //Session login timers...
         //no transfer of ownership, we're good with raw pointers.
         typedef std::map<std::string, boost::asio::deadline_timer *> timer_map;
         timer_map m_timers;
+
+        std::time_t                             m_ts;
+        boost::asio::io_service                 m_io;
 
         const bool m_multi;
 
