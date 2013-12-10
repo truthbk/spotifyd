@@ -1,12 +1,12 @@
-#ifndef _SPOTIFY_CUST_HH
-#define _SPOTIFY_CUST_HH
+#ifndef _SPOTIFY_IPC_SRV_HH
+#define _SPOTIFY_IPC_SRV_HH
 
 //Boost.
 #include <boost/shared_ptr.hpp>
 
 #include "lockable.h"
 #include "runnable.h"
-#include "spotify_handler.h"
+#include "xplodify_handler.h"
 
 #include "SpotifyIPC.h"
 
@@ -14,17 +14,18 @@
 class XplodifyIPCServer
     : virtual public SpotifyIPCIf
     , public Runnable
-    , private Lockable 
-    , public SpotifyHandler {
+    , public Lockable { 
 
     public:
         XplodifyIPCServer();
 
         bool set_master();
         bool set_slave();
-        void login(const SpotifyIPCCredential& cred);
-        bool logout();
-        bool is_logged(const SpotifyIPCCredential& cred);
+        void check_in(SpotifyIPCCredential& _return, const SpotifyIPCCredential& cred);
+        bool check_out();
+        bool login(const SpotifyIPCCredential& cred);
+        void logout();
+        bool is_logged();
         void selectPlaylist(const std::string& playlist);
         void selectPlaylistById(const int32_t plist_id);
         void selectTrack(const std::string& track);
@@ -33,37 +34,27 @@ class XplodifyIPCServer
         void stop();
         void terminate_proc();
 
-        void notify_main_thread(void);
-        void set_playback_done(bool done);
-        int  music_playback(const sp_audioformat * format, 
-                const void * frames, int num_frames);
-        void audio_fifo_stats(sp_audio_buffer_stats *stats);
-        void audio_fifo_flush_now(void);
-        void update_timestamp(void);
-        std::string get_cachedir();
 
     protected:
         //implementing runnable
         void run();
 
     private:
-        void login_timeout(const boost::system::error_code&);
+        void login_timeout(const boost::system::error_code&, std::string uuid);
+        void update_timestamp(void);
 
-        boost::shared_ptr<XplodifySession>      m_session;
-        int                                     m_playback_done;
-        int                                     m_notify_events;
-        std::string                             m_sp_cachedir;
+        XplodifyHandler                         m_sh;
         std::time_t                             m_ts;
         const bool                              m_multi;
         bool                                    m_master;
+        bool                                    m_logging_in;
+
+        const size_t                            LOGIN_IPC_TO;
+        boost::asio::io_service                 m_io;
         boost::asio::deadline_timer             m_timer;
-
-        audio_fifo_t *                          audio_fifo();
-
-        //libspotify wrapped
-        audio_fifo_t                            m_audiofifo;
-
+        //IPC server meant to only have a single session.
+        std::string                             m_uuid; 
 
 };
 
-#endif //_SPOTIFY_CUST_HH
+#endif //_SPOTIFY_IPC_SRV_HH
