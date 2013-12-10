@@ -10,9 +10,11 @@ struct SpotifyIPCCredential {
 service SpotifyIPC {
 	bool set_master();
 	bool set_slave();
-	oneway void login(1: SpotifyIPCCredential cred);
-	bool  logout();
-	bool is_logged(1: SpotifyIPCCredential cred);
+	SpotifyIPCCredential check_in(1: SpotifyIPCCredential cred);
+	bool check_out();
+	bool login(1: SpotifyIPCCredential cred);
+	bool is_logged();
+	oneway void logout();
 
 	oneway void selectPlaylist(1: string playlist);
 	oneway void selectPlaylistById(1: i32 plist_id);
