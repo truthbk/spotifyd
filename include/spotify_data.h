@@ -29,5 +29,8 @@ const size_t g_appkey_size = sizeof(g_appkey);
 
 #define SP_CACHEDIR "~/.spotifyd/"
 
+#define SP_TIMEOUT 1
+#define SP_IPC_TIMEOUT 3
+
 
 #endif //_SPOTIFY_DATA_H
