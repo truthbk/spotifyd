@@ -62,8 +62,8 @@ XplodifyServer::XplodifyServer(bool multisession)
 
 void XplodifyServer::run() 
 {
-    //process timed events?
     while(!m_done) {
+        //is this too much of a busy loop?
         m_io.poll();
         m_io.reset();
     }
@@ -99,7 +99,7 @@ bool XplodifyServer::loginSession(const SpotifyCredential& cred) {
     return logging_in;
 }
 
-void XplodifyHandler::update_timestamp(void){
+void XplodifyServer::update_timestamp(void){
     lock();
     m_ts = std::time(NULL);
     unlock();
@@ -135,12 +135,7 @@ void XplodifyServer::login_timeout(const boost::system::error_code&,
 #if 0
     //not logged in, cleanup.
     lock();
-
     m_sh.check_out(uuid);
-    remove_from_cache(uuid);
-
-    sess->flush();
-    sess.reset();
     unlock();
 #endif
 
@@ -152,16 +147,11 @@ bool XplodifyServer::isLoggedIn(const SpotifyCredential& cred) {
     return m_sh.login_status(cred._uuid);
 }
 
-#if 0
 int64_t XplodifyServer::getStateTS(const SpotifyCredential& cred) {
-    int64_t ts;
 
-    ts = m_sh.get_session_state(cred._uuid);
-    return ts;
+    return m_ts;
 }
-#endif
 
-#if 0
 int64_t XplodifyServer::getSessionStateTS(const SpotifyCredential& cred) {
 
     int64_t ts;
@@ -169,10 +159,10 @@ int64_t XplodifyServer::getSessionStateTS(const SpotifyCredential& cred) {
     ts = m_sh.get_session_state(cred._uuid);
     return ts;
 }
-#endif
 
 void XplodifyServer::logoutSession(const SpotifyCredential& cred) {
 
+    m_sh.logout(cred._uuid);
 
     update_timestamp();
     return;
@@ -356,7 +346,7 @@ int main(int argc, char **argv) {
     uint32_t port, child_port;
     bool multi = true;
 
-    pid_t master_pid, slave_pid;
+    pid_t master_pid = 0, slave_pid = 0;
 
     namespace po = boost::program_options; 
     po::options_description desc("Options"); 
@@ -412,13 +402,15 @@ int main(int argc, char **argv) {
     int status;
     pid_t done;
 
-    if(!(done = waitpid(master_pid, &status, 0))) {
-        std::cerr << strerror(errno) << std::endl;
-        return -1;
-    }
-    if(!(done = waitpid(slave_pid, &status, 0))) {
-        std::cerr << strerror(errno) << std::endl;
-        return -1;
+    if(multi) {
+        if(!(done = waitpid(master_pid, &status, 0))) {
+            std::cerr << strerror(errno) << std::endl;
+            return -1;
+        }
+        if(!(done = waitpid(slave_pid, &status, 0))) {
+            std::cerr << strerror(errno) << std::endl;
+            return -1;
+        }
     }
 
     return 0;
