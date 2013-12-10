@@ -166,7 +166,6 @@ void XplodifyPlaylistContainer::playlist_added(sp_playlist *pl, int pos){
     boost::shared_ptr<XplodifyPlaylist> npl(new XplodifyPlaylist(sess));
     npl->load(pl);
     if(npl->is_loaded()) {
-        boost::shared_ptr<XplodifyPlaylist> npl(xpl);
 #ifdef _DEBUG
         std::cout << "Playlist " << npl->get_name() << " loaded into plc." << std::endl;
 #endif

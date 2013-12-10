@@ -170,7 +170,7 @@ void XplodifyTrack::cache(void) {
     m_popularity = get_popularity(false);
     m_starred = is_starred(false);
 
-    for(int i=0 ; i<m_num_artists : i++) {
+    for(int i=0 ; i<m_num_artists ; i++) {
         m_artists.push_back(get_artist(i, false));
     }
 
