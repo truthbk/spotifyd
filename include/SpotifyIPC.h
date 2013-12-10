@@ -17,9 +17,11 @@ class SpotifyIPCIf {
   virtual ~SpotifyIPCIf() {}
   virtual bool set_master() = 0;
   virtual bool set_slave() = 0;
-  virtual void login(const SpotifyIPCCredential& cred) = 0;
-  virtual bool logout() = 0;
-  virtual bool is_logged(const SpotifyIPCCredential& cred) = 0;
+  virtual void check_in(SpotifyIPCCredential& _return, const SpotifyIPCCredential& cred) = 0;
+  virtual bool check_out() = 0;
+  virtual bool login(const SpotifyIPCCredential& cred) = 0;
+  virtual bool is_logged() = 0;
+  virtual void logout() = 0;
   virtual void selectPlaylist(const std::string& playlist) = 0;
   virtual void selectPlaylistById(const int32_t plist_id) = 0;
   virtual void selectTrack(const std::string& track) = 0;
@@ -64,16 +66,23 @@ class SpotifyIPCNull : virtual public SpotifyIPCIf {
     bool _return = false;
     return _return;
   }
-  void login(const SpotifyIPCCredential& /* cred */) {
+  void check_in(SpotifyIPCCredential& /* _return */, const SpotifyIPCCredential& /* cred */) {
     return;
   }
-  bool logout() {
+  bool check_out() {
     bool _return = false;
     return _return;
   }
-  bool is_logged(const SpotifyIPCCredential& /* cred */) {
+  bool login(const SpotifyIPCCredential& /* cred */) {
     bool _return = false;
     return _return;
+  }
+  bool is_logged() {
+    bool _return = false;
+    return _return;
+  }
+  void logout() {
+    return;
   }
   void selectPlaylist(const std::string& /* playlist */) {
     return;
@@ -286,6 +295,208 @@ class SpotifyIPC_set_slave_presult {
 
 };
 
+typedef struct _SpotifyIPC_check_in_args__isset {
+  _SpotifyIPC_check_in_args__isset() : cred(false) {}
+  bool cred;
+} _SpotifyIPC_check_in_args__isset;
+
+class SpotifyIPC_check_in_args {
+ public:
+
+  SpotifyIPC_check_in_args() {
+  }
+
+  virtual ~SpotifyIPC_check_in_args() throw() {}
+
+  SpotifyIPCCredential cred;
+
+  _SpotifyIPC_check_in_args__isset __isset;
+
+  void __set_cred(const SpotifyIPCCredential& val) {
+    cred = val;
+  }
+
+  bool operator == (const SpotifyIPC_check_in_args & rhs) const
+  {
+    if (!(cred == rhs.cred))
+      return false;
+    return true;
+  }
+  bool operator != (const SpotifyIPC_check_in_args &rhs) const {
+    return !(*this == rhs);
+  }
+
+  bool operator < (const SpotifyIPC_check_in_args & ) const;
+
+  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+};
+
+
+class SpotifyIPC_check_in_pargs {
+ public:
+
+
+  virtual ~SpotifyIPC_check_in_pargs() throw() {}
+
+  const SpotifyIPCCredential* cred;
+
+  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+};
+
+typedef struct _SpotifyIPC_check_in_result__isset {
+  _SpotifyIPC_check_in_result__isset() : success(false) {}
+  bool success;
+} _SpotifyIPC_check_in_result__isset;
+
+class SpotifyIPC_check_in_result {
+ public:
+
+  SpotifyIPC_check_in_result() {
+  }
+
+  virtual ~SpotifyIPC_check_in_result() throw() {}
+
+  SpotifyIPCCredential success;
+
+  _SpotifyIPC_check_in_result__isset __isset;
+
+  void __set_success(const SpotifyIPCCredential& val) {
+    success = val;
+  }
+
+  bool operator == (const SpotifyIPC_check_in_result & rhs) const
+  {
+    if (!(success == rhs.success))
+      return false;
+    return true;
+  }
+  bool operator != (const SpotifyIPC_check_in_result &rhs) const {
+    return !(*this == rhs);
+  }
+
+  bool operator < (const SpotifyIPC_check_in_result & ) const;
+
+  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+};
+
+typedef struct _SpotifyIPC_check_in_presult__isset {
+  _SpotifyIPC_check_in_presult__isset() : success(false) {}
+  bool success;
+} _SpotifyIPC_check_in_presult__isset;
+
+class SpotifyIPC_check_in_presult {
+ public:
+
+
+  virtual ~SpotifyIPC_check_in_presult() throw() {}
+
+  SpotifyIPCCredential* success;
+
+  _SpotifyIPC_check_in_presult__isset __isset;
+
+  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+
+};
+
+
+class SpotifyIPC_check_out_args {
+ public:
+
+  SpotifyIPC_check_out_args() {
+  }
+
+  virtual ~SpotifyIPC_check_out_args() throw() {}
+
+
+  bool operator == (const SpotifyIPC_check_out_args & /* rhs */) const
+  {
+    return true;
+  }
+  bool operator != (const SpotifyIPC_check_out_args &rhs) const {
+    return !(*this == rhs);
+  }
+
+  bool operator < (const SpotifyIPC_check_out_args & ) const;
+
+  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+};
+
+
+class SpotifyIPC_check_out_pargs {
+ public:
+
+
+  virtual ~SpotifyIPC_check_out_pargs() throw() {}
+
+
+  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+};
+
+typedef struct _SpotifyIPC_check_out_result__isset {
+  _SpotifyIPC_check_out_result__isset() : success(false) {}
+  bool success;
+} _SpotifyIPC_check_out_result__isset;
+
+class SpotifyIPC_check_out_result {
+ public:
+
+  SpotifyIPC_check_out_result() : success(0) {
+  }
+
+  virtual ~SpotifyIPC_check_out_result() throw() {}
+
+  bool success;
+
+  _SpotifyIPC_check_out_result__isset __isset;
+
+  void __set_success(const bool val) {
+    success = val;
+  }
+
+  bool operator == (const SpotifyIPC_check_out_result & rhs) const
+  {
+    if (!(success == rhs.success))
+      return false;
+    return true;
+  }
+  bool operator != (const SpotifyIPC_check_out_result &rhs) const {
+    return !(*this == rhs);
+  }
+
+  bool operator < (const SpotifyIPC_check_out_result & ) const;
+
+  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+};
+
+typedef struct _SpotifyIPC_check_out_presult__isset {
+  _SpotifyIPC_check_out_presult__isset() : success(false) {}
+  bool success;
+} _SpotifyIPC_check_out_presult__isset;
+
+class SpotifyIPC_check_out_presult {
+ public:
+
+
+  virtual ~SpotifyIPC_check_out_presult() throw() {}
+
+  bool* success;
+
+  _SpotifyIPC_check_out_presult__isset __isset;
+
+  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+
+};
+
 typedef struct _SpotifyIPC_login_args__isset {
   _SpotifyIPC_login_args__isset() : cred(false) {}
   bool cred;
@@ -337,104 +548,63 @@ class SpotifyIPC_login_pargs {
 
 };
 
-
-class SpotifyIPC_logout_args {
- public:
-
-  SpotifyIPC_logout_args() {
-  }
-
-  virtual ~SpotifyIPC_logout_args() throw() {}
-
-
-  bool operator == (const SpotifyIPC_logout_args & /* rhs */) const
-  {
-    return true;
-  }
-  bool operator != (const SpotifyIPC_logout_args &rhs) const {
-    return !(*this == rhs);
-  }
-
-  bool operator < (const SpotifyIPC_logout_args & ) const;
-
-  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
-  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
-
-};
-
-
-class SpotifyIPC_logout_pargs {
- public:
-
-
-  virtual ~SpotifyIPC_logout_pargs() throw() {}
-
-
-  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
-
-};
-
-typedef struct _SpotifyIPC_logout_result__isset {
-  _SpotifyIPC_logout_result__isset() : success(false) {}
+typedef struct _SpotifyIPC_login_result__isset {
+  _SpotifyIPC_login_result__isset() : success(false) {}
   bool success;
-} _SpotifyIPC_logout_result__isset;
+} _SpotifyIPC_login_result__isset;
 
-class SpotifyIPC_logout_result {
+class SpotifyIPC_login_result {
  public:
 
-  SpotifyIPC_logout_result() : success(0) {
+  SpotifyIPC_login_result() : success(0) {
   }
 
-  virtual ~SpotifyIPC_logout_result() throw() {}
+  virtual ~SpotifyIPC_login_result() throw() {}
 
   bool success;
 
-  _SpotifyIPC_logout_result__isset __isset;
+  _SpotifyIPC_login_result__isset __isset;
 
   void __set_success(const bool val) {
     success = val;
   }
 
-  bool operator == (const SpotifyIPC_logout_result & rhs) const
+  bool operator == (const SpotifyIPC_login_result & rhs) const
   {
     if (!(success == rhs.success))
       return false;
     return true;
   }
-  bool operator != (const SpotifyIPC_logout_result &rhs) const {
+  bool operator != (const SpotifyIPC_login_result &rhs) const {
     return !(*this == rhs);
   }
 
-  bool operator < (const SpotifyIPC_logout_result & ) const;
+  bool operator < (const SpotifyIPC_login_result & ) const;
 
   uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
   uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
 
 };
 
-typedef struct _SpotifyIPC_logout_presult__isset {
-  _SpotifyIPC_logout_presult__isset() : success(false) {}
+typedef struct _SpotifyIPC_login_presult__isset {
+  _SpotifyIPC_login_presult__isset() : success(false) {}
   bool success;
-} _SpotifyIPC_logout_presult__isset;
+} _SpotifyIPC_login_presult__isset;
 
-class SpotifyIPC_logout_presult {
+class SpotifyIPC_login_presult {
  public:
 
 
-  virtual ~SpotifyIPC_logout_presult() throw() {}
+  virtual ~SpotifyIPC_login_presult() throw() {}
 
   bool* success;
 
-  _SpotifyIPC_logout_presult__isset __isset;
+  _SpotifyIPC_login_presult__isset __isset;
 
   uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
 
 };
 
-typedef struct _SpotifyIPC_is_logged_args__isset {
-  _SpotifyIPC_is_logged_args__isset() : cred(false) {}
-  bool cred;
-} _SpotifyIPC_is_logged_args__isset;
 
 class SpotifyIPC_is_logged_args {
  public:
@@ -444,18 +614,9 @@ class SpotifyIPC_is_logged_args {
 
   virtual ~SpotifyIPC_is_logged_args() throw() {}
 
-  SpotifyIPCCredential cred;
 
-  _SpotifyIPC_is_logged_args__isset __isset;
-
-  void __set_cred(const SpotifyIPCCredential& val) {
-    cred = val;
-  }
-
-  bool operator == (const SpotifyIPC_is_logged_args & rhs) const
+  bool operator == (const SpotifyIPC_is_logged_args & /* rhs */) const
   {
-    if (!(cred == rhs.cred))
-      return false;
     return true;
   }
   bool operator != (const SpotifyIPC_is_logged_args &rhs) const {
@@ -476,7 +637,6 @@ class SpotifyIPC_is_logged_pargs {
 
   virtual ~SpotifyIPC_is_logged_pargs() throw() {}
 
-  const SpotifyIPCCredential* cred;
 
   uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
 
@@ -536,6 +696,43 @@ class SpotifyIPC_is_logged_presult {
   _SpotifyIPC_is_logged_presult__isset __isset;
 
   uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+
+};
+
+
+class SpotifyIPC_logout_args {
+ public:
+
+  SpotifyIPC_logout_args() {
+  }
+
+  virtual ~SpotifyIPC_logout_args() throw() {}
+
+
+  bool operator == (const SpotifyIPC_logout_args & /* rhs */) const
+  {
+    return true;
+  }
+  bool operator != (const SpotifyIPC_logout_args &rhs) const {
+    return !(*this == rhs);
+  }
+
+  bool operator < (const SpotifyIPC_logout_args & ) const;
+
+  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+};
+
+
+class SpotifyIPC_logout_pargs {
+ public:
+
+
+  virtual ~SpotifyIPC_logout_pargs() throw() {}
+
+
+  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
 
 };
 
@@ -880,14 +1077,20 @@ class SpotifyIPCClient : virtual public SpotifyIPCIf {
   bool set_slave();
   void send_set_slave();
   bool recv_set_slave();
-  void login(const SpotifyIPCCredential& cred);
+  void check_in(SpotifyIPCCredential& _return, const SpotifyIPCCredential& cred);
+  void send_check_in(const SpotifyIPCCredential& cred);
+  void recv_check_in(SpotifyIPCCredential& _return);
+  bool check_out();
+  void send_check_out();
+  bool recv_check_out();
+  bool login(const SpotifyIPCCredential& cred);
   void send_login(const SpotifyIPCCredential& cred);
-  bool logout();
-  void send_logout();
-  bool recv_logout();
-  bool is_logged(const SpotifyIPCCredential& cred);
-  void send_is_logged(const SpotifyIPCCredential& cred);
+  bool recv_login();
+  bool is_logged();
+  void send_is_logged();
   bool recv_is_logged();
+  void logout();
+  void send_logout();
   void selectPlaylist(const std::string& playlist);
   void send_selectPlaylist(const std::string& playlist);
   void selectPlaylistById(const int32_t plist_id);
@@ -919,9 +1122,11 @@ class SpotifyIPCProcessor : public ::apache::thrift::TDispatchProcessor {
   ProcessMap processMap_;
   void process_set_master(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext);
   void process_set_slave(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext);
+  void process_check_in(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext);
+  void process_check_out(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext);
   void process_login(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext);
-  void process_logout(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext);
   void process_is_logged(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext);
+  void process_logout(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext);
   void process_selectPlaylist(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext);
   void process_selectPlaylistById(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext);
   void process_selectTrack(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext);
@@ -934,9 +1139,11 @@ class SpotifyIPCProcessor : public ::apache::thrift::TDispatchProcessor {
     iface_(iface) {
     processMap_["set_master"] = &SpotifyIPCProcessor::process_set_master;
     processMap_["set_slave"] = &SpotifyIPCProcessor::process_set_slave;
+    processMap_["check_in"] = &SpotifyIPCProcessor::process_check_in;
+    processMap_["check_out"] = &SpotifyIPCProcessor::process_check_out;
     processMap_["login"] = &SpotifyIPCProcessor::process_login;
-    processMap_["logout"] = &SpotifyIPCProcessor::process_logout;
     processMap_["is_logged"] = &SpotifyIPCProcessor::process_is_logged;
+    processMap_["logout"] = &SpotifyIPCProcessor::process_logout;
     processMap_["selectPlaylist"] = &SpotifyIPCProcessor::process_selectPlaylist;
     processMap_["selectPlaylistById"] = &SpotifyIPCProcessor::process_selectPlaylistById;
     processMap_["selectTrack"] = &SpotifyIPCProcessor::process_selectTrack;
@@ -990,31 +1197,50 @@ class SpotifyIPCMultiface : virtual public SpotifyIPCIf {
     return ifaces_[i]->set_slave();
   }
 
-  void login(const SpotifyIPCCredential& cred) {
+  void check_in(SpotifyIPCCredential& _return, const SpotifyIPCCredential& cred) {
+    size_t sz = ifaces_.size();
+    size_t i = 0;
+    for (; i < (sz - 1); ++i) {
+      ifaces_[i]->check_in(_return, cred);
+    }
+    ifaces_[i]->check_in(_return, cred);
+    return;
+  }
+
+  bool check_out() {
+    size_t sz = ifaces_.size();
+    size_t i = 0;
+    for (; i < (sz - 1); ++i) {
+      ifaces_[i]->check_out();
+    }
+    return ifaces_[i]->check_out();
+  }
+
+  bool login(const SpotifyIPCCredential& cred) {
     size_t sz = ifaces_.size();
     size_t i = 0;
     for (; i < (sz - 1); ++i) {
       ifaces_[i]->login(cred);
     }
-    ifaces_[i]->login(cred);
+    return ifaces_[i]->login(cred);
   }
 
-  bool logout() {
+  bool is_logged() {
+    size_t sz = ifaces_.size();
+    size_t i = 0;
+    for (; i < (sz - 1); ++i) {
+      ifaces_[i]->is_logged();
+    }
+    return ifaces_[i]->is_logged();
+  }
+
+  void logout() {
     size_t sz = ifaces_.size();
     size_t i = 0;
     for (; i < (sz - 1); ++i) {
       ifaces_[i]->logout();
     }
-    return ifaces_[i]->logout();
-  }
-
-  bool is_logged(const SpotifyIPCCredential& cred) {
-    size_t sz = ifaces_.size();
-    size_t i = 0;
-    for (; i < (sz - 1); ++i) {
-      ifaces_[i]->is_logged(cred);
-    }
-    return ifaces_[i]->is_logged(cred);
+    ifaces_[i]->logout();
   }
 
   void selectPlaylist(const std::string& playlist) {
