@@ -31,7 +31,7 @@ class SpotifyHandler
         SpotifyHandler() 
             : Runnable()
             , Lockable()
-            , LOGIN_TO(1)
+            , LOGIN_TO(SP_TIMEOUT)
             , m_playback_done(1)
             , m_notify_events(0)
             , m_sp_cachedir(SP_CACHEDIR)
@@ -88,7 +88,13 @@ class SpotifyHandler
         //SILENCE NUM SAMPLES THRESHOLD
         enum { SILENCE_N_SAMPLES = 8192 };
 
-    private:
+        //libspotify wrapped
+        audio_fifo_t                            m_audiofifo;
+        audio_fifo_t *                          audio_fifo(){
+            return &m_audiofifo;
+        }
+
+
         virtual boost::shared_ptr<XplodifySession> get_active_session(void){
             return m_active_session;
         };
