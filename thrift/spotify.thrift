@@ -43,6 +43,7 @@ typedef map<string, SpotifyPlaylist> SpotifyLibrary
 typedef map<string, SpotifyCredential> SpotifySessions
 
 service Spotify {
+	bool is_service_ready();
         SpotifyCredential check_in(1: SpotifyCredential cred);
         bool check_out(1: SpotifyCredential cred);
         bool loginSession(1: SpotifyCredential cred);

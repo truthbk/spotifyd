@@ -61,6 +61,7 @@ class XplodifyServer
         , private Lockable {
     public:
         XplodifyServer(bool multisession=false);
+        bool is_service_ready();
         void check_in(SpotifyCredential& _return, const SpotifyCredential& cred);
         bool check_out(const SpotifyCredential& cred);
         bool loginSession(const SpotifyCredential& cred);

@@ -41,6 +41,7 @@ class SpotifyHandler
         virtual ~SpotifyHandler() {
         }
 
+        virtual bool handler_available() = 0;
         virtual std::string check_in() = 0;
         virtual bool check_out(const std::string& uuid) = 0;
         virtual bool login(const std::string& uuid, 

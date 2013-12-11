@@ -29,6 +29,7 @@ class XplodifyHandler
         XplodifyHandler();
         virtual ~XplodifyHandler();
 
+        virtual bool handler_available();
         virtual std::string check_in();
         virtual bool check_out(const std::string& uuid);
         virtual bool login(const std::string& uuid, 
