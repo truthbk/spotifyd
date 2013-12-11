@@ -29,7 +29,7 @@ class XplodifyPlaylist
     , public boost::enable_shared_from_this<XplodifyPlaylist>
 {
     public:
-        XplodifyPlaylist(boost::shared_ptr<XplodifySession> sess);
+        XplodifyPlaylist(boost::shared_ptr<XplodifySession> sess, int idx);
         ~XplodifyPlaylist();
 
         bool load(sp_playlist * pl);
@@ -38,8 +38,10 @@ class XplodifyPlaylist
         void flush();
         bool load_tracks();
         void update_track_ptrs();
+        void set_sp_playlist(sp_playlist * pl);
         bool is_loaded();
         std::string get_name(bool cache=false);
+        int    get_index(bool cache=true);
         size_t get_num_tracks(bool cache=false);
         void   add_track(boost::shared_ptr<XplodifyTrack> tr);
         void   add_track(boost::shared_ptr<XplodifyTrack> tr, int pos);
@@ -146,6 +148,7 @@ class XplodifyPlaylist
 
 
         std::string                                    m_name;
+        int                                            m_index;
         size_t                                         m_num_tracks;
 
         //LOAD_WAIT

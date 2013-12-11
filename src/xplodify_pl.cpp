@@ -35,13 +35,14 @@ const sp_playlist_callbacks XplodifyPlaylist::cbs = {
     cb_subscribers_changed
 };
 
-XplodifyPlaylist::XplodifyPlaylist(boost::shared_ptr<XplodifySession> sess) 
+XplodifyPlaylist::XplodifyPlaylist(boost::shared_ptr<XplodifySession> sess, int idx) 
     : Lockable()
     , Cacheable()
     , m_session(sess)
     , m_playlist(NULL)
     , m_loading(true) 
     , m_name()
+    , m_index(idx)
     , m_num_tracks(){
     //EMPTY
 }
@@ -162,6 +163,10 @@ bool XplodifyPlaylist::load_tracks() {
     return true;
 }
 
+void XplodifyPlaylist::set_sp_playlist(sp_playlist * pl) {
+    m_playlist = pl;
+}
+
 void XplodifyPlaylist::update_track_ptrs() {
 
     lock();
@@ -195,6 +200,15 @@ std::string XplodifyPlaylist::get_name(bool cache) {
     }
 
     return std::string(sp_playlist_name(m_playlist));
+}
+
+int XplodifyPlaylist::get_index(bool cache) {
+    if(cache) {
+        return m_index;
+    }
+
+    return m_index; //can't find right API call right now.
+
 }
 
 size_t XplodifyPlaylist::get_num_tracks(bool cache){

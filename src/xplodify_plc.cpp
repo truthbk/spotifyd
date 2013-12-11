@@ -102,6 +102,19 @@ void XplodifyPlaylistContainer::add_playlist(boost::shared_ptr<XplodifyPlaylist>
     }
 }
 
+void XplodifyPlaylistContainer::update_playlist_ptrs() {
+
+    pl_cache_by_rand& pl_r = m_pl_cache.get<0>();
+
+    for(uint32_t i=0 ; i<pl_r.size() ; i++ ) {
+        sp_playlist * p = sp_playlistcontainer_playlist( 
+                m_plcontainer, pl_r[i]._playlist->get_index(true));
+        pl_r[i]._playlist->set_sp_playlist(p);
+        //might be wise to recache...
+    }
+    return;
+}
+
 size_t XplodifyPlaylistContainer::get_num_playlists() {
     pl_cache_by_rand& c_r = m_pl_cache.get<0>();
 
@@ -162,8 +175,10 @@ void XplodifyPlaylistContainer::playlist_added(sp_playlist *pl, int pos){
         return;
     }
 
-    boost::shared_ptr<XplodifySession> sess(m_session.lock());
-    boost::shared_ptr<XplodifyPlaylist> npl(new XplodifyPlaylist(sess));
+    boost::shared_ptr<XplodifySession> sess(m_session);
+    boost::shared_ptr<XplodifyPlaylist> npl(new XplodifyPlaylist(sess, pos));
+ 
+    //should fix other playlists...
     npl->load(pl);
     if(npl->is_loaded()) {
 #ifdef _DEBUG
@@ -217,8 +232,8 @@ void XplodifyPlaylistContainer::container_loaded(){
     for(int i=0 ; i<n ; i++ ) {
         sp_playlist * p = sp_playlistcontainer_playlist( m_plcontainer, i);
 
-        boost::shared_ptr<XplodifySession> sess(m_session.lock());
-        boost::shared_ptr<XplodifyPlaylist> npl(new XplodifyPlaylist(sess));
+        boost::shared_ptr<XplodifySession> sess(m_session);
+        boost::shared_ptr<XplodifyPlaylist> npl(new XplodifyPlaylist(sess, i));
         npl->load(p);
         if(npl->is_loaded()) {
 #ifdef _DEBUG
