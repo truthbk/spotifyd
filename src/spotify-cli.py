@@ -72,11 +72,36 @@ class spclient(object):
         # Empty selected playlist
         self._currentplaylist = None
 
+        # Checked In
+        self.checked_in = False
+
+    def service_ready(self):
+        return self._client.is_service_ready()
+
+    def check_in(self):
+        try:
+            credentials = SpotifyCredential()
+            self._credentials = self._client.check_in(credentials)
+            if self._credentials._uuid:
+                self._checked_in = True
+        except Exception, e:
+            logging.debug("Exception: %s", e)
+            return False
+
+        return self._checked_in
+
     def login(self, username, password):
         success = False
+        if not self._checked_in:
+            success = self.check_in()
+            if not success:
+                return False
+
+        success = False
         try:
-            credentials = SpotifyCredential(username, password)
-            self._credentials = self._client.loginSession(credentials)
+            self._credentials._username = username
+            self._credentials._passwd = password
+            self._credentials = self._client.loginSession(self._credentials)
             success = True   # refine this.
         except Exception, e:
             logging.debug("Exception: %s", e)
@@ -88,6 +113,7 @@ class spclient(object):
         try:
             if self._credentials:
                 self._client.logoutSession(self._credentials)
+                # we'll see how we handle logout and checkouts... leave as is for now.
                 self._credentials = None
         except Exception, e:
             logging.debug("Exception: %s", e)
@@ -275,6 +301,9 @@ class XplodifyApp(urwid.Frame):
         self.logged = False
         self.spoticlient = spclient(host, port)
 
+        #get UUID
+        self.spoticlient.check_in()
+
         self._playlists = None
         self._active_pl = None
         self._active_pl_button = None
@@ -388,13 +417,18 @@ class XplodifyApp(urwid.Frame):
                     self.loop.draw_screen()
 
     def login(self, key):
+        if not self.spoticlient.service_ready():
+            # TODO: bring up a warning for a couple seconds... will do this different with webUI
+            self.body = self.mainview
+            return
+
         username = self.loginview.original_widget.\
             widget_list[0].get_edit_text()
         passwd = self.loginview.original_widget.\
             widget_list[1].get_edit_text()
         if not self.logged:
             self.logged = self.spoticlient.login(username, passwd)
-        time.sleep(10)
+        time.sleep(8)
         if self.logged:
             self.logwid.original_widget.set_text(u"Logged in as "+username)
             logging.debug("Retrieving playlists.")
