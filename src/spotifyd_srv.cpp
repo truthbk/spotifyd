@@ -69,6 +69,20 @@ void XplodifyServer::run()
     }
 }
 
+bool XplodifyServer::is_service_ready() {
+    //in monosession, handler is always ready.
+    if(!m_multi){
+        return true;
+    }
+
+    //in multisession handler, check with handler.
+    if(!m_sh.handler_available()){
+        return true;
+    }
+
+    return false;
+}
+
 void XplodifyServer::check_in(SpotifyCredential& _return, const SpotifyCredential& cred) {
     std::string uuid_str = m_sh.check_in();
     _return = cred;
@@ -171,40 +185,34 @@ void XplodifyServer::logoutSession(const SpotifyCredential& cred) {
 void XplodifyServer::sendCommand(const SpotifyCredential& cred, const SpotifyCmd::type cmd) {
     std::cout << "sendCommand" << std::endl;
 
-#if 0
-    boost::shared_ptr<XplodifySession> sess = get_session(cred._uuid);
-    if(!sess) {
-        return;
-    }
-
+    //rethink role for cred._uuid for this RPC call.
     switch(cmd){
         case SpotifyCmd::PLAY:
-            sess->start_playback();
+            m_sh.start();
             break;
         case SpotifyCmd::PAUSE:
-            sess->stop_playback();
-#if 0
-            audio_fifo_flush_now();
-            audio_fifo_set_reset(audio_fifo(), 1);
-#endif
+            m_sh.stop();
             break;
         case SpotifyCmd::NEXT:
         case SpotifyCmd::PREV:
+#if 0
             sess->end_of_track();
             break;
+#endif
         case SpotifyCmd::RAND:
         case SpotifyCmd::LINEAR:
         case SpotifyCmd::REPEAT_ONE:
         case SpotifyCmd::REPEAT:
+#if 0
             sess->set_mode(cmd);
             break;
+#endif
         default:
             break;
     }
 
     update_timestamp();
     return;
-#endif
 }
 
 

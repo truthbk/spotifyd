@@ -42,6 +42,14 @@ XplodifyHandler::~XplodifyHandler() {
     //EMPTY.
 }
 
+bool XplodifyHandler::handler_available(){
+    if(m_active_session) {
+        return false;
+    }
+
+    return true;
+}
+
 std::string XplodifyHandler::check_in(){
     boost::shared_ptr< XplodifySession > sess = XplodifySession::create(this);
     if(sess->init_session(g_appkey, g_appkey_size )) {
@@ -307,8 +315,11 @@ boost::shared_ptr<XplodifyTrack> XplodifyHandler::whats_playing(std::string uuid
 void XplodifyHandler::play(){
     m_active_session->start_playback();
 }
+
 void XplodifyHandler::stop(){
     m_active_session->stop_playback();
+    audio_fifo_flush_now();
+    audio_fifo_set_reset(audio_fifo(), 1);
 }
 
 void XplodifyHandler::notify_main_thread(void){
