@@ -24,7 +24,8 @@ class XplodifyTrack
         XplodifyTrack(boost::shared_ptr<XplodifySession> sess);
         ~XplodifyTrack();
 
-        bool          load(sp_track * track);
+        bool          load(sp_track * track, int idx);
+        void          set_sp_track(sp_track * track);
         void          unload();
         bool          is_loaded();
         bool          is_streamable();

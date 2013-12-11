@@ -140,7 +140,7 @@ bool XplodifyPlaylist::load_tracks() {
         std::pair<track_r_iterator, bool> p;
 
         boost::shared_ptr<XplodifyTrack> tr(new XplodifyTrack(sess));
-        if(tr->load(t)){
+        if(tr->load(t, i)){
             tr->cache();
             std::string trname(tr->get_name());
             track_entry tr_entry(trname, tr);
@@ -162,6 +162,17 @@ bool XplodifyPlaylist::load_tracks() {
     return true;
 }
 
+void XplodifyPlaylist::update_track_ptrs() {
+
+    lock();
+    track_cache_by_rand& t_r = m_track_cache.get<0>();
+    for(int i=0 ; i<t_r.size() ; i++) {
+        sp_track * t = sp_playlist_track(m_playlist, t_r[i].track->get_index(true));
+        t_r[i].track->set_sp_track(t);
+    }
+    unlock();
+    return;
+}
 bool XplodifyPlaylist::unload() {
 
     boost::shared_ptr<XplodifySession> sess(m_session.lock());
@@ -385,7 +396,7 @@ void XplodifyPlaylist::playlist_update_in_progress(bool done){
 void XplodifyPlaylist::playlist_metadata_updated(){
     //If playlist metadata has been updated, we first check
     //for pending tracks that are ready....
-    boost::shared_ptr<XplodifySession> sess(m_session.lock());
+    boost::shared_ptr<XplodifySession> sess(m_session);
     track_cache_by_rand& tr_cache_rand = m_track_cache.get<0>();
 
     typedef std::vector< boost::shared_ptr<XplodifyTrack> > wvec;

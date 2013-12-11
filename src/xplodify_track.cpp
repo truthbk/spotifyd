@@ -36,11 +36,17 @@ XplodifyTrack::~XplodifyTrack() {
 }
 
 
-bool XplodifyTrack::load(sp_track * track){
+bool XplodifyTrack::load(sp_track * track, int idx){
     m_track = track;
+    m_index = idx;
     sp_track_add_ref(m_track);
     return is_loaded();
 }
+
+void XplodifyTrack::set_sp_track(sp_track * track) {
+    m_track = track;
+}
+
 void XplodifyTrack::unload(){
     sp_track_release(m_track);
     m_track = NULL;
