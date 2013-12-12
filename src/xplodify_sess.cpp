@@ -168,6 +168,21 @@ void XplodifySession::login( const std::string& username
 
 }
 
+void XplodifySession::update_plcontainer(bool cascade) {
+    if(!m_session){
+        return;
+    }
+
+    sp_playlistcontainer* c = sp_session_playlistcontainer( m_session );
+    if(!c) {
+        return;
+    }
+    m_plcontainer->set_plcontainer(c);
+    m_plcontainer->update_playlist_ptrs(cascade);
+
+    return;
+}
+
 boost::shared_ptr<XplodifyPlaylistContainer> XplodifySession::get_pl_container(void) {
     if(!!m_plcontainer) {
         return m_plcontainer;

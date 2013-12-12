@@ -38,7 +38,7 @@ class XplodifyPlaylist
         void flush();
         bool load_tracks();
         void update_track_ptrs();
-        void set_sp_playlist(sp_playlist * pl);
+        bool set_sp_playlist(sp_playlist * pl);
         bool is_loaded();
         std::string get_name(bool cache=false);
         int    get_index(bool cache=true);
