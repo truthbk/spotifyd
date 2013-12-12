@@ -43,8 +43,13 @@ bool XplodifyTrack::load(sp_track * track, int idx){
     return is_loaded();
 }
 
-void XplodifyTrack::set_sp_track(sp_track * track) {
+bool XplodifyTrack::set_sp_track(sp_track * track) {
+    if(!track){
+        return false;
+    }
     m_track = track;
+
+    return true;
 }
 
 void XplodifyTrack::unload(){

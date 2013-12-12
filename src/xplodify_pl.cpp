@@ -92,9 +92,7 @@ bool XplodifyPlaylist::load(sp_playlist * pl) {
         return false;
     }
 
-    m_playlist = pl;
-    sp_playlist_add_callbacks(pl, const_cast<sp_playlist_callbacks *>(&cbs), this);
-
+    set_sp_playlist(pl);
     if(!sp_playlist_is_loaded(pl))
     {
         m_loading = true;
@@ -163,8 +161,16 @@ bool XplodifyPlaylist::load_tracks() {
     return true;
 }
 
-void XplodifyPlaylist::set_sp_playlist(sp_playlist * pl) {
+bool XplodifyPlaylist::set_sp_playlist(sp_playlist * pl) {
+
+    if(!pl) {
+        return false;
+    }
     m_playlist = pl;
+    sp_playlist_add_callbacks(
+            m_playlist, const_cast<sp_playlist_callbacks *>(&cbs), this);
+
+    return true;
 }
 
 void XplodifyPlaylist::update_track_ptrs() {

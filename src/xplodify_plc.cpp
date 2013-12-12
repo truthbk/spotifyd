@@ -34,14 +34,24 @@ XplodifyPlaylistContainer::~XplodifyPlaylistContainer(){
 #endif
 }
 
+bool XplodifyPlaylistContainer::set_plcontainer(sp_playlistcontainer * plc) {
+
+    if(!plc) {
+        return false;
+    }
+    m_plcontainer = plc;
+    sp_playlistcontainer_add_callbacks(plc, 
+            const_cast<sp_playlistcontainer_callbacks *>(&cbs), this);
+
+    return true;
+}
+
 bool XplodifyPlaylistContainer::load(sp_playlistcontainer * plc) {
     if(!plc) {
         return false;
     }
 
-    m_plcontainer = plc;
-    sp_playlistcontainer_add_callbacks(plc, 
-            const_cast<sp_playlistcontainer_callbacks *>(&cbs), this);
+    set_plcontainer(plc);
 
     m_loading = !sp_playlistcontainer_is_loaded(plc);
     if(!m_loading) {
@@ -102,7 +112,7 @@ void XplodifyPlaylistContainer::add_playlist(boost::shared_ptr<XplodifyPlaylist>
     }
 }
 
-void XplodifyPlaylistContainer::update_playlist_ptrs() {
+void XplodifyPlaylistContainer::update_playlist_ptrs(bool cascade) {
 
     pl_cache_by_rand& pl_r = m_pl_cache.get<0>();
 
@@ -111,6 +121,9 @@ void XplodifyPlaylistContainer::update_playlist_ptrs() {
                 m_plcontainer, pl_r[i]._playlist->get_index(true));
         pl_r[i]._playlist->set_sp_playlist(p);
         //might be wise to recache...
+        if(cascade) {
+            pl_r[i]._playlist->update_track_ptrs();
+        }
     }
     return;
 }

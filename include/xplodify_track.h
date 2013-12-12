@@ -25,7 +25,7 @@ class XplodifyTrack
         ~XplodifyTrack();
 
         bool          load(sp_track * track, int idx);
-        void          set_sp_track(sp_track * track);
+        bool          set_sp_track(sp_track * track);
         void          unload();
         bool          is_loaded();
         bool          is_streamable();
