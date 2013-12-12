@@ -171,7 +171,7 @@ void XplodifyPlaylist::update_track_ptrs() {
 
     lock();
     track_cache_by_rand& t_r = m_track_cache.get<0>();
-    for(int i=0 ; i<t_r.size() ; i++) {
+    for(uint32_t i=0 ; i<t_r.size() ; i++) {
         sp_track * t = sp_playlist_track(m_playlist, t_r[i].track->get_index(true));
         t_r[i].track->set_sp_track(t);
     }
