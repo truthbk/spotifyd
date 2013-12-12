@@ -55,6 +55,7 @@ XplodifyServer::XplodifyServer(bool multisession)
     : Runnable()
     , Lockable()
     , LOGIN_TO(1)
+    , m_sh()
     , m_ts(std::time(NULL))
     , m_multi(multisession) {
 }
@@ -63,8 +64,8 @@ XplodifyServer::XplodifyServer(bool multisession)
 void XplodifyServer::run() 
 {
     while(!m_done) {
-        //is this too much of a busy loop?
-        m_io.poll();
+        //run() is a blocking call, more appropriate.
+        m_io.run();
         m_io.reset();
     }
 }
@@ -232,7 +233,7 @@ void XplodifyServer::getPlaylists(SpotifyPlaylistList& _return, const SpotifyCre
 {
 
     std::vector< boost::shared_ptr<XplodifyPlaylist> > playlists(m_sh.get_playlists(cred._uuid));
-    for(int i=0 ; i<playlists.size() ; i++) {
+    for(uint32_t i=0 ; i<playlists.size() ; i++) {
         std::string plstr(playlists[i]->get_name(true));
         _return.insert(plstr);
     }
