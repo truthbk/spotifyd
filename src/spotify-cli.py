@@ -80,7 +80,7 @@ class spclient(object):
 
     def check_in(self):
         try:
-            credentials = SpotifyCredential()
+            credentials = SpotifyCredential("","","")
             self._credentials = self._client.check_in(credentials)
             if self._credentials._uuid:
                 self._checked_in = True
