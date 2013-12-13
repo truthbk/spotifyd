@@ -69,7 +69,7 @@ std::string XplodifyHandler::check_in(){
     m_session_cache.get<1>().insert(sess_map_entry( uuid_str, 
                 const_cast<const sp_session *>(sess->get_session()), sess ));
 
-    m_active_session->set_uuid(uuid_str);
+    sess->set_uuid(uuid_str);
     update_timestamp();
     unlock();
 
@@ -103,8 +103,11 @@ bool XplodifyHandler::login(const std::string& uuid,
         return true;
     }
 
-
     sess->login(username, passwd);
+    lock();
+    set_active_session(sess);
+    unlock();
+
     return true;
 
 }
@@ -467,7 +470,11 @@ void XplodifyHandler::run(){
         do {
             //we can only do work on the active session!
             lock();
+            if(!m_active_session) {
+                sleep(0);
+            } else {
                 sp_session_process_events(m_active_session->get_session(), &next_timeout);
+            }
             unlock();
         } while (next_timeout == 0);
 

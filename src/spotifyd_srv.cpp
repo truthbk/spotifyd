@@ -58,6 +58,8 @@ XplodifyServer::XplodifyServer(bool multisession)
     , m_sh()
     , m_ts(std::time(NULL))
     , m_multi(multisession) {
+        //start handler worker thread.
+        m_sh.start();
 }
 
 
