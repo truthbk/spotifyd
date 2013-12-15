@@ -48,6 +48,7 @@ bool XplodifyTrack::set_sp_track(sp_track * track) {
         return false;
     }
     m_track = track;
+    sp_track_add_ref(m_track);
 
     return true;
 }
@@ -68,7 +69,7 @@ bool XplodifyTrack::is_streamable(){
     }
 
     sp_track_availability available;
-    boost::shared_ptr<XplodifySession> sess(m_sess.lock());
+    boost::shared_ptr<XplodifySession> sess(m_sess);
     available = sp_track_get_availability(sess->get_sp_session(), m_track);
     if(available == SP_TRACK_AVAILABILITY_NOT_STREAMABLE) {
         return false;
@@ -135,7 +136,7 @@ bool XplodifyTrack::is_starred(bool cache){
     if(cache && is_cached()) {
         return m_starred;
     }
-    boost::shared_ptr<XplodifySession> sess(m_sess.lock());
+    boost::shared_ptr<XplodifySession> sess(m_sess);
     return sp_track_is_starred(sess->get_sp_session(), m_track);
 }
 
@@ -161,7 +162,7 @@ void XplodifyTrack::set_starred(bool star){
     if(!m_track) {
         return;
     }
-    boost::shared_ptr<XplodifySession> sess(m_sess.lock());
+    boost::shared_ptr<XplodifySession> sess(m_sess);
     sp_track_set_starred(sess->get_sp_session(), &m_track, 1, star);
 }
 

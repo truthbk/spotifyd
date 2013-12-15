@@ -293,7 +293,7 @@ void XplodifySession::set_track(int idx) {
     m_track = track;
     m_track_idx = idx;
     sp_session_player_load(m_session, m_track->m_track);
-#if _DEBUG
+#ifdef _DEBUG
     std::cout << "Track " << m_track->get_name() << " loaded succesfully." << std::endl;
 #endif
 }
@@ -323,7 +323,7 @@ void XplodifySession::set_track(std::string trackname) {
     }
     m_track = track;
     sp_session_player_load(m_session, m_track->m_track);
-#if _DEBUG
+#ifdef _DEBUG
     std::cout << "Track " << m_track->get_name() << " loaded succesfully." << std::endl;
 #endif
 }
@@ -345,7 +345,7 @@ void XplodifySession::end_of_track() {
     m_handler->set_playback_done(m_playback_done);
 
 
-#if _DEBUG
+#ifdef _DEBUG
     std::cout << "Track has finished." << std::endl;
 #endif
     switch(m_mode){
@@ -398,10 +398,10 @@ void XplodifySession::play_token_lost()
 
 void XplodifySession::logged_in(sp_session *sess, sp_error error) {
     //We've logged in succesfully, lets load pl container, and pl's
-    m_plcontainer = get_pl_container(); 
+    get_pl_container(); 
     m_loggedin = true;
 
-#if _DEBUG
+#ifdef _DEBUG
     std::cout << "Session " << m_uuid << " logged in succesfully." << std::endl;
 #endif
 
@@ -416,14 +416,14 @@ void XplodifySession::flush() {
 
     pc->flush();
     m_plcontainer.reset();
-#if _DEBUG
+#ifdef _DEBUG
     std::cout << "Playlist Container use count: " << pc.use_count() << std::endl;
 #endif
 }
 
 void XplodifySession::start_playback()
 {
-#if _DEBUG
+#ifdef _DEBUG
     std::cout << "Starting playback." << std::endl;
 #endif
     sp_session_player_play(m_session, 1);
@@ -432,7 +432,7 @@ void XplodifySession::start_playback()
 
 void XplodifySession::stop_playback()
 {
-#if _DEBUG
+#ifdef _DEBUG
     std::cout << "Stopping playback." << std::endl;
 #endif
     sp_session_player_play(m_session, 0);
@@ -473,6 +473,7 @@ int XplodifySession::music_delivery(sp_session *sess, const sp_audioformat *form
 
 void XplodifySession::notify_main_thread(sp_session *sess)
 {
+
     m_handler->notify_main_thread();
 }
 

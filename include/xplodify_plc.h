@@ -86,6 +86,9 @@ class XplodifyPlaylistContainer :
         static const sp_playlistcontainer_callbacks cbs;
 
         pl_cache                           m_pl_cache;
+        std::vector<
+            boost::shared_ptr<XplodifyPlaylist>
+            >                              m_pending_playlists;
         sp_playlistcontainer *             m_plcontainer;
         boost::weak_ptr<XplodifySession>   m_session;
         bool                               m_loading;

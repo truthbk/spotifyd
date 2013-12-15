@@ -22,7 +22,7 @@ XplodifyPlaylistContainer::XplodifyPlaylistContainer(
         boost::shared_ptr<XplodifySession> sess)
     : m_plcontainer(NULL)
     , m_session(sess)
-    , m_loading(false) 
+    , m_loading(true) 
 {
     //EMPTY
 }
@@ -39,7 +39,8 @@ bool XplodifyPlaylistContainer::set_plcontainer(sp_playlistcontainer * plc) {
     if(!plc) {
         return false;
     }
-    m_plcontainer = plc;
+    m_plcontainer = plc; 
+    sp_playlistcontainer_add_ref(m_plcontainer);
     sp_playlistcontainer_add_callbacks(plc, 
             const_cast<sp_playlistcontainer_callbacks *>(&cbs), this);
 
@@ -58,7 +59,6 @@ bool XplodifyPlaylistContainer::load(sp_playlistcontainer * plc) {
 #ifdef _DEBUG
         std::cout << "container was immediately loaded" << std::endl;
 #endif
-        container_loaded();
     }
     return m_loading;
 }
@@ -199,7 +199,12 @@ void XplodifyPlaylistContainer::playlist_added(sp_playlist *pl, int pos){
 #endif
         npl->cache();
         add_playlist(npl, pos);
-    }
+     } else {
+#ifdef _DEBUG
+        std::cout << "Playlist not fully loaded: deferring." << std::endl;
+#endif
+        m_pending_playlists.push_back(npl);
+     }
 
     return;
 }
@@ -234,7 +239,6 @@ void XplodifyPlaylistContainer::playlist_moved(sp_playlist *pl, int pos, int new
 
 void XplodifyPlaylistContainer::container_loaded(){
 
-    //container_loaded callback never being raised....
     m_loading = false;
 
     int n = sp_playlistcontainer_num_playlists(m_plcontainer);
@@ -254,6 +258,8 @@ void XplodifyPlaylistContainer::container_loaded(){
 #endif
             npl->cache();
             add_playlist(npl);
+        } else {
+            m_pending_playlists.push_back(npl);
         }
     }
     return;
