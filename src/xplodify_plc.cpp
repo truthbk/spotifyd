@@ -128,6 +128,20 @@ void XplodifyPlaylistContainer::update_playlist_ptrs(bool cascade) {
     return;
 }
 
+
+void XplodifyPlaylistContainer::update_cache() {
+    std::vector< boost::shared_ptr<XplodifyPlaylist> >::iterator it;
+    for (it = m_pending_playlists.begin() ; it!= m_pending_playlists.end() ;) {
+        boost::shared_ptr<XplodifyPlaylist> xpl(*it);
+        if(xpl->is_loaded()) {
+            xpl->cache();
+            //no longer deferred.
+            it = m_pending_playlists.erase(it);
+        }
+    }
+    return;
+}
+
 size_t XplodifyPlaylistContainer::get_num_playlists() {
     pl_cache_by_rand& c_r = m_pl_cache.get<0>();
 
