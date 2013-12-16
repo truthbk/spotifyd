@@ -136,7 +136,6 @@ bool XplodifyHandler::login_status(std::string uuid){
 
 //only the active session can be logged in
 bool XplodifyHandler::logout(std::string uuid){
-    sp_error err;
     bool switched = false;
 
     boost::shared_ptr<XplodifySession> sess = get_session(uuid);
@@ -153,10 +152,7 @@ bool XplodifyHandler::logout(std::string uuid){
     }
 
     //switch_session();
-    sess->flush();
-    err = sp_session_logout(sess->get_session());
-    sp_session_release(sess->get_session());
-    m_active_session.reset();
+    sess->logout();
 
 #ifdef _DEBUG
     std::cout << "XplodifySession use count: " << sess.use_count()  << std::endl;
@@ -332,6 +328,12 @@ void XplodifyHandler::notify_main_thread(void){
     unlock();
 }
 
+void XplodifyHandler::set_session_done(bool done){
+    lock();
+    m_session_done = done;
+    unlock();
+}
+
 void XplodifyHandler::set_playback_done(bool done){
     lock();
     m_playback_done = done;
@@ -472,7 +474,10 @@ void XplodifyHandler::run(){
             lock();
             if(!m_active_session) {
                 sleep(0);
-            } else {
+            } if(m_session_done) {
+                m_active_session.reset();
+                m_session_done = 0;
+            }else {
                 sp_session_process_events(m_active_session->get_session(), &next_timeout);
             }
             unlock();

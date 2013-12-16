@@ -56,10 +56,10 @@ class XplodifySession
             return m_track_idx;
         };
         bool get_logged_in(){
-            return m_loggedin;
+            return m_logged_in;
         }
         void set_logged_in(bool logged){
-            m_loggedin = logged;
+            m_logged_in = logged;
         }
         std::string get_uuid() const {
             return m_uuid;
@@ -76,6 +76,8 @@ class XplodifySession
                  , const std::string& passwd
                  , bool remember=false );
 
+       bool logout(bool doflush=false);
+       void logged_out();
 
         sp_session * get_sp_session();
         void set_track(int idx);
@@ -100,7 +102,6 @@ class XplodifySession
         XplodifySession();
         XplodifySession(XplodifyHandler * h);
 
-        void flush();
         void logged_in(sp_session *sess, sp_error error);
         void play_token_lost();
         void start_playback();
@@ -113,6 +114,7 @@ class XplodifySession
                 const void *frames, int num_frames);
 
     private:
+        void flush();
 
         // C Callbacks...
         static void SP_CALLCONV cb_logged_in(sp_session *session, sp_error error);
@@ -154,7 +156,8 @@ class XplodifySession
         SpotifyHandler * const  m_handler;
 
         std::string             m_uuid;
-        bool                    m_loggedin;
+        bool                    m_logged_in;
+        bool                    m_logging_out;
         int                     m_playback_done;
         int                     m_remove_tracks;
 #define NO_TRACK NULL

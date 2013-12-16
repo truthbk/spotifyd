@@ -33,7 +33,8 @@ XplodifySession::XplodifySession()
     , m_track()
     , m_handler(NULL)
     , m_uuid("")
-    , m_loggedin(false)
+    , m_logged_in(false)
+    , m_logging_out(false)
     , m_playback_done(1)
     , m_remove_tracks(0)
     , m_track_idx(-1)
@@ -52,7 +53,8 @@ XplodifySession::XplodifySession(XplodifyHandler * h)
     , m_track()
     , m_handler(h)
     , m_uuid("")
-    , m_loggedin(false)
+    , m_logged_in(false)
+    , m_logging_out(false)
     , m_playback_done(1)
     , m_remove_tracks(0)
     , m_track_idx(-1)
@@ -158,7 +160,6 @@ void XplodifySession::login( const std::string& username
                           , const std::string& passwd
                           , bool remember ) {
 
-
     //gotta add blob support (see libspotify api).
     sp_error err;
     err = sp_session_login( 
@@ -166,6 +167,31 @@ void XplodifySession::login( const std::string& username
             username.c_str(), 
             passwd.c_str(), remember, NULL);
 
+}
+
+bool XplodifySession::logout(bool doflush) {
+    sp_error err;
+    err = sp_session_logout(get_session());
+    if(err != SP_ERROR_OK){
+        return false;
+    }
+
+    if(doflush) {
+        flush();
+    }
+    m_logging_out = true;
+    return true;
+}
+
+void XplodifySession::logged_out() {
+    if(!m_logging_out) {
+        return;
+    }
+    sp_session_release(get_session());
+    //m_active_session.reset();
+    m_handler->set_session_done(true);
+
+    return;
 }
 
 void XplodifySession::update_plcontainer(bool cascade) {
@@ -399,7 +425,7 @@ void XplodifySession::play_token_lost()
 void XplodifySession::logged_in(sp_session *sess, sp_error error) {
     //We've logged in succesfully, lets load pl container, and pl's
     get_pl_container(); 
-    m_loggedin = true;
+    m_logged_in = true;
 
 #ifdef _DEBUG
     std::cout << "Session " << m_uuid << " logged in succesfully." << std::endl;
@@ -494,6 +520,11 @@ void SP_CALLCONV XplodifySession::cb_logged_in(
 void SP_CALLCONV XplodifySession::cb_logged_out(sp_session *sess) {
 
     //TODO
+    XplodifySession * s = XplodifySession::get_session_from_udata(sess);
+    if(!s) {
+        return;
+    }
+    s->logged_out();
     return;
 }
 
