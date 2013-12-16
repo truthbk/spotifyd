@@ -101,8 +101,7 @@ class spclient(object):
         try:
             self._credentials._username = username
             self._credentials._passwd = password
-            self._credentials = self._client.loginSession(self._credentials)
-            success = True   # refine this.
+            success = self._client.loginSession(self._credentials)
         except Exception, e:
             logging.debug("Exception: %s", e)
             return False
