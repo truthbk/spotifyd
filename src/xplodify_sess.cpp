@@ -34,6 +34,7 @@ XplodifySession::XplodifySession()
     , m_handler(NULL)
     , m_uuid("")
     , m_logged_in(false)
+    , m_logged_earlier(false)
     , m_logging_out(false)
     , m_playback_done(1)
     , m_remove_tracks(0)
@@ -54,6 +55,7 @@ XplodifySession::XplodifySession(XplodifyHandler * h)
     , m_handler(h)
     , m_uuid("")
     , m_logged_in(false)
+    , m_logged_earlier(false)
     , m_logging_out(false)
     , m_playback_done(1)
     , m_remove_tracks(0)
@@ -190,6 +192,7 @@ void XplodifySession::logged_out() {
     sp_session_release(get_session());
     //m_active_session.reset();
     m_handler->set_session_done(true);
+    m_logged_in = false;
 
     return;
 }
@@ -204,7 +207,9 @@ void XplodifySession::update_plcontainer(bool cascade) {
         return;
     }
     m_plcontainer->set_plcontainer(c);
-    m_plcontainer->update_playlist_ptrs(cascade);
+    if(cascade) {
+        m_plcontainer->update_playlist_ptrs(cascade);
+    }
 
     return;
 }
@@ -424,7 +429,12 @@ void XplodifySession::play_token_lost()
 
 void XplodifySession::logged_in(sp_session *sess, sp_error error) {
     //We've logged in succesfully, lets load pl container, and pl's
-    get_pl_container(); 
+    if(!m_logged_earlier) {
+        get_pl_container(); 
+        m_logged_earlier = true;
+    } else {
+        update_plcontainer(true);
+    }
     m_logged_in = true;
 
 #ifdef _DEBUG

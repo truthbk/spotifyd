@@ -84,6 +84,7 @@ bool XplodifyHandler::check_out(const std::string& uuid){
     if(sess == m_active_session) {
         logout(uuid);
     }
+    sess->flush();
 
     remove_from_cache(uuid);
     return true;
@@ -152,7 +153,7 @@ bool XplodifyHandler::logout(std::string uuid){
     }
 
     //switch_session();
-    sess->logout();
+    sess->logout(false);
 
 #ifdef _DEBUG
     std::cout << "XplodifySession use count: " << sess.use_count()  << std::endl;

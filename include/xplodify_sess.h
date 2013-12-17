@@ -114,8 +114,8 @@ class XplodifySession
                 const void *frames, int num_frames);
 
     private:
-        void flush();
 
+        void flush();
         // C Callbacks...
         static void SP_CALLCONV cb_logged_in(sp_session *session, sp_error error);
         static void SP_CALLCONV cb_logged_out(sp_session *session);
@@ -157,6 +157,7 @@ class XplodifySession
 
         std::string             m_uuid;
         bool                    m_logged_in;
+        bool                    m_logged_earlier;
         bool                    m_logging_out;
         int                     m_playback_done;
         int                     m_remove_tracks;
