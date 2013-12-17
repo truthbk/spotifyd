@@ -191,7 +191,7 @@ void XplodifyServer::sendCommand(const SpotifyCredential& cred, const SpotifyCmd
     //rethink role for cred._uuid for this RPC call.
     switch(cmd){
         case SpotifyCmd::PLAY:
-            m_sh.start();
+            m_sh.play();
             break;
         case SpotifyCmd::PAUSE:
             m_sh.stop();

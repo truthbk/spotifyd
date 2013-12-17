@@ -475,10 +475,10 @@ void XplodifyHandler::run(){
             lock();
             if(!m_active_session) {
                 sleep(0);
-            } if(m_session_done) {
+            } else if(m_session_done) {
                 m_active_session.reset();
                 m_session_done = 0;
-            }else {
+            } else {
                 sp_session_process_events(m_active_session->get_session(), &next_timeout);
             }
             unlock();
