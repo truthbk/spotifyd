@@ -64,6 +64,8 @@ class SpotifyHandler
         virtual boost::shared_ptr<XplodifyTrack> whats_playing(std::string uuid) = 0;
         virtual void play() = 0;
         virtual void stop() = 0;
+        virtual void next() = 0;
+        virtual void prev() = 0;
 
         virtual void notify_main_thread(void) = 0;
         virtual void set_session_done(bool done) = 0;
@@ -73,6 +75,7 @@ class SpotifyHandler
         virtual void audio_fifo_stats(sp_audio_buffer_stats *stats) = 0;
         virtual void audio_fifo_flush_now(void) = 0 ;
 
+        virtual int64_t get_handler_state() = 0;
         virtual int64_t get_session_state(std::string uuid) = 0;
         virtual void update_timestamp(void) = 0;
         virtual std::string get_cachedir() = 0;

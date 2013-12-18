@@ -172,7 +172,7 @@ class spclient(object):
     def whats_playing(self):
         song = None
         try:
-            song = self._client.whats_playing()
+            song = self._client.whats_playing(self._credentials)
         except Exception, e:
             logging.debug("Exception: %s", e)
             self._success = False

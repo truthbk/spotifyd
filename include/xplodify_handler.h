@@ -51,6 +51,8 @@ class XplodifyHandler
         virtual boost::shared_ptr<XplodifyTrack> whats_playing(std::string uuid);
         virtual void play();
         virtual void stop();
+        virtual void next();
+        virtual void prev();
 
         virtual void notify_main_thread(void);
         virtual void set_session_done(bool done);
@@ -60,6 +62,7 @@ class XplodifyHandler
         virtual void audio_fifo_stats(sp_audio_buffer_stats *stats);
         virtual void audio_fifo_flush_now(void) ;
 
+        virtual int64_t get_handler_state();
         virtual int64_t get_session_state(std::string uuid);
         virtual void update_timestamp(void);
         virtual std::string get_cachedir();

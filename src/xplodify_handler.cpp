@@ -36,6 +36,20 @@ XplodifyHandler::XplodifyHandler()
             exit(1);
         }
     }
+    enum audio_arch arch;
+#ifdef _OSX
+#ifdef HAS_OPENAL
+    arch = OPENAL_ARCH;
+#elif HAS_AUDIOTOOLKIT
+    arch = AUDIOTOOLKIT;
+#endif
+#else
+#ifdef _LINUX
+    arch = ALSA;
+#endif
+#endif
+    set_audio(arch);
+    audio_init(&m_audiofifo);
 }
 
 XplodifyHandler::~XplodifyHandler() {
@@ -314,12 +328,26 @@ boost::shared_ptr<XplodifyTrack> XplodifyHandler::whats_playing(std::string uuid
 
 void XplodifyHandler::play(){
     m_active_session->start_playback();
+    update_timestamp();
 }
 
 void XplodifyHandler::stop(){
     m_active_session->stop_playback();
     audio_fifo_flush_now();
     audio_fifo_set_reset(audio_fifo(), 1);
+    update_timestamp();
+}
+
+void XplodifyHandler::next(){
+    //this is different for multi session
+    m_active_session->end_of_track();
+    update_timestamp();
+}
+
+void XplodifyHandler::prev(){
+    //this is different for multi session
+    m_active_session->end_of_track();
+    update_timestamp();
 }
 
 void XplodifyHandler::notify_main_thread(void){
@@ -333,12 +361,14 @@ void XplodifyHandler::set_session_done(bool done){
     lock();
     m_session_done = done;
     unlock();
+    update_timestamp();
 }
 
 void XplodifyHandler::set_playback_done(bool done){
     lock();
     m_playback_done = done;
     unlock();
+    update_timestamp();
 }
 
 int  XplodifyHandler::music_playback(const sp_audioformat * format, 
@@ -416,6 +446,15 @@ void XplodifyHandler::audio_fifo_stats(sp_audio_buffer_stats *stats){
 void XplodifyHandler::audio_fifo_flush_now(void){
     audio_fifo_flush(audio_fifo());
     return;
+}
+
+int64_t XplodifyHandler::get_handler_state(){
+    int64_t ts = 0;
+    lock();
+    ts = m_ts;
+    unlock();
+
+    return ts;
 }
 
 int64_t XplodifyHandler::get_session_state(std::string uuid){

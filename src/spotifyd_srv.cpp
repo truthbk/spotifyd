@@ -156,7 +156,7 @@ void XplodifyServer::login_timeout(const boost::system::error_code&,
     unlock();
 #endif
 
-    update_timestamp();
+    m_sh.update_timestamp();
 }
 
 bool XplodifyServer::isLoggedIn(const SpotifyCredential& cred) {
@@ -166,7 +166,10 @@ bool XplodifyServer::isLoggedIn(const SpotifyCredential& cred) {
 
 int64_t XplodifyServer::getStateTS(const SpotifyCredential& cred) {
 
-    return m_ts;
+    int64_t ts;
+
+    ts = m_sh.get_handler_state();
+    return ts;
 }
 
 int64_t XplodifyServer::getSessionStateTS(const SpotifyCredential& cred) {
@@ -197,11 +200,11 @@ void XplodifyServer::sendCommand(const SpotifyCredential& cred, const SpotifyCmd
             m_sh.stop();
             break;
         case SpotifyCmd::NEXT:
-        case SpotifyCmd::PREV:
-#if 0
-            sess->end_of_track();
+            m_sh.next();
             break;
-#endif
+        case SpotifyCmd::PREV:
+            m_sh.prev();
+            break;
         case SpotifyCmd::RAND:
         case SpotifyCmd::LINEAR:
         case SpotifyCmd::REPEAT_ONE:
