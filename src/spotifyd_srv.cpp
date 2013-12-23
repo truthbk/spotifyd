@@ -69,6 +69,7 @@ void XplodifyServer::run()
         //run() is a blocking call, more appropriate.
         m_io.run();
         m_io.reset();
+        sleep(0);
     }
 }
 
