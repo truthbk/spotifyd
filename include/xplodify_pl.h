@@ -22,7 +22,7 @@
 //forward declarations
 class XplodifySession;
 
-//NOTE: should this be lockable? I'm not sure Spotify C api enfores thread safety.
+//NOTE: should this be lockable? I'm not sure Spotify C api enfores thread safety: libspotify is not thread safe :S
 class XplodifyPlaylist
     : private Lockable
     , public Cacheable
