@@ -399,7 +399,7 @@ void XplodifyPlaylist::playlist_state_changed(){
         if(m_loading) {
             m_loading = false;
             //we should now create shared_ptr and insert into cache.
-            sess->get_pl_container()->add_playlist(this);
+            sess->get_pl_container()->add_playlist(shared_from_this());
             sess->get_pl_container()->update_cache();
         }
         load_tracks();

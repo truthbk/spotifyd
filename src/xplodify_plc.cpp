@@ -137,6 +137,8 @@ void XplodifyPlaylistContainer::update_cache() {
             xpl->cache();
             //no longer deferred.
             it = m_pending_playlists.erase(it);
+        } else {
+            it++;
         }
     }
     return;
