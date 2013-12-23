@@ -32,7 +32,7 @@ class SpotifyHandler
             : Runnable()
             , Lockable()
             , LOGIN_TO(SP_TIMEOUT)
-            , m_session_done(0)
+            , m_session_done(false)
             , m_playback_done(1)
             , m_notify_events(0)
             , m_sp_cachedir(SP_CACHEDIR)
@@ -85,7 +85,7 @@ class SpotifyHandler
         virtual void run() = 0;
 
         const size_t                            LOGIN_TO;
-        int                                     m_session_done;
+        bool                                    m_session_done;
         int                                     m_playback_done;
         int                                     m_notify_events;
         std::string                             m_sp_cachedir;
