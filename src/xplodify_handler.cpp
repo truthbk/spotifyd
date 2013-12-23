@@ -65,17 +65,18 @@ bool XplodifyHandler::handler_available(){
 }
 
 std::string XplodifyHandler::check_in(){
+    lock();
     boost::shared_ptr< XplodifySession > sess = XplodifySession::create(this);
     if(sess->init_session(g_appkey, g_appkey_size )) {
 #ifdef _DEBUG
         std::cout << "Unexpected error creating session. "<< std::endl;
 #endif
         sess.reset();
+        unlock();
         return std::string(); //empty string if error.
     }
 
 
-    lock();
     //generate UUID
     const boost::uuids::uuid uuid = boost::uuids::random_generator()();
     const std::string uuid_str = boost::lexical_cast<std::string>(uuid);
@@ -95,12 +96,18 @@ bool XplodifyHandler::check_out(const std::string& uuid){
     if(!sess) {
         return false;
     }
+
+    lock();
     if(sess == m_active_session) {
         logout(uuid);
     }
     sess->flush();
+    unlock();
 
     remove_from_cache(uuid);
+#ifdef _DEBUG
+    std::cout << "XplodifySession use count: " << sess.use_count()  << std::endl;
+#endif
     return true;
 }
 
@@ -114,12 +121,12 @@ bool XplodifyHandler::login(const std::string& uuid,
         return false;
     }
 
+    lock();
     if(sess->get_logged_in()) {
         return true;
     }
 
-    sess->login(username, passwd);
-    lock();
+    sess->login(username, passwd, true);
     set_active_session(sess);
     unlock();
 
@@ -168,11 +175,8 @@ bool XplodifyHandler::logout(std::string uuid){
 
     //switch_session();
     sess->logout(false);
-
-#ifdef _DEBUG
-    std::cout << "XplodifySession use count: " << sess.use_count()  << std::endl;
-#endif
     unlock();
+
     return true;
 }
 
@@ -187,6 +191,7 @@ std::vector< boost::shared_ptr<XplodifyPlaylist> > XplodifyHandler::get_playlist
     }
 
     //TODO: !!Important!! what if cached?
+    lock();
     boost::shared_ptr<XplodifyPlaylistContainer> pc = sess->get_pl_container();
     if(!pc) {
         return pls;
@@ -197,6 +202,7 @@ std::vector< boost::shared_ptr<XplodifyPlaylist> > XplodifyHandler::get_playlist
         boost::shared_ptr<XplodifyPlaylist> pl = pc->get_playlist(i);
         pls.push_back(pl);
     }
+    unlock();
 
     return pls;
 }
@@ -210,14 +216,17 @@ std::vector< boost::shared_ptr<XplodifyTrack> > XplodifyHandler::get_tracks(
         return playlist;
     }
 
+    lock();
     boost::shared_ptr<XplodifyPlaylistContainer> pc = sess->get_pl_container();
     if(!pc) {
+        unlock();
         return playlist;
     }
 
     boost::shared_ptr<XplodifyPlaylist> pl = pc->get_playlist(pid);
 
     if(!pl) {
+        unlock();
         return playlist;
     }
 
@@ -231,6 +240,7 @@ std::vector< boost::shared_ptr<XplodifyTrack> > XplodifyHandler::get_tracks(
         playlist.push_back(tr);
     }
 
+    unlock();
     return playlist;
 }
 std::vector< boost::shared_ptr<XplodifyTrack> > XplodifyHandler::get_tracks(
@@ -243,13 +253,16 @@ std::vector< boost::shared_ptr<XplodifyTrack> > XplodifyHandler::get_tracks(
         return playlist;
     }
 
+    lock();
     boost::shared_ptr<XplodifyPlaylistContainer> pc = sess->get_pl_container();
     if(!pc) {
+        unlock();
         return playlist;
     }
     boost::shared_ptr<XplodifyPlaylist> pl = pc->get_playlist(name);
 
     if(!pl) {
+        unlock();
         return playlist;
     }
 
@@ -263,6 +276,7 @@ std::vector< boost::shared_ptr<XplodifyTrack> > XplodifyHandler::get_tracks(
         playlist.push_back(tr);
     }
 
+    unlock();
     return playlist;
 
 }
@@ -273,7 +287,10 @@ bool XplodifyHandler::select_playlist(std::string uuid, int pid){
         return false;
     }
 
+    lock();
     sess->set_active_playlist(pid);
+    unlock();
+
     return true;
 }
 
@@ -283,7 +300,10 @@ bool XplodifyHandler::select_playlist(std::string uuid, std::string pname){
         return false;
     }
 
+    lock();
     sess->set_active_playlist(pname);
+    unlock();
+
     return true;
 }
 bool XplodifyHandler::select_track(std::string uuid, int tid){
@@ -297,7 +317,11 @@ bool XplodifyHandler::select_track(std::string uuid, int tid){
         << sess->m_uuid << std::endl;
 #endif
 #endif
+
+    lock();
     sess->set_track(tid);
+    unlock();
+
     return true;
 }
 bool XplodifyHandler::select_track(std::string uuid, std::string tname){
@@ -311,7 +335,11 @@ bool XplodifyHandler::select_track(std::string uuid, std::string tname){
         << sess->m_uuid << std::endl;
 #endif
 #endif
+
+    lock();
     sess->set_track(tname);
+    unlock();
+
     return true;
 
 }
@@ -321,18 +349,27 @@ boost::shared_ptr<XplodifyTrack> XplodifyHandler::whats_playing(std::string uuid
         return boost::shared_ptr<XplodifyTrack>();
     }
 
+    lock();
     boost::shared_ptr<XplodifyTrack> tr( m_active_session->get_track());
+    unlock();
+
     return tr;
 
 }
 
 void XplodifyHandler::play(){
+    lock();
     m_active_session->start_playback();
+    unlock();
+
     update_timestamp();
 }
 
 void XplodifyHandler::stop(){
+    lock();
     m_active_session->stop_playback();
+    unlock();
+
     audio_fifo_flush_now();
     audio_fifo_set_reset(audio_fifo(), 1);
     update_timestamp();
@@ -340,13 +377,19 @@ void XplodifyHandler::stop(){
 
 void XplodifyHandler::next(){
     //this is different for multi session
+    lock();
     m_active_session->end_of_track();
+    unlock();
+
     update_timestamp();
 }
 
 void XplodifyHandler::prev(){
     //this is different for multi session
+    lock();
     m_active_session->end_of_track();
+    unlock();
+
     update_timestamp();
 }
 
@@ -371,7 +414,7 @@ void XplodifyHandler::set_playback_done(bool done){
     update_timestamp();
 }
 
-int  XplodifyHandler::music_playback(const sp_audioformat * format, 
+int XplodifyHandler::music_playback(const sp_audioformat * format, 
         const void * frames, int num_frames) {
     size_t s;
     audio_fifo_data_t *afd;
@@ -383,8 +426,10 @@ int  XplodifyHandler::music_playback(const sp_audioformat * format,
 
     //we're receiving synthetic "end of track" silence...
     if (num_frames > SILENCE_N_SAMPLES) {
+        lock();
         m_active_session->end_of_track();
-        pthread_mutex_unlock(&m_audiofifo.mutex);
+        unlock();
+
         update_timestamp();
         return 0;
     }
@@ -513,10 +558,10 @@ void XplodifyHandler::run(){
             //we can only do work on the active session!
             lock();
             if(!m_active_session) {
-                sleep(0);
             } else if(m_session_done) {
                 m_active_session.reset();
                 m_session_done = 0;
+                sleep(0);
             } else {
                 sp_session_process_events(m_active_session->get_session(), &next_timeout);
             }
@@ -534,6 +579,7 @@ void XplodifyHandler::run(){
 
 //change session, allow it to be played.
 void XplodifyHandler::switch_session() {
+    lock();
     sp_session_player_unload(m_active_session->get_session());
 
     //Currently just round-robin.
@@ -544,6 +590,7 @@ void XplodifyHandler::switch_session() {
     }
 
     m_active_session = m_sess_it->session;
+    unlock();
     //should load track...
     //sp_session_player_load(m_active_session->get_session(), sometrack );
 
