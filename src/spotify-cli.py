@@ -108,6 +108,18 @@ class spclient(object):
 
         return success
 
+    def checkout(self):
+        ret = None
+        try:
+            if self._credentials:
+                ret = self._client.check_out(self._credentials)
+                self._checked_in = not ret
+        except Exception, e:
+            logging.debug("Exception: %s", e)
+            return False
+
+        return ret
+
     def logout(self):
         try:
             if self._credentials:
@@ -460,6 +472,12 @@ class XplodifyApp(urwid.Frame):
 
             self.logged = False
 
+    def checkout(self):
+        if self.logged:
+            self.logout()
+        self.spoticlient.checkout()
+
+
     def adjust_pl_pid(self, pl, pid):
         for pl in self._plwalker:
             if pl.original_widget.el_name == pl:
@@ -652,6 +670,7 @@ class XplodifyApp(urwid.Frame):
             self.logout()
         elif k == "f11":
             self.logout()
+            self.checkout()
             raise urwid.ExitMainLoop()
         elif k == "tab":
             self.mainview.focus_position = (
