@@ -73,7 +73,7 @@ class spclient(object):
         self._currentplaylist = None
 
         # Checked In
-        self.checked_in = False
+        self._checked_in = False
 
     def service_ready(self):
         return self._client.is_service_ready()
@@ -114,6 +114,9 @@ class spclient(object):
             if self._credentials:
                 ret = self._client.check_out(self._credentials)
                 self._checked_in = not ret
+                if not self._checked_in:
+                    # we'll see how we handle logout and checkouts... leave as is for now.
+                    self._credentials = None
         except Exception, e:
             logging.debug("Exception: %s", e)
             return False
@@ -124,8 +127,6 @@ class spclient(object):
         try:
             if self._credentials:
                 self._client.logoutSession(self._credentials)
-                # we'll see how we handle logout and checkouts... leave as is for now.
-                self._credentials = None
         except Exception, e:
             logging.debug("Exception: %s", e)
             return False
