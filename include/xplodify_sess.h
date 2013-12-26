@@ -76,7 +76,7 @@ class XplodifySession
                  , const std::string& passwd
                  , bool remember=false );
 
-       bool logout(bool doflush=false);
+       bool logout(bool unload=true,  bool doflush=false);
        void logged_out();
 
         sp_session * get_sp_session();

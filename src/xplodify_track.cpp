@@ -56,6 +56,8 @@ bool XplodifyTrack::set_sp_track(sp_track * track) {
 void XplodifyTrack::unload(){
     sp_track_release(m_track);
     m_track = NULL;
+
+    return;
 }
 bool XplodifyTrack::is_loaded(){
     if(!m_track) {

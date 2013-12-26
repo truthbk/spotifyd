@@ -28,7 +28,7 @@ class XplodifyPlaylistContainer :
 
         bool    set_plcontainer(sp_playlistcontainer *plc);
         bool    load(sp_playlistcontainer * plc);
-        bool    unload();
+        bool    unload(bool cascade=true);
         void    flush();
         void    add_playlist(XplodifyPlaylist * pl);
         void    add_playlist(boost::shared_ptr<XplodifyPlaylist> pl);

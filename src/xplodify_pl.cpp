@@ -185,13 +185,24 @@ void XplodifyPlaylist::update_track_ptrs() {
     unlock();
     return;
 }
-bool XplodifyPlaylist::unload() {
+bool XplodifyPlaylist::unload(bool cascade) {
 
-    boost::shared_ptr<XplodifySession> sess(m_session);
+    lock();
+
+    if(cascade) {
+        track_cache_by_rand& t_r = m_track_cache.get<0>();
+        for(uint32_t i=0 ; i<t_r.size() ; i++) {
+            t_r[i].track->unload();
+        }
+    }
+    sp_playlist_release(m_playlist);
     sp_playlist_remove_callbacks(m_playlist, const_cast<sp_playlist_callbacks *>(&cbs), this);
-    m_track_cache.get<0>().clear();
+
+    //m_track_cache.get<0>().clear();
+    boost::shared_ptr<XplodifySession> sess(m_session);
     m_loading = false;
     m_playlist = NULL;
+    unlock();
 
     sess->update_state_ts();
     return true;

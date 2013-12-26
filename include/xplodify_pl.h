@@ -34,7 +34,7 @@ class XplodifyPlaylist
 
         bool load(sp_playlist * pl);
         bool load(sp_playlist * pl, int32_t pos);
-        bool unload();
+        bool unload(bool cascade=true);
         void flush();
         bool load_tracks();
         void update_track_ptrs();

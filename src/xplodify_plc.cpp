@@ -62,12 +62,25 @@ bool XplodifyPlaylistContainer::load(sp_playlistcontainer * plc) {
     }
     return m_loading;
 }
-bool XplodifyPlaylistContainer::unload() {
+bool XplodifyPlaylistContainer::unload(bool cascade) {
 
     if(!m_plcontainer){
         return true;
     }
+    if(cascade) {
+        pl_cache_by_rand& c_r = m_pl_cache.get<0>();
+        pl_cache_by_rand::iterator it = c_r.begin();
 
+        while(it != m_pl_cache.get<0>().end() ) {
+            boost::shared_ptr<XplodifyPlaylist> pl = it->_playlist;
+            pl->unload(cascade);
+#ifdef _DEBUG
+            std::cout << "Unloading " << pl->get_name() << std::endl;
+#endif
+        }
+    }
+
+    sp_playlistcontainer_release(m_plcontainer);
     sp_playlistcontainer_remove_callbacks(
             m_plcontainer, const_cast<sp_playlistcontainer_callbacks *>(&cbs), this);
     m_pl_cache.get<0>().clear();

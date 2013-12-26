@@ -171,16 +171,22 @@ void XplodifySession::login( const std::string& username
 
 }
 
-bool XplodifySession::logout(bool doflush) {
+bool XplodifySession::logout(bool unload, bool doflush) {
     sp_error err;
-    err = sp_session_logout(get_session());
-    if(err != SP_ERROR_OK){
-        return false;
+    if(unload) {
+        if(m_plcontainer) {
+            m_plcontainer->unload();
+        }
     }
 
     if(doflush) {
         flush();
     }
+    err = sp_session_logout(get_session());
+    if(err != SP_ERROR_OK){
+        return false;
+    }
+
     m_logging_out = true;
     return true;
 }
