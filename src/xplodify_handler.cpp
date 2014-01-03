@@ -26,7 +26,6 @@
 
 XplodifyHandler::XplodifyHandler()
     : SpotifyHandler() 
-    , m_sess_it(m_session_cache.get<0>().begin()) 
 {
     //check temp dir.
     boost::filesystem::path dir(get_cachedir());
@@ -50,6 +49,15 @@ XplodifyHandler::XplodifyHandler()
 #endif
     set_audio(arch);
     audio_init(&m_audiofifo);
+
+    //create session
+
+    if(m_session.init_session(g_appkey, g_appkey_size )) {
+#ifdef _DEBUG
+        std::cout << "Unexpected error creating session. "<< std::endl;
+#endif
+        exit(1); //NASTY!
+    }
 }
 
 XplodifyHandler::~XplodifyHandler() {
@@ -57,57 +65,33 @@ XplodifyHandler::~XplodifyHandler() {
 }
 
 bool XplodifyHandler::handler_available(){
-    if(m_active_session) {
-        return false;
-    }
-
+    //TODO: accomodate to new architecture.
     return true;
 }
 
 std::string XplodifyHandler::check_in(){
-    lock();
-    boost::shared_ptr< XplodifySession > sess = XplodifySession::create(this);
-    if(sess->init_session(g_appkey, g_appkey_size )) {
-#ifdef _DEBUG
-        std::cout << "Unexpected error creating session. "<< std::endl;
-#endif
-        sess.reset();
-        unlock();
-        return std::string(); //empty string if error.
-    }
-
 
     //generate UUID
     const boost::uuids::uuid uuid = boost::uuids::random_generator()();
     const std::string uuid_str = boost::lexical_cast<std::string>(uuid);
 
-    m_session_cache.get<1>().insert(sess_map_entry( uuid_str, 
-                const_cast<const sp_session *>(sess->get_session()), sess ));
-
-    sess->set_uuid(uuid_str);
-    update_timestamp();
-    unlock();
-
     return uuid_str;
 }
 
 bool XplodifyHandler::check_out(const std::string& uuid){
-    boost::shared_ptr< XplodifySession > sess = get_session(uuid);
-    if(!sess) {
+
+    if(is_checked_in(uuid)) {
+        //user not checked in.
         return false;
     }
 
     lock();
-    if(sess == m_active_session) {
-        logout(uuid);
-    }
-    sess->flush();
+    std::string username(get_username(uuid));
+    m_session.logout(username);
+    m_session.flush(username);
     unlock();
 
     remove_from_cache(uuid);
-#ifdef _DEBUG
-    std::cout << "XplodifySession use count: " << sess.use_count()  << std::endl;
-#endif
     return true;
 }
 
@@ -115,29 +99,35 @@ bool XplodifyHandler::check_out(const std::string& uuid){
 bool XplodifyHandler::login(const std::string& uuid,
         const std::string& username, const std::string& passwd){
 
-    boost::shared_ptr< XplodifySession > sess = get_session(uuid);
-    if(!sess) {
+    if(is_checked_in(uuid)) {
         //user not checked in.
         return false;
     }
 
-    lock();
-    if(sess->get_logged_in()) {
+    if(m_session.get_logged_in(username)) {
         return true;
     }
 
-    sess->login(username, passwd, true);
-    set_active_session(sess);
-    unlock();
+    lock();
+    m_user_cache.get<1>().insert(
+            user_entry( uuid, username, passwd));
 
+
+    if(m_session.available()) {
+        m_session.login(username, passwd, true);
+    } else {
+        unlock();
+        return false;
+    }
+
+    unlock();
     return true;
 
 }
 
 bool XplodifyHandler::login(const std::string& uuid, const std::string& token){
 
-    boost::shared_ptr< XplodifySession > sess = get_session(uuid);
-    if(!sess) {
+    if(is_checked_in(uuid)) {
         //user not checked in.
         return false;
     }
@@ -147,34 +137,30 @@ bool XplodifyHandler::login(const std::string& uuid, const std::string& token){
 }
 
 bool XplodifyHandler::login_status(std::string uuid){
-    boost::shared_ptr< XplodifySession > 
-        sess = get_session(uuid);
 
-    if(!sess)
+    if(is_checked_in(uuid)) {
+        //user not checked in.
         return false;
+    }
 
-    return sess->get_logged_in();
+    std::string username(get_username(uuid));
+
+    return m_session.get_logged_in(username);
 }
 
 //only the active session can be logged in
 bool XplodifyHandler::logout(std::string uuid){
     bool switched = false;
 
-    boost::shared_ptr<XplodifySession> sess = get_session(uuid);
-    if(!sess) {
+    if(is_checked_in(uuid)) {
+        //user not checked in.
         return false;
     }
 
     lock();
-    if(sess != m_active_session) 
-    {
-        //already logged out..
-        return true;
+    std::string username(get_username(uuid));
 
-    }
-
-    //switch_session();
-    sess->logout(false);
+    m_session.logout(username, false);
     unlock();
 
     return true;
@@ -185,14 +171,17 @@ std::vector< boost::shared_ptr<XplodifyPlaylist> > XplodifyHandler::get_playlist
 
     std::vector< boost::shared_ptr<XplodifyPlaylist> > pls;
 
-    boost::shared_ptr<XplodifySession> sess = get_session(uuid);
-    if(!sess) {
+    if(is_checked_in(uuid)) {
+        //user not checked in.
         return pls;
     }
 
+    std::string username(get_username(uuid));
+
     //TODO: !!Important!! what if cached?
     lock();
-    boost::shared_ptr<XplodifyPlaylistContainer> pc = sess->get_pl_container();
+    boost::shared_ptr<XplodifyPlaylistContainer> pc = 
+        m_session.get_pl_container(username);
     if(!pc) {
         return pls;
     }
@@ -211,13 +200,16 @@ std::vector< boost::shared_ptr<XplodifyTrack> > XplodifyHandler::get_tracks(
 
     std::vector<boost::shared_ptr<XplodifyTrack> > playlist;
 
-    boost::shared_ptr<XplodifySession> sess = get_session(uuid);
-    if(!sess) {
+    if(is_checked_in(uuid)) {
+        //user not checked in.
         return playlist;
     }
 
+    std::string username(get_username(uuid));
+
     lock();
-    boost::shared_ptr<XplodifyPlaylistContainer> pc = sess->get_pl_container();
+    boost::shared_ptr<XplodifyPlaylistContainer> pc = 
+        m_session.get_pl_container(username);
     if(!pc) {
         unlock();
         return playlist;
@@ -248,13 +240,16 @@ std::vector< boost::shared_ptr<XplodifyTrack> > XplodifyHandler::get_tracks(
 
     std::vector<boost::shared_ptr<XplodifyTrack> > playlist;
 
-    boost::shared_ptr<XplodifySession> sess = get_session(uuid);
-    if(!sess) {
+    if(is_checked_in(uuid)) {
+        //user not checked in.
         return playlist;
     }
 
+    std::string username(get_username(uuid));
+
     lock();
-    boost::shared_ptr<XplodifyPlaylistContainer> pc = sess->get_pl_container();
+    boost::shared_ptr<XplodifyPlaylistContainer> pc =
+        m_session.get_pl_container(username);
     if(!pc) {
         unlock();
         return playlist;
@@ -282,33 +277,35 @@ std::vector< boost::shared_ptr<XplodifyTrack> > XplodifyHandler::get_tracks(
 }
 
 bool XplodifyHandler::select_playlist(std::string uuid, int pid){
-    boost::shared_ptr< XplodifySession > sess = get_session(uuid);
-    if(!sess) {
+
+    if(is_checked_in(uuid)) {
+        //user not checked in.
         return false;
     }
 
-    lock();
-    sess->set_active_playlist(pid);
-    unlock();
+    std::string username(get_username(uuid));
+    m_session.set_active_playlist(username, pid);
 
     return true;
 }
 
 bool XplodifyHandler::select_playlist(std::string uuid, std::string pname){
-    boost::shared_ptr<XplodifySession> sess = get_session(uuid);
-    if(!sess) {
+
+    if(is_checked_in(uuid)) {
+        //user not checked in.
         return false;
     }
 
-    lock();
-    sess->set_active_playlist(pname);
-    unlock();
+    std::string username(get_username(uuid));
+    m_session.set_active_playlist(username, pname);
 
     return true;
 }
+
 bool XplodifyHandler::select_track(std::string uuid, int tid){
-    boost::shared_ptr< XplodifySession > sess = get_session(uuid);
-    if(!sess) {
+
+    if(is_checked_in(uuid)) {
+        //user not checked in.
         return false;
     }
 #if 0
@@ -318,15 +315,15 @@ bool XplodifyHandler::select_track(std::string uuid, int tid){
 #endif
 #endif
 
-    lock();
-    sess->set_track(tid);
-    unlock();
+    std::string username(get_username(uuid));
+    m_session.set_track(username, tid);
 
     return true;
 }
 bool XplodifyHandler::select_track(std::string uuid, std::string tname){
-    boost::shared_ptr< XplodifySession > sess = get_session(uuid);
-    if(!sess) {
+
+    if(is_checked_in(uuid)) {
+        //user not checked in.
         return false;
     }
 #if 0
@@ -336,39 +333,33 @@ bool XplodifyHandler::select_track(std::string uuid, std::string tname){
 #endif
 #endif
 
-    lock();
-    sess->set_track(tname);
-    unlock();
+    std::string username(get_username(uuid));
+    m_session.set_track(username, tname);
 
     return true;
 
 }
 boost::shared_ptr<XplodifyTrack> XplodifyHandler::whats_playing(std::string uuid) {
     //TODO: check if uuid is indeed checked-in
-    if(!exists_in_cache(uuid) || !m_active_session) {
+    if(!is_checked_in(uuid) || m_session.available()) {
         return boost::shared_ptr<XplodifyTrack>();
     }
 
-    lock();
-    boost::shared_ptr<XplodifyTrack> tr( m_active_session->get_track());
-    unlock();
+    boost::shared_ptr<XplodifyTrack> tr( m_session.get_track());
 
     return tr;
 
 }
 
 void XplodifyHandler::play(){
-    lock();
-    m_active_session->start_playback();
-    unlock();
 
+    m_session.start_playback();
     update_timestamp();
 }
 
 void XplodifyHandler::stop(){
-    lock();
-    m_active_session->stop_playback();
-    unlock();
+
+    m_session.stop_playback();
 
     audio_fifo_flush_now();
     audio_fifo_set_reset(audio_fifo(), 1);
@@ -377,18 +368,14 @@ void XplodifyHandler::stop(){
 
 void XplodifyHandler::next(){
     //this is different for multi session
-    lock();
-    m_active_session->end_of_track();
-    unlock();
+    m_session.end_of_track();
 
     update_timestamp();
 }
 
 void XplodifyHandler::prev(){
     //this is different for multi session
-    lock();
-    m_active_session->end_of_track();
-    unlock();
+    m_session.end_of_track();
 
     update_timestamp();
 }
@@ -398,13 +385,6 @@ void XplodifyHandler::notify_main_thread(void){
     m_notify_events = 1;
     cond_signal();
     unlock();
-}
-
-void XplodifyHandler::set_session_done(bool done){
-    lock();
-    m_session_done = done;
-    unlock();
-    update_timestamp();
 }
 
 void XplodifyHandler::set_playback_done(bool done){
@@ -427,7 +407,7 @@ int XplodifyHandler::music_playback(const sp_audioformat * format,
     //we're receiving synthetic "end of track" silence...
     if (num_frames > SILENCE_N_SAMPLES) {
         lock();
-        m_active_session->end_of_track();
+        m_session.end_of_track();
         unlock();
 
         update_timestamp();
@@ -503,12 +483,14 @@ int64_t XplodifyHandler::get_handler_state(){
 }
 
 int64_t XplodifyHandler::get_session_state(std::string uuid){
-    boost::shared_ptr<XplodifySession> sess = get_session(uuid);
-    if(!sess) {
+
+    if(is_checked_in(uuid)) {
+        //user not checked in.
         return 0;
     }
+    std::string username(get_username(uuid));
 
-    return sess->get_state_ts();
+    return m_session.get_state_ts(username);
 }
 
 void XplodifyHandler::update_timestamp(void){
@@ -557,13 +539,10 @@ void XplodifyHandler::run(){
         do {
             //we can only do work on the active session!
             lock();
-            if(!m_active_session) {
-            } else if(m_session_done) {
-                m_active_session.reset();
-                m_session_done = 0;
+            if(m_session.available()) {
                 sleep(0);
             } else {
-                sp_session_process_events(m_active_session->get_session(), &next_timeout);
+                sp_session_process_events(m_session.get_sp_session(), &next_timeout);
             }
             unlock();
         } while (next_timeout == 0);
@@ -577,79 +556,50 @@ void XplodifyHandler::run(){
     }
 }
 
-//change session, allow it to be played.
-void XplodifyHandler::switch_session() {
-    lock();
-    sp_session_player_unload(m_active_session->get_session());
 
-    //Currently just round-robin.
-    m_sess_it++;
-    if (m_sess_it == m_session_cache.get<0>().end())
-    {
-        m_sess_it = m_session_cache.get<0>().begin();
+std::string XplodifyHandler::get_username(const std::string& uuid) {
+
+    user_map_by_uuid& user_by_uuid = m_user_cache.get<1>();
+
+    user_map_by_uuid::iterator sit = user_by_uuid.find(uuid);
+    if( sit == m_user_cache.get<1>().end() ) {
+        return std::string();
     }
 
-    m_active_session = m_sess_it->session;
-    unlock();
-    //should load track...
-    //sp_session_player_load(m_active_session->get_session(), sometrack );
-
-    update_timestamp();
-    return;
+    return sit->_user;
 }
 
-boost::shared_ptr<XplodifySession> XplodifyHandler::get_session(const std::string& uuid) {
-
-    sess_map_by_uuid& sess_by_uuid = m_session_cache.get<1>();
-
-    sess_map_by_uuid::iterator sit = sess_by_uuid.find(uuid);
-    if( sit == m_session_cache.get<1>().end() ) {
-        return boost::shared_ptr<XplodifySession>();
-    }
-
-    return sit->session;
-}
-
-boost::shared_ptr<XplodifySession> XplodifyHandler::get_session(const sp_session * sps) {
-
-    sess_map_by_sessptr& sessByPtr = m_session_cache.get<2>();
-
-    sess_map_by_sessptr::iterator sit = sessByPtr.find(reinterpret_cast<uintptr_t>(sps));
-    if( sit == m_session_cache.get<2>().end() ) {
-        return boost::shared_ptr<XplodifySession>();
-    }
-
-    return sit->session;
-}
 
 void XplodifyHandler::remove_from_cache(const std::string& uuid) {
+#if 0
     bool move_on = false;
-    sess_map_entry aux_entry(*m_sess_it);
-    sess_map_sequenced::iterator sess_it = m_sess_it;
-    if(++sess_it == m_session_cache.get<0>().end()) {
-        sess_it = m_session_cache.get<0>().begin();
+    user_entry aux_entry(*m_user_it);
+    user_map_sequenced::iterator user_it = m_user_it;
+    if(++user_it == m_user_cache.get<0>().end()) {
+        user_it = m_user_cache.get<0>().begin();
     }
     if(aux_entry._uuid == uuid) {
         move_on = true;
     }
-    sess_map_by_uuid& sess_by_uuid = m_session_cache.get<1>();
-    size_t n = sess_by_uuid.erase(uuid);
+    user_map_by_uuid& sess_by_uuid = m_user_cache.get<1>();
+    size_t n = user_by_uuid.erase(uuid);
 
     //fix the potentially invalidated iterator.
     if(n) {
         if(move_on) {
-            m_sess_it = sess_it;
+            m_user_it = user_it;
         } else {
-            m_sess_it = m_session_cache.get<0>().iterator_to(aux_entry);
+            m_user_it = m_user_cache.get<0>().iterator_to(aux_entry);
         }
     }
+#endif
 }
 
-bool XplodifyHandler::exists_in_cache(const std::string& uuid) {
+bool XplodifyHandler::is_checked_in(const std::string& uuid) {
 
-    sess_map_by_uuid& sess_by_uuid = m_session_cache.get<1>();
-    sess_map_by_uuid::iterator sit = sess_by_uuid.find(uuid);
-    if( sit == m_session_cache.get<1>().end() ) {
+    user_map_by_uuid& sess_by_uuid = m_user_cache.get<1>();
+    user_map_by_uuid::iterator sit = sess_by_uuid.find(uuid);
+    if( sit == m_user_cache.get<1>().end() ) {
         return false;
     }
 

@@ -19,7 +19,6 @@ extern "C" {
 };
 
 //Forward declaration.
-class XplodifySession;
 class XplodifyPlaylist;
 class XplodifyTrack;
 
@@ -32,12 +31,10 @@ class SpotifyHandler
             : Runnable()
             , Lockable()
             , LOGIN_TO(SP_TIMEOUT)
-            , m_session_done(false)
             , m_playback_done(1)
             , m_notify_events(0)
             , m_sp_cachedir(SP_CACHEDIR)
-            , m_ts(std::time(NULL))
-            , m_active_session() {
+            , m_ts(std::time(NULL)) {
         }
         virtual ~SpotifyHandler() {
         }
@@ -68,7 +65,6 @@ class SpotifyHandler
         virtual void prev() = 0;
 
         virtual void notify_main_thread(void) = 0;
-        virtual void set_session_done(bool done) = 0;
         virtual void set_playback_done(bool done) = 0;
         virtual int  music_playback(const sp_audioformat * format, 
                 const void * frames, int num_frames) = 0;
@@ -85,7 +81,6 @@ class SpotifyHandler
         virtual void run() = 0;
 
         const size_t                            LOGIN_TO;
-        bool                                    m_session_done;
         int                                     m_playback_done;
         int                                     m_notify_events;
         std::string                             m_sp_cachedir;
@@ -99,19 +94,10 @@ class SpotifyHandler
         audio_fifo_t                            m_audiofifo;
         audio_fifo_t *                          audio_fifo(){
             return &m_audiofifo;
-        }
-
-
-        virtual boost::shared_ptr<XplodifySession> get_active_session(void){
-            return m_active_session;
         };
-        virtual void set_active_session(boost::shared_ptr<XplodifySession> session){
-            m_active_session = session;
-        };
+
         void login_timeout(const boost::system::error_code&,
                 std::string uuid);
-
-        boost::shared_ptr<XplodifySession>      m_active_session;
 
 };
 

@@ -70,7 +70,7 @@ class XplodifyServer
         int64_t getSessionStateTS(const SpotifyCredential& cred);
         void logoutSession(const SpotifyCredential& cred);
         void sendCommand(const SpotifyCredential& cred, const SpotifyCmd::type cmd);
-        void switch_session();
+        //void switch_session();
 
         void search(SpotifyPlaylist& _return, const SpotifyCredential& cred,
                 const SpotifySearch& criteria);

@@ -21,6 +21,7 @@
 #include "spotify_handler.h"
 #include "spotify_data.h"
 
+#include "xplodify_sess.h"
 
 class XplodifyHandler
     : public SpotifyHandler
@@ -55,7 +56,6 @@ class XplodifyHandler
         virtual void prev();
 
         virtual void notify_main_thread(void);
-        virtual void set_session_done(bool done);
         virtual void set_playback_done(bool done);
         virtual int  music_playback(const sp_audioformat * format, 
                 const void * frames, int num_frames);
@@ -70,64 +70,52 @@ class XplodifyHandler
     protected:
         //implementing runnable
         virtual void run();
-        virtual void switch_session();
+        //virtual void switch_session();
 
     private:
-        struct sess_map_entry {
+
+        XplodifySession              m_session;
+
+        struct user_entry {
             std::string _uuid;
-            std::uintptr_t _sessintptr;
-            int _ptrlow32;
+            std::string _user;
+            std::string _passwd;
 
-            boost::shared_ptr<XplodifySession> session;
-
-            sess_map_entry( const std::string &uuid, uintptr_t sintptr
-                    , boost::shared_ptr<XplodifySession> sess ) 
+            user_entry( const std::string &uuid, 
+                            const std::string &user,
+                            const std::string &passwd )
                 : _uuid(uuid)
-                , _sessintptr(sintptr)
-                  //lower 32 bits for greater entropy.
-                , _ptrlow32( static_cast<int>(_sessintptr))
-                , session(sess)
-            {
-                return;
-            }
-            sess_map_entry( const std::string &uuid, const sp_session * sp
-                    , boost::shared_ptr<XplodifySession> sess ) 
-                : _uuid(uuid)
-                , _sessintptr(reinterpret_cast<std::uintptr_t>(sp))
-                , session(sess)
+                , _user(user)
+                , _passwd(passwd)
             {
             }
         };
 
         //maybe tagging would make code more readable, but I'm not a fan. Leaving out for now.
         typedef boost::multi_index_container<
-            sess_map_entry,
+            user_entry,
             boost::multi_index::indexed_by<
                 boost::multi_index::sequenced<>,
                 boost::multi_index::hashed_unique< 
-                    BOOST_MULTI_INDEX_MEMBER(sess_map_entry, std::string, _uuid) >,
-                boost::multi_index::hashed_unique< 
-                    BOOST_MULTI_INDEX_MEMBER(sess_map_entry, std::uintptr_t, _sessintptr) >
-            > > sess_map;
+                    BOOST_MULTI_INDEX_MEMBER(user_entry, std::string, _uuid) >
+            > > user_map;
 
-        typedef sess_map::nth_index<0>::type sess_map_sequenced;
-        typedef sess_map::nth_index<1>::type sess_map_by_uuid;
-        typedef sess_map::nth_index<2>::type sess_map_by_sessptr;
+        typedef user_map::nth_index<0>::type user_map_sequenced;
+        typedef user_map::nth_index<1>::type user_map_by_uuid;
 
-        sess_map                     m_session_cache;
-        sess_map_sequenced::iterator m_sess_it;
+        user_map                     m_user_cache;
+        user_map_sequenced::iterator m_user_it;
 
         size_t get_cache_size() {
-            sess_map_sequenced& smap = m_session_cache.get<0>();
+            user_map_sequenced& smap = m_user_cache.get<0>();
 
             return smap.size();
         }
 
         void remove_from_cache(const std::string& uuid);
-        bool exists_in_cache(const std::string& uuid);
+        bool is_checked_in(const std::string& uuid);
+        std::string get_username(const std::string& uuid);
 
-        boost::shared_ptr<XplodifySession> get_session(const std::string& uuid);
-        boost::shared_ptr<XplodifySession> get_session(const sp_session * sps);
 };
 
 #endif //_XPLODIFY_HANDLER

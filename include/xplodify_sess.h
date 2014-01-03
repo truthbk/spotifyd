@@ -33,9 +33,6 @@ class XplodifySession
 
         static boost::shared_ptr< XplodifySession > create(XplodifyHandler * h = NULL );
 
-        sp_session * get_session(void){
-            return m_session;
-        };
         int init_session(const uint8_t * appkey, size_t appkey_size);
         int init_session(const uint8_t * appkey, size_t appkey_size, 
                 sp_session_callbacks * sess_cb);
@@ -46,49 +43,57 @@ class XplodifySession
         void set_playback_done(int done){
             m_playback_done = done;
         };
+        boost::shared_ptr<XplodifyTrack> get_track(std::string user);
+        boost::shared_ptr<XplodifyTrack> get_track(void);
+#if 0
         boost::shared_ptr<XplodifyPlaylist> get_active_playlist(void){
             return m_playlist;
-        };
-        boost::shared_ptr<XplodifyTrack> get_track(){
-            return m_track;
         };
         int getCurrentTrackIdx(){
             return m_track_idx;
         };
+#endif
+        bool get_logged_in(std::string username);
         bool get_logged_in(){
             return m_logged_in;
         }
         void set_logged_in(bool logged){
             m_logged_in = logged;
         }
+#if 0
         std::string get_uuid() const {
             return m_uuid;
         }
        void set_uuid(std::string uuid) {
            m_uuid = uuid;
         }
+#endif
        std::uintptr_t get_spsession_ptr() const {
            return reinterpret_cast<std::uintptr_t>(m_session);
         }
 
 
+       bool available(void);
        void login( const std::string& username
                  , const std::string& passwd
                  , bool remember=false );
 
-       bool logout(bool unload=true,  bool doflush=false);
+       bool logout(std::string user, bool unload=true,  bool doflush=false);
        void logged_out();
 
         sp_session * get_sp_session();
-        void set_track(int idx);
-        void set_track(std::string trackname);
-        void update_plcontainer(bool cascade=false);
+        void set_track(std::string user, int idx);
+        void set_track(std::string user, std::string trackname);
+        void update_plcontainer(std::string user, bool cascade=false);
+        boost::shared_ptr<XplodifyPlaylistContainer> get_pl_container(std::string user);
         boost::shared_ptr<XplodifyPlaylistContainer> get_pl_container(void);
-        void set_active_playlist(int idx);
-        void set_active_playlist(std::string plname);
+        void set_active_playlist(std::string user, int idx);
+        void set_active_playlist(std::string user, std::string plname);
         std::string get_playlist_name(void);
+        std::string get_playlist_name(std::string user);
         void update_state_ts(void);
         int64_t get_state_ts(void);
+        int64_t get_state_ts(std::string user);
 
         void set_mode(SpotifyCmd::type mode);
         SpotifyCmd::type get_mode(void);
@@ -115,7 +120,25 @@ class XplodifySession
 
     private:
 
-        void flush();
+        sp_session * get_session(void){
+            return m_session;
+        };
+        struct SessionStatus {
+            boost::shared_ptr<XplodifyPlaylistContainer>  m_plcontainer;
+            boost::shared_ptr<XplodifyPlaylist>           m_playlist;
+            boost::shared_ptr<XplodifyTrack>              m_track;
+#define NO_TRACK NULL
+#define NO_TRACK_IDX -1 //not a valid libspotify index that's why we use it.
+            std::time_t                                   m_ts;
+            int                                           m_track_idx;
+            bool                                          m_logged_in;
+            bool                                          m_logged_earlier;
+        };
+
+        void flush(std::string const user);
+        bool is_user_active();
+        bool user_exists(std::string const user);
+
         // C Callbacks...
         static void SP_CALLCONV cb_logged_in(sp_session *session, sp_error error);
         static void SP_CALLCONV cb_logged_out(sp_session *session);
@@ -146,24 +169,20 @@ class XplodifySession
 
 
         sp_session *                                  m_session;
-        boost::shared_ptr<XplodifyPlaylistContainer>  m_plcontainer;
-        boost::shared_ptr<XplodifyPlaylist>           m_playlist;
-        boost::shared_ptr<XplodifyTrack>              m_track;
+        std::map< std::string, SessionStatus >        m_statuses;
+        std::string                                   m_active_user;
+
         sp_session_callbacks    session_callbacks;
         sp_session_config       m_spconfig;
 
         //pointer to notify handler of stuff
         SpotifyHandler * const  m_handler;
 
-        std::string             m_uuid;
         bool                    m_logged_in;
-        bool                    m_logged_earlier;
+        bool                    m_logging_in;
         bool                    m_logging_out;
         int                     m_playback_done;
         int                     m_remove_tracks;
-#define NO_TRACK NULL
-#define NO_TRACK_IDX -1 //not a valid libspotify index that's why we use it.
-        int                     m_track_idx;
 
         SpotifyCmd::type        m_mode;
         SpotifyCmd::type        m_playback;

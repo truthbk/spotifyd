@@ -28,17 +28,12 @@ extern "C" {
 XplodifySession::XplodifySession() 
     : Lockable()
     , m_session(NULL)
-    , m_plcontainer()
-    , m_playlist()
-    , m_track()
     , m_handler(NULL)
-    , m_uuid("")
     , m_logged_in(false)
-    , m_logged_earlier(false)
+    , m_logging_in(false)
     , m_logging_out(false)
     , m_playback_done(1)
     , m_remove_tracks(0)
-    , m_track_idx(-1)
     , m_mode(SpotifyCmd::LINEAR)
     , m_playback(SpotifyCmd::PAUSE)
     , m_ts(0)
@@ -49,17 +44,11 @@ XplodifySession::XplodifySession()
 XplodifySession::XplodifySession(XplodifyHandler * h) 
     : Lockable()
     , m_session(NULL)
-    , m_plcontainer()
-    , m_playlist()
-    , m_track()
     , m_handler(h)
-    , m_uuid("")
     , m_logged_in(false)
-    , m_logged_earlier(false)
     , m_logging_out(false)
     , m_playback_done(1)
     , m_remove_tracks(0)
-    , m_track_idx(-1)
     , m_mode(SpotifyCmd::LINEAR)
     , m_playback(SpotifyCmd::PAUSE)
     , m_ts(0)
@@ -99,6 +88,7 @@ int XplodifySession::init_session(const uint8_t * appkey, size_t appkey_size) {
     m_spconfig.api_version = SPOTIFY_API_VERSION;
     m_spconfig.cache_location =  m_handler->get_cachedir().c_str();
     m_spconfig.settings_location = m_handler->get_cachedir().c_str();
+    m_spconfig.tracefile = 0x0;
     m_spconfig.application_key = appkey;
     m_spconfig.application_key_size = appkey_size; // Set in main()
     m_spconfig.user_agent = "spotifyd";
@@ -139,6 +129,7 @@ int XplodifySession::init_session(const uint8_t * appkey, size_t appkey_size,
     m_spconfig.api_version = SPOTIFY_API_VERSION;
     m_spconfig.cache_location =  m_handler->get_cachedir().c_str();
     m_spconfig.settings_location = m_handler->get_cachedir().c_str();
+    m_spconfig.tracefile = 0x0;
     m_spconfig.application_key = appkey;
     m_spconfig.application_key_size = appkey_size; // Set in main()
     m_spconfig.user_agent = "spotifyd";
@@ -158,6 +149,15 @@ int XplodifySession::init_session(const uint8_t * appkey, size_t appkey_size,
     return 0;
 }
 
+bool XplodifySession::available(void) {
+    bool active;
+    lock();
+    active = !(m_active_user.empty() || !m_logged_in);
+    unlock();
+
+    return active;
+}
+
 void XplodifySession::login( const std::string& username
                           , const std::string& passwd
                           , bool remember ) {
@@ -169,41 +169,74 @@ void XplodifySession::login( const std::string& username
             username.c_str(), 
             passwd.c_str(), remember, NULL);
 
+    lock();
+    m_active_user = username;
+    unlock();
+
+    return;
 }
 
-bool XplodifySession::logout(bool unload, bool doflush) {
+bool XplodifySession::get_logged_in(std::string username) {
+    bool logged;
+
+    lock();
+    logged = (user_exists(username) ? m_statuses[username].m_logged_in : false);
+    unlock();
+
+    return logged;
+}
+
+bool XplodifySession::logout(std::string user, bool unload, bool doflush) {
     sp_error err;
+
+    lock();
+    if(!is_user_active() || m_active_user != user) {
+        unlock();
+        return false;
+    }
     if(unload) {
-        if(m_plcontainer) {
-            m_plcontainer->unload();
+        if(m_statuses[m_active_user].m_plcontainer) {
+            m_statuses[m_active_user].m_plcontainer->unload(true);
         }
     }
 
     if(doflush) {
-        flush();
+        flush(m_active_user);
     }
+
     err = sp_session_logout(get_session());
     if(err != SP_ERROR_OK){
         return false;
     }
 
     m_logging_out = true;
+    unlock();
     return true;
 }
 
 void XplodifySession::logged_out() {
+    lock();
     if(!m_logging_out) {
+        unlock();
         return;
     }
-    sp_session_release(get_session());
+#ifdef _DEBUG
+    std::cout << "Session logged out succesfully." << std::endl;
+#endif
+    //sp_session_release(get_session());
     //m_active_session.reset();
-    m_handler->set_session_done(true);
     m_logged_in = false;
+    m_active_user = std::string();
+    unlock();
 
     return;
 }
 
-void XplodifySession::update_plcontainer(bool cascade) {
+void XplodifySession::update_plcontainer(std::string user, bool cascade) {
+    if(!user_exists(user)) {
+        return;
+    }
+
     if(!m_session){
         return;
     }
@@ -212,17 +245,24 @@ void XplodifySession::update_plcontainer(bool cascade) {
     if(!c) {
         return;
     }
-    m_plcontainer->set_plcontainer(c);
+
+    m_statuses[user].m_plcontainer->set_plcontainer(c);
     if(cascade) {
-        m_plcontainer->update_playlist_ptrs(cascade);
+        m_statuses[user].m_plcontainer->update_playlist_ptrs(cascade);
     }
 
     return;
 }
 
-boost::shared_ptr<XplodifyPlaylistContainer> XplodifySession::get_pl_container(void) {
-    if(!!m_plcontainer) {
-        return m_plcontainer;
+boost::shared_ptr<XplodifyPlaylistContainer> XplodifySession::get_pl_container(std::string user) {
+
+    if(!user_exists(user)) {
+        return boost::shared_ptr<XplodifyPlaylistContainer>();
+    }
+
+    std::map<std::string, SessionStatus>::iterator it;
+    if((m_statuses[user].m_plcontainer != NULL)) {
+        return m_statuses[user].m_plcontainer;
     }
 
     sp_playlistcontainer* c = sp_session_playlistcontainer( m_session );
@@ -235,43 +275,76 @@ boost::shared_ptr<XplodifyPlaylistContainer> XplodifySession::get_pl_container(v
     XplodifyPlaylistContainer * xplc = 
         new XplodifyPlaylistContainer(shared_from_this());
 
-    m_plcontainer = boost::shared_ptr<XplodifyPlaylistContainer>(xplc);
+    m_statuses[user].m_plcontainer =  boost::shared_ptr<XplodifyPlaylistContainer>(xplc);;
 
 #ifdef _DEBUG
     std::cout << "Loading playlist container..." << std::endl;
 #endif
 
-    m_plcontainer->load(c);
+    m_statuses[user].m_plcontainer->load(c);
 
-    return m_plcontainer;
+    return m_statuses[user].m_plcontainer;
 }
 
-void XplodifySession::set_active_playlist(int idx) {
-    boost::shared_ptr<XplodifyPlaylistContainer> pc = get_pl_container();
+//Changed to scoped lock...
+boost::shared_ptr<XplodifyPlaylistContainer> XplodifySession::get_pl_container(void) {
+
+    lock();
+    if((m_statuses[m_active_user].m_plcontainer != NULL)) {
+        boost::shared_ptr<XplodifyPlaylistContainer> 
+            plc(m_statuses[m_active_user].m_plcontainer);
+        unlock();
+        return plc;
+    }
+    unlock();
+
+    return boost::shared_ptr<XplodifyPlaylistContainer>();
+}
+
+void XplodifySession::set_active_playlist(std::string user, int idx) {
+    boost::shared_ptr<XplodifyPlaylistContainer> pc = get_pl_container(user);
     if(!pc) {
         return;
     }
 
     boost::shared_ptr<XplodifyPlaylist> pl = pc->get_playlist(idx);
-    m_playlist = pl;
+    m_statuses[user].m_playlist = pl;
 }
 
-void XplodifySession::set_active_playlist(std::string plname) {
-    boost::shared_ptr<XplodifyPlaylistContainer> pc = get_pl_container();
+void XplodifySession::set_active_playlist(std::string user, std::string plname) {
+    boost::shared_ptr<XplodifyPlaylistContainer> pc = get_pl_container(user);
     if(!pc) {
         return;
     }
 
     boost::shared_ptr<XplodifyPlaylist> pl = pc->get_playlist(plname);
-    m_playlist = pl;
+    m_statuses[user].m_playlist = pl;
 }
 
 std::string XplodifySession::get_playlist_name(void) {
-    if(!m_playlist) {
-        return std::string("");
+}
+
+std::string XplodifySession::get_playlist_name(std::string user) {
+    std::map<std::string, SessionStatus>::iterator it;
+    it = m_statuses.find(user);
+    if(it != m_statuses.end()) {
+        return it->second.m_playlist->get_name();
     }
 
-    return m_playlist->get_name();
+    return std::string("");
+}
+
+boost::shared_ptr<XplodifyTrack> XplodifySession::get_track(std::string user){
+
+    if (user_exists(user)) {
+        return boost::shared_ptr<XplodifyTrack>();
+    }
+
+    return m_statuses[user].m_track;
+}
+
+boost::shared_ptr<XplodifyTrack> XplodifySession::get_track(void){
+    return get_track(m_active_user);
 }
 
 void XplodifySession::update_state_ts(void) {
@@ -290,6 +363,20 @@ int64_t XplodifySession::get_state_ts(void) {
     return state;
 }
 
+int64_t XplodifySession::get_state_ts(std::string user) {
+    int64_t state = 0;
+
+    if(!user_exists(user)) {
+        return false;
+    }
+
+    lock();
+    state = m_statuses[user].m_ts;
+    unlock();
+
+    return state;
+}
+
 void XplodifySession::set_mode(SpotifyCmd::type mode) {
     m_mode = mode;
 }
@@ -302,66 +389,83 @@ sp_session * XplodifySession::get_sp_session() {
     return m_session;
 }
 
-void XplodifySession::set_track(int idx) {
+void XplodifySession::set_track(std::string user, int idx) {
+
+    if(!user_exists(user)) {
+        return;
+    }
+
     if( idx < 0 ) {
-        m_track_idx = NO_TRACK_IDX;
+        m_statuses[user].m_track_idx = NO_TRACK_IDX;
         return;
     }
 
-    if(!m_playlist) {
+    std::map<std::string, SessionStatus>::iterator it;
+    it = m_statuses.find(user);
+    if(it == m_statuses.end() || !(it->second.m_playlist)) {
         return;
     }
 
-    boost::shared_ptr<XplodifyTrack> track = m_playlist->get_track_at(idx);
+    boost::shared_ptr<XplodifyTrack> track = it->second.m_playlist->get_track_at(idx);
     //track has been changed.
-    if(m_track && track != m_track) {
+    //got to make sure the session has user std::string user logged in before doing this...
+    if(it->second.m_track && (track != it->second.m_track)) {
         sp_session_player_unload(m_session);
         //m_handler->audio_fifo_flush_now();
-        m_track_idx = NO_TRACK_IDX;
-        m_track = boost::shared_ptr<XplodifyTrack>();
+        it->second.m_track_idx = NO_TRACK_IDX;
+        it->second.m_track = boost::shared_ptr<XplodifyTrack>();
     }
     if(!track || track->get_track_error() != SP_ERROR_OK ) {
         return;
     }
-    if(m_track == track) {
+    if(it->second.m_track == track) {
         return;
     }
 
-    m_track = track;
-    m_track_idx = idx;
-    sp_session_player_load(m_session, m_track->m_track);
+    it->second.m_track = track;
+    it->second.m_track_idx = idx;
+
+    sp_session_player_load(m_session, it->second.m_track->m_track);
 #ifdef _DEBUG
-    std::cout << "Track " << m_track->get_name() << " loaded succesfully." << std::endl;
+    std::cout << "Track " << it->second.m_track->get_name() << " loaded succesfully." << std::endl;
 #endif
 }
 
-void XplodifySession::set_track(std::string trackname) {
+void XplodifySession::set_track(std::string user, std::string trackname) {
     if( trackname.empty() ) {
         return;
     }
 
-    if(!m_playlist) {
+    if(!user_exists(user)) {
         return;
     }
 
-    boost::shared_ptr<XplodifyTrack> track = m_playlist->get_track(trackname);
+
+    std::map<std::string, SessionStatus>::iterator it;
+    it = m_statuses.find(user);
+    if(it == m_statuses.end() || !(it->second.m_playlist)) {
+        return;
+    }
+
+    boost::shared_ptr<XplodifyTrack> track = it->second.m_playlist->get_track(trackname);
     //track has been changed.
-    if(m_track && track != m_track) {
+    if(it->second.m_track && (track != it->second.m_track)) {
         sp_session_player_unload(m_session);
         //m_handler->audio_fifo_flush_now();
-        m_track_idx = NO_TRACK_IDX;
-        m_track = boost::shared_ptr<XplodifyTrack>();
+        m_statuses[user].m_track_idx = NO_TRACK_IDX;
+        m_statuses[user].m_track = boost::shared_ptr<XplodifyTrack>();
     }
     if(!track || track->get_track_error() != SP_ERROR_OK ) {
         return;
     }
-    if(m_track == track) {
+    if(it->second.m_track == track) {
         return;
     }
-    m_track = track;
-    sp_session_player_load(m_session, m_track->m_track);
+
+    it->second.m_track = track;
+    sp_session_player_load(m_session, it->second.m_track->m_track);
 #ifdef _DEBUG
-    std::cout << "Track " << m_track->get_name() << " loaded succesfully." << std::endl;
+    std::cout << "Track " << it->second.m_track->get_name() << " loaded succesfully." << std::endl;
 #endif
 }
 
@@ -376,7 +480,7 @@ void selectPlaylist(const SpotifyCredential& cred, const std::string& playlist) 
 void XplodifySession::end_of_track() {
     int next;
     boost::shared_ptr<XplodifyTrack> trk;
-    int num = m_playlist->get_num_tracks();
+    int num = m_statuses[m_active_user].m_playlist->get_num_tracks();
 
     set_playback_done(1);
     m_handler->set_playback_done(m_playback_done);
@@ -392,13 +496,13 @@ void XplodifySession::end_of_track() {
         case SpotifyCmd::RAND:
             //Any track on the playlist.
             next = rand() % num + 1;
-            set_track(next);
+            set_track(m_active_user, next);
             start_playback();
             break;
         case SpotifyCmd::LINEAR:
             //MEANT to get the NEXT playlist.
-            trk = m_playlist->get_next_track();
-            set_track(trk->get_name());
+            trk = m_statuses[m_active_user].m_playlist->get_next_track();
+            set_track(m_active_user, trk->get_name());
             start_playback();
             break;
         default:
@@ -435,32 +539,50 @@ void XplodifySession::play_token_lost()
 
 void XplodifySession::logged_in(sp_session *sess, sp_error error) {
     //We've logged in succesfully, lets load pl container, and pl's
-    if(!m_logged_earlier) {
-        get_pl_container(); 
-        m_logged_earlier = true;
+    if(!m_statuses[m_active_user].m_logged_earlier) {
+        get_pl_container(m_active_user); 
+        m_statuses[m_active_user].m_logged_earlier = true;
     } else {
-        update_plcontainer(true);
+        update_plcontainer(m_active_user, true);
     }
-    m_logged_in = true;
+    m_statuses[m_active_user].m_logged_in = true;
 
 #ifdef _DEBUG
-    std::cout << "Session " << m_uuid << " logged in succesfully." << std::endl;
+    std::cout << "Session logged in succesfully." << std::endl;
 #endif
+    lock();
+    m_logged_in = true;
+    unlock();
 
     return;
 }
 
-void XplodifySession::flush() {
-    boost::shared_ptr<XplodifyPlaylistContainer> pc = get_pl_container();
+void XplodifySession::flush(std::string const user) {
+    boost::shared_ptr<XplodifyPlaylistContainer> pc = get_pl_container(user);
     if(!pc) {
         return;
     }
 
     pc->flush();
-    m_plcontainer.reset();
+    m_statuses[user].m_plcontainer.reset();
 #ifdef _DEBUG
     std::cout << "Playlist Container use count: " << pc.use_count() << std::endl;
 #endif
+}
+
+//Should be called holding lock. 
+//Doesn't make sense to lock in here because we should ensure the active user 
+//doesn't change at the caller.
+bool XplodifySession::is_user_active() {
+    return !(m_active_user.empty());
+}
+
+bool XplodifySession::user_exists(std::string const user) {
+
+    std::map<std::string, SessionStatus>::iterator it;
+    it = m_statuses.find(user);
+
+    return !(it == m_statuses.end());
 }
 
 void XplodifySession::start_playback()
@@ -468,7 +590,9 @@ void XplodifySession::start_playback()
 #ifdef _DEBUG
     std::cout << "Starting playback." << std::endl;
 #endif
+    lock();
     sp_session_player_play(m_session, 1);
+    unlock();
     return;
 }
 
@@ -477,7 +601,9 @@ void XplodifySession::stop_playback()
 #ifdef _DEBUG
     std::cout << "Stopping playback." << std::endl;
 #endif
+    lock();
     sp_session_player_play(m_session, 0);
+    unlock();
     return;
 }
 

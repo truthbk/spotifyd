@@ -32,6 +32,12 @@ XplodifyPlaylistContainer::~XplodifyPlaylistContainer(){
 #ifdef _DEBUG
     std::cout << "Xplodify Playlist Container destroyed...." << std::endl;
 #endif
+    if(m_plcontainer){
+        sp_playlistcontainer_remove_callbacks(
+                m_plcontainer, const_cast<sp_playlistcontainer_callbacks *>(&cbs), this);
+        //sp_playlistcontainer_release(m_plcontainer);
+        m_plcontainer = NULL;
+    }
 }
 
 bool XplodifyPlaylistContainer::set_plcontainer(sp_playlistcontainer * plc) {
@@ -83,7 +89,7 @@ bool XplodifyPlaylistContainer::unload(bool cascade) {
     sp_playlistcontainer_release(m_plcontainer);
     sp_playlistcontainer_remove_callbacks(
             m_plcontainer, const_cast<sp_playlistcontainer_callbacks *>(&cbs), this);
-    m_pl_cache.get<0>().clear();
+    //m_pl_cache.get<0>().clear();
     m_plcontainer = NULL;
 
     return true;
@@ -206,6 +212,8 @@ void XplodifyPlaylistContainer::flush() {
         pl->flush();
         pl.reset();
     }
+
+    return;
 }
 
 void XplodifyPlaylistContainer::playlist_added(sp_playlist *pl, int pos){

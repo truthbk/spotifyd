@@ -51,6 +51,13 @@ XplodifyPlaylist::~XplodifyPlaylist() {
 #ifdef _DEBUG
     std::cout << "XplodifyPlaylist being destroyed..." << std::endl;
 #endif
+    lock();
+    if(m_playlist){
+        sp_playlist_remove_callbacks(m_playlist, const_cast<sp_playlist_callbacks *>(&cbs), this);
+        //sp_playlist_release(m_playlist);
+        m_playlist = NULL;
+    }
+    unlock();
 }
 
 boost::shared_ptr<XplodifyTrack> 
@@ -106,6 +113,7 @@ bool XplodifyPlaylist::load(sp_playlist * pl) {
 
 void XplodifyPlaylist::flush() {
 
+    lock();
     boost::shared_ptr<XplodifySession> sess(m_session);
     track_cache_by_rand& t_r = m_track_cache.get<0>();
     std::size_t sz = t_r.size();
@@ -114,6 +122,10 @@ void XplodifyPlaylist::flush() {
         boost::shared_ptr<XplodifyTrack> tr = get_track(0, true);
         tr.reset();
     }
+
+    m_loading = false;
+    unlock();
+
     sess->update_state_ts();
 }
 
@@ -195,7 +207,7 @@ bool XplodifyPlaylist::unload(bool cascade) {
             t_r[i].track->unload();
         }
     }
-    sp_playlist_release(m_playlist);
+    //sp_playlist_release(m_playlist);
     sp_playlist_remove_callbacks(m_playlist, const_cast<sp_playlist_callbacks *>(&cbs), this);
 
     //m_track_cache.get<0>().clear();
