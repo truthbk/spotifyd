@@ -6,6 +6,7 @@
 
 #include <boost/shared_ptr.hpp>
 #include <boost/enable_shared_from_this.hpp>
+#include <boost/thread/mutex.hpp>
 
 #include "lockable.h"
 
@@ -24,8 +25,7 @@ class XplodifyTrack;
 
 //nice per session wrapper class
 class XplodifySession 
-    : private Lockable
-    , public boost::enable_shared_from_this<XplodifySession> {
+    : public boost::enable_shared_from_this<XplodifySession> {
 
     public:
         friend class XplodifyHandler;
@@ -187,6 +187,8 @@ class XplodifySession
         SpotifyCmd::type        m_mode;
         SpotifyCmd::type        m_playback;
         std::time_t             m_ts;
+
+        boost::mutex            m_mutex;
 
 
 };

@@ -26,8 +26,7 @@ extern "C" {
 
 
 XplodifySession::XplodifySession() 
-    : Lockable()
-    , m_session(NULL)
+    : m_session(NULL)
     , m_handler(NULL)
     , m_logged_in(false)
     , m_logging_in(false)
@@ -42,8 +41,7 @@ XplodifySession::XplodifySession()
 }
 
 XplodifySession::XplodifySession(XplodifyHandler * h) 
-    : Lockable()
-    , m_session(NULL)
+    : m_session(NULL)
     , m_handler(h)
     , m_logged_in(false)
     , m_logging_out(false)
@@ -151,9 +149,9 @@ int XplodifySession::init_session(const uint8_t * appkey, size_t appkey_size,
 
 bool XplodifySession::available(void) {
     bool active;
-    lock();
+    boost::mutex::scoped_lock scoped_lock(m_mutex);
     active = !(m_active_user.empty() || !m_logged_in);
-    unlock();
+    
 
     return active;
 }
@@ -169,9 +167,9 @@ void XplodifySession::login( const std::string& username
             username.c_str(), 
             passwd.c_str(), remember, NULL);
 
-    lock();
+    boost::mutex::scoped_lock scoped_lock(m_mutex);
     m_active_user = username;
-    unlock();
+    
 
     return;
 }
@@ -179,9 +177,9 @@ void XplodifySession::login( const std::string& username
 bool XplodifySession::get_logged_in(std::string username) {
     bool logged;
 
-    lock();
+    boost::mutex::scoped_lock scoped_lock(m_mutex);
     logged = (user_exists(username) ? m_statuses[username].m_logged_in : false);
-    unlock();
+    
 
     return logged;
 }
@@ -189,9 +187,9 @@ bool XplodifySession::get_logged_in(std::string username) {
 bool XplodifySession::logout(std::string user, bool unload, bool doflush) {
     sp_error err;
 
-    lock();
+    boost::mutex::scoped_lock scoped_lock(m_mutex);
     if(!is_user_active() || m_active_user != user) {
-        unlock();
+        
         return false;
     }
     if(unload) {
@@ -210,14 +208,14 @@ bool XplodifySession::logout(std::string user, bool unload, bool doflush) {
     }
 
     m_logging_out = true;
-    unlock();
+    
     return true;
 }
 
 void XplodifySession::logged_out() {
-    lock();
+    boost::mutex::scoped_lock scoped_lock(m_mutex);
     if(!m_logging_out) {
-        unlock();
+        
         return;
     }
 #ifdef _DEBUG
@@ -227,7 +225,7 @@ void XplodifySession::logged_out() {
     //m_active_session.reset();
     m_logged_in = false;
     m_active_user = std::string();
-    unlock();
+    
 
     return;
 }
@@ -286,17 +284,16 @@ boost::shared_ptr<XplodifyPlaylistContainer> XplodifySession::get_pl_container(s
     return m_statuses[user].m_plcontainer;
 }
 
-//Changed to scoped lock...
 boost::shared_ptr<XplodifyPlaylistContainer> XplodifySession::get_pl_container(void) {
 
-    lock();
+    boost::mutex::scoped_lock scoped_lock(m_mutex);
     if((m_statuses[m_active_user].m_plcontainer != NULL)) {
         boost::shared_ptr<XplodifyPlaylistContainer> 
             plc(m_statuses[m_active_user].m_plcontainer);
-        unlock();
+        
         return plc;
     }
-    unlock();
+    
 
     return boost::shared_ptr<XplodifyPlaylistContainer>();
 }
@@ -348,17 +345,17 @@ boost::shared_ptr<XplodifyTrack> XplodifySession::get_track(void){
 }
 
 void XplodifySession::update_state_ts(void) {
-    lock();
+    boost::mutex::scoped_lock scoped_lock(m_mutex);
     m_ts = std::time(NULL);
-    unlock();
+    
 }
 
 int64_t XplodifySession::get_state_ts(void) {
     int64_t state = 0;
 
-    lock();
+    boost::mutex::scoped_lock scoped_lock(m_mutex);
     state = m_ts;
-    unlock();
+    
 
     return state;
 }
@@ -370,9 +367,9 @@ int64_t XplodifySession::get_state_ts(std::string user) {
         return false;
     }
 
-    lock();
+    boost::mutex::scoped_lock scoped_lock(m_mutex);
     state = m_statuses[user].m_ts;
-    unlock();
+    
 
     return state;
 }
@@ -510,12 +507,12 @@ void XplodifySession::end_of_track() {
     }
 
 #if 0
-    lock();
+    boost::mutex::scoped_lock scoped_lock(m_mutex);
     m_playback_done = 1;
     //h->setPlaybackState(DONE);
     switchSession();
     cond_signal();
-    unlock();
+    
 #endif
 }
 
@@ -550,9 +547,9 @@ void XplodifySession::logged_in(sp_session *sess, sp_error error) {
 #ifdef _DEBUG
     std::cout << "Session logged in succesfully." << std::endl;
 #endif
-    lock();
+    boost::mutex::scoped_lock scoped_lock(m_mutex);
     m_logged_in = true;
-    unlock();
+    
 
     return;
 }
@@ -590,9 +587,9 @@ void XplodifySession::start_playback()
 #ifdef _DEBUG
     std::cout << "Starting playback." << std::endl;
 #endif
-    lock();
+    boost::mutex::scoped_lock scoped_lock(m_mutex);
     sp_session_player_play(m_session, 1);
-    unlock();
+    
     return;
 }
 
@@ -601,9 +598,9 @@ void XplodifySession::stop_playback()
 #ifdef _DEBUG
     std::cout << "Stopping playback." << std::endl;
 #endif
-    lock();
+    boost::mutex::scoped_lock scoped_lock(m_mutex);
     sp_session_player_play(m_session, 0);
-    unlock();
+    
     return;
 }
 
