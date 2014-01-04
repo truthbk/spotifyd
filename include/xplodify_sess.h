@@ -31,8 +31,6 @@ class XplodifySession
         friend class XplodifyHandler;
         ~XplodifySession();
 
-        static boost::shared_ptr< XplodifySession > create(XplodifyHandler * h = NULL );
-
         int init_session(const uint8_t * appkey, size_t appkey_size);
         int init_session(const uint8_t * appkey, size_t appkey_size, 
                 sp_session_callbacks * sess_cb);

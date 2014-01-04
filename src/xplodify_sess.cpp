@@ -62,14 +62,6 @@ XplodifySession::~XplodifySession()
 #endif
 }
 
-boost::shared_ptr< XplodifySession > XplodifySession::create(XplodifyHandler * h)
-{
-    if(!h) {
-            return boost::shared_ptr< XplodifySession >( new XplodifySession() );
-    }
-
-    return boost::shared_ptr< XplodifySession >( new XplodifySession(h) );
-}
 
 XplodifySession * XplodifySession::get_session_from_udata(sp_session * sp) {
     XplodifySession * s = 
@@ -151,7 +143,7 @@ bool XplodifySession::available(void) {
     bool active;
     boost::mutex::scoped_lock scoped_lock(m_mutex);
     active = !(m_active_user.empty() || !m_logged_in);
-    
+
 
     return active;
 }
@@ -160,6 +152,8 @@ void XplodifySession::login( const std::string& username
                           , const std::string& passwd
                           , bool remember ) {
 
+    boost::mutex::scoped_lock scoped_lock(m_mutex);
+
     //gotta add blob support (see libspotify api).
     sp_error err;
     err = sp_session_login( 
@@ -167,9 +161,7 @@ void XplodifySession::login( const std::string& username
             username.c_str(), 
             passwd.c_str(), remember, NULL);
 
-    boost::mutex::scoped_lock scoped_lock(m_mutex);
     m_active_user = username;
-    
 
     return;
 }
@@ -179,7 +171,6 @@ bool XplodifySession::get_logged_in(std::string username) {
 
     boost::mutex::scoped_lock scoped_lock(m_mutex);
     logged = (user_exists(username) ? m_statuses[username].m_logged_in : false);
-    
 
     return logged;
 }
@@ -189,7 +180,6 @@ bool XplodifySession::logout(std::string user, bool unload, bool doflush) {
 
     boost::mutex::scoped_lock scoped_lock(m_mutex);
     if(!is_user_active() || m_active_user != user) {
-        
         return false;
     }
     if(unload) {
@@ -208,14 +198,14 @@ bool XplodifySession::logout(std::string user, bool unload, bool doflush) {
     }
 
     m_logging_out = true;
-    
+
     return true;
 }
 
 void XplodifySession::logged_out() {
     boost::mutex::scoped_lock scoped_lock(m_mutex);
+
     if(!m_logging_out) {
-        
         return;
     }
 #ifdef _DEBUG
@@ -224,13 +214,16 @@ void XplodifySession::logged_out() {
     //sp_session_release(get_session());
     //m_active_session.reset();
     m_logged_in = false;
+    m_logging_in = false;
+    m_logging_out = false;
     m_active_user = std::string();
-    
 
     return;
 }
 
 void XplodifySession::update_plcontainer(std::string user, bool cascade) {
+
+    boost::mutex::scoped_lock scoped_lock(m_mutex);
     if(!user_exists(user)) {
         return;
     }
@@ -254,6 +247,7 @@ void XplodifySession::update_plcontainer(std::string user, bool cascade) {
 
 boost::shared_ptr<XplodifyPlaylistContainer> XplodifySession::get_pl_container(std::string user) {
 
+    boost::mutex::scoped_lock scoped_lock(m_mutex);
     if(!user_exists(user)) {
         return boost::shared_ptr<XplodifyPlaylistContainer>();
     }
@@ -290,10 +284,8 @@ boost::shared_ptr<XplodifyPlaylistContainer> XplodifySession::get_pl_container(v
     if((m_statuses[m_active_user].m_plcontainer != NULL)) {
         boost::shared_ptr<XplodifyPlaylistContainer> 
             plc(m_statuses[m_active_user].m_plcontainer);
-        
         return plc;
     }
-    
 
     return boost::shared_ptr<XplodifyPlaylistContainer>();
 }
@@ -304,6 +296,7 @@ void XplodifySession::set_active_playlist(std::string user, int idx) {
         return;
     }
 
+    boost::mutex::scoped_lock scoped_lock(m_mutex);
     boost::shared_ptr<XplodifyPlaylist> pl = pc->get_playlist(idx);
     m_statuses[user].m_playlist = pl;
 }
@@ -314,6 +307,7 @@ void XplodifySession::set_active_playlist(std::string user, std::string plname) 
         return;
     }
 
+    boost::mutex::scoped_lock scoped_lock(m_mutex);
     boost::shared_ptr<XplodifyPlaylist> pl = pc->get_playlist(plname);
     m_statuses[user].m_playlist = pl;
 }
@@ -322,6 +316,9 @@ std::string XplodifySession::get_playlist_name(void) {
 }
 
 std::string XplodifySession::get_playlist_name(std::string user) {
+
+    boost::mutex::scoped_lock scoped_lock(m_mutex);
+
     std::map<std::string, SessionStatus>::iterator it;
     it = m_statuses.find(user);
     if(it != m_statuses.end()) {
@@ -333,6 +330,7 @@ std::string XplodifySession::get_playlist_name(std::string user) {
 
 boost::shared_ptr<XplodifyTrack> XplodifySession::get_track(std::string user){
 
+    boost::mutex::scoped_lock scoped_lock(m_mutex);
     if (user_exists(user)) {
         return boost::shared_ptr<XplodifyTrack>();
     }
@@ -347,7 +345,8 @@ boost::shared_ptr<XplodifyTrack> XplodifySession::get_track(void){
 void XplodifySession::update_state_ts(void) {
     boost::mutex::scoped_lock scoped_lock(m_mutex);
     m_ts = std::time(NULL);
-    
+
+    return;
 }
 
 int64_t XplodifySession::get_state_ts(void) {
@@ -355,7 +354,6 @@ int64_t XplodifySession::get_state_ts(void) {
 
     boost::mutex::scoped_lock scoped_lock(m_mutex);
     state = m_ts;
-    
 
     return state;
 }
@@ -363,31 +361,39 @@ int64_t XplodifySession::get_state_ts(void) {
 int64_t XplodifySession::get_state_ts(std::string user) {
     int64_t state = 0;
 
+    boost::mutex::scoped_lock scoped_lock(m_mutex);
     if(!user_exists(user)) {
         return false;
     }
 
-    boost::mutex::scoped_lock scoped_lock(m_mutex);
     state = m_statuses[user].m_ts;
-    
 
     return state;
 }
 
 void XplodifySession::set_mode(SpotifyCmd::type mode) {
+
+    boost::mutex::scoped_lock scoped_lock(m_mutex);
     m_mode = mode;
 }
 
 SpotifyCmd::type XplodifySession::get_mode(void) {
+
+    boost::mutex::scoped_lock scoped_lock(m_mutex);
     return m_mode;
 }
 
 sp_session * XplodifySession::get_sp_session() {
+
+    boost::mutex::scoped_lock scoped_lock(m_mutex);
     return m_session;
 }
 
+// Using random access to map as opposed to an iterator for readability...
+// This is a performance issue though.
 void XplodifySession::set_track(std::string user, int idx) {
 
+    boost::mutex::scoped_lock scoped_lock(m_mutex);
     if(!user_exists(user)) {
         return;
     }
@@ -397,38 +403,36 @@ void XplodifySession::set_track(std::string user, int idx) {
         return;
     }
 
-    std::map<std::string, SessionStatus>::iterator it;
-    it = m_statuses.find(user);
-    if(it == m_statuses.end() || !(it->second.m_playlist)) {
-        return;
-    }
-
-    boost::shared_ptr<XplodifyTrack> track = it->second.m_playlist->get_track_at(idx);
+    boost::shared_ptr<XplodifyTrack> track = m_statuses[user].m_playlist->get_track_at(idx);
     //track has been changed.
     //got to make sure the session has user std::string user logged in before doing this...
-    if(it->second.m_track && (track != it->second.m_track)) {
+    if(m_statuses[user].m_track && (track != m_statuses[user].m_track)) {
         sp_session_player_unload(m_session);
         //m_handler->audio_fifo_flush_now();
-        it->second.m_track_idx = NO_TRACK_IDX;
-        it->second.m_track = boost::shared_ptr<XplodifyTrack>();
+        m_statuses[user].m_track_idx = NO_TRACK_IDX;
+        m_statuses[user].m_track = boost::shared_ptr<XplodifyTrack>();
     }
     if(!track || track->get_track_error() != SP_ERROR_OK ) {
         return;
     }
-    if(it->second.m_track == track) {
+    if(m_statuses[user].m_track == track) {
         return;
     }
 
-    it->second.m_track = track;
-    it->second.m_track_idx = idx;
+    m_statuses[user].m_track = track;
+    m_statuses[user].m_track_idx = idx;
 
-    sp_session_player_load(m_session, it->second.m_track->m_track);
+    sp_session_player_load(m_session, m_statuses[user].m_track->m_track);
 #ifdef _DEBUG
-    std::cout << "Track " << it->second.m_track->get_name() << " loaded succesfully." << std::endl;
+    std::cout << "Track " << m_statuses[user].m_track->get_name() << " loaded succesfully." << std::endl;
 #endif
 }
 
+// Using random access to map as opposed to an iterator for readability...
+// This is a performance issue though.
 void XplodifySession::set_track(std::string user, std::string trackname) {
+
+    boost::mutex::scoped_lock scoped_lock(m_mutex);
     if( trackname.empty() ) {
         return;
     }
@@ -459,10 +463,10 @@ void XplodifySession::set_track(std::string user, std::string trackname) {
         return;
     }
 
-    it->second.m_track = track;
-    sp_session_player_load(m_session, it->second.m_track->m_track);
+    m_statuses[user].m_track = track;
+    sp_session_player_load(m_session, m_statuses[user].m_track->m_track);
 #ifdef _DEBUG
-    std::cout << "Track " << it->second.m_track->get_name() << " loaded succesfully." << std::endl;
+    std::cout << "Track " << m_statuses[user].m_track->get_name() << " loaded succesfully." << std::endl;
 #endif
 }
 
@@ -475,8 +479,12 @@ void selectPlaylist(const SpotifyCredential& cred, const std::string& playlist) 
 
 
 void XplodifySession::end_of_track() {
+
     int next;
     boost::shared_ptr<XplodifyTrack> trk;
+
+    boost::mutex::scoped_lock scoped_lock(m_mutex);
+
     int num = m_statuses[m_active_user].m_playlist->get_num_tracks();
 
     set_playback_done(1);
@@ -493,12 +501,14 @@ void XplodifySession::end_of_track() {
         case SpotifyCmd::RAND:
             //Any track on the playlist.
             next = rand() % num + 1;
+            scoped_lock.unlock(); //manual unlock -  set_track also will try to hold lock
             set_track(m_active_user, next);
             start_playback();
             break;
         case SpotifyCmd::LINEAR:
             //MEANT to get the NEXT playlist.
             trk = m_statuses[m_active_user].m_playlist->get_next_track();
+            scoped_lock.unlock(); //manual unlock -  set_track also will try to hold lock
             set_track(m_active_user, trk->get_name());
             start_playback();
             break;
@@ -534,22 +544,28 @@ void XplodifySession::play_token_lost()
 #endif
 }
 
+//TODO: could have a race-condition here, watch out.
 void XplodifySession::logged_in(sp_session *sess, sp_error error) {
     //We've logged in succesfully, lets load pl container, and pl's
+    boost::mutex::scoped_lock scoped_lock(m_mutex);
+
     if(!m_statuses[m_active_user].m_logged_earlier) {
-        get_pl_container(m_active_user); 
         m_statuses[m_active_user].m_logged_earlier = true;
+        scoped_lock.unlock();
+        get_pl_container(m_active_user); 
+        scoped_lock.lock();
     } else {
+        scoped_lock.unlock();
         update_plcontainer(m_active_user, true);
+        scoped_lock.lock();
     }
+
     m_statuses[m_active_user].m_logged_in = true;
+    m_logged_in = true;
 
 #ifdef _DEBUG
     std::cout << "Session logged in succesfully." << std::endl;
 #endif
-    boost::mutex::scoped_lock scoped_lock(m_mutex);
-    m_logged_in = true;
-    
 
     return;
 }
@@ -567,14 +583,22 @@ void XplodifySession::flush(std::string const user) {
 #endif
 }
 
-//Should be called holding lock. 
+//Should be called holding lock.
 //Doesn't make sense to lock in here because we should ensure the active user 
 //doesn't change at the caller.
 bool XplodifySession::is_user_active() {
+
+    boost::mutex::scoped_lock scoped_lock(m_mutex);
+
     return !(m_active_user.empty());
 }
 
+//Should be called holding lock.
+//Doesn't make sense to lock in here because we should ensure the active user 
+//doesn't change at the caller.
 bool XplodifySession::user_exists(std::string const user) {
+
+    boost::mutex::scoped_lock scoped_lock(m_mutex);
 
     std::map<std::string, SessionStatus>::iterator it;
     it = m_statuses.find(user);
@@ -589,7 +613,7 @@ void XplodifySession::start_playback()
 #endif
     boost::mutex::scoped_lock scoped_lock(m_mutex);
     sp_session_player_play(m_session, 1);
-    
+
     return;
 }
 
