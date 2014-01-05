@@ -24,8 +24,7 @@ class XplodifyPlaylist;
 class XplodifyTrack;
 
 //nice per session wrapper class
-class XplodifySession 
-    : public boost::enable_shared_from_this<XplodifySession> {
+class XplodifySession { 
 
     public:
         friend class XplodifyHandler;

@@ -29,7 +29,7 @@ class XplodifyPlaylist
     , public boost::enable_shared_from_this<XplodifyPlaylist>
 {
     public:
-        XplodifyPlaylist(boost::shared_ptr<XplodifySession> sess, int idx);
+        XplodifyPlaylist(XplodifySession& sess, int idx);
         ~XplodifyPlaylist();
 
         bool load(sp_playlist * pl);
@@ -139,7 +139,7 @@ class XplodifyPlaylist
         track_cache_by_rand::iterator                  m_it_idx;
         track_cache_by_name::iterator                  m_it_name;
 
-        boost::weak_ptr<XplodifySession>               m_session;
+        XplodifySession&                               m_session;
         std::vector<
             boost::shared_ptr<XplodifyTrack>
             >                                          m_pending_tracks;

@@ -19,7 +19,7 @@ const sp_playlistcontainer_callbacks XplodifyPlaylistContainer::cbs = {
 };
 
 XplodifyPlaylistContainer::XplodifyPlaylistContainer(
-        boost::shared_ptr<XplodifySession> sess)
+        XplodifySession& sess)
     : m_plcontainer(NULL)
     , m_session(sess)
     , m_loading(true) 
@@ -225,8 +225,7 @@ void XplodifyPlaylistContainer::playlist_added(sp_playlist *pl, int pos){
         return;
     }
 
-    boost::shared_ptr<XplodifySession> sess(m_session);
-    boost::shared_ptr<XplodifyPlaylist> npl(new XplodifyPlaylist(sess, pos));
+    boost::shared_ptr<XplodifyPlaylist> npl(new XplodifyPlaylist(m_session, pos));
  
     //should fix other playlists...
     npl->load(pl);
@@ -286,8 +285,7 @@ void XplodifyPlaylistContainer::container_loaded(){
     for(int i=0 ; i<n ; i++ ) {
         sp_playlist * p = sp_playlistcontainer_playlist( m_plcontainer, i);
 
-        boost::shared_ptr<XplodifySession> sess(m_session);
-        boost::shared_ptr<XplodifyPlaylist> npl(new XplodifyPlaylist(sess, i));
+        boost::shared_ptr<XplodifyPlaylist> npl(new XplodifyPlaylist(m_session, i));
         npl->load(p);
         if(npl->is_loaded()) {
 #ifdef _DEBUG

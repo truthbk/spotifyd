@@ -140,12 +140,12 @@ int XplodifySession::init_session(const uint8_t * appkey, size_t appkey_size,
 }
 
 bool XplodifySession::available(void) {
-    bool active;
+    bool available;
     boost::mutex::scoped_lock scoped_lock(m_mutex);
-    active = !(m_active_user.empty() || !m_logged_in);
+    available = (m_active_user.empty() && !m_logged_in);
 
 
-    return active;
+    return available;
 }
 
 void XplodifySession::login( const std::string& username
@@ -167,7 +167,7 @@ void XplodifySession::login( const std::string& username
 }
 
 bool XplodifySession::get_logged_in(std::string username) {
-    bool logged;
+    bool logged = false;
 
     boost::mutex::scoped_lock scoped_lock(m_mutex);
     logged = (user_exists(username) ? m_statuses[username].m_logged_in : false);
@@ -265,7 +265,7 @@ boost::shared_ptr<XplodifyPlaylistContainer> XplodifySession::get_pl_container(s
     }
 
     XplodifyPlaylistContainer * xplc = 
-        new XplodifyPlaylistContainer(shared_from_this());
+        new XplodifyPlaylistContainer(*this);
 
     m_statuses[user].m_plcontainer =  boost::shared_ptr<XplodifyPlaylistContainer>(xplc);;
 
@@ -597,8 +597,6 @@ bool XplodifySession::is_user_active() {
 //Doesn't make sense to lock in here because we should ensure the active user 
 //doesn't change at the caller.
 bool XplodifySession::user_exists(std::string const user) {
-
-    boost::mutex::scoped_lock scoped_lock(m_mutex);
 
     std::map<std::string, SessionStatus>::iterator it;
     it = m_statuses.find(user);

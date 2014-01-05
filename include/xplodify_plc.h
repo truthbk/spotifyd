@@ -23,7 +23,7 @@ class XplodifyPlaylistContainer :
     public boost::enable_shared_from_this<XplodifyPlaylistContainer>
 {
     public:
-        XplodifyPlaylistContainer(boost::shared_ptr<XplodifySession> sess);
+        XplodifyPlaylistContainer(XplodifySession& sess);
         ~XplodifyPlaylistContainer();
 
         bool    set_plcontainer(sp_playlistcontainer *plc);
@@ -91,7 +91,7 @@ class XplodifyPlaylistContainer :
             boost::shared_ptr<XplodifyPlaylist>
             >                              m_pending_playlists;
         sp_playlistcontainer *             m_plcontainer;
-        boost::weak_ptr<XplodifySession>   m_session;
+        XplodifySession&                   m_session;
         bool                               m_loading;
 };
 

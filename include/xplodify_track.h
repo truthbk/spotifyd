@@ -21,7 +21,7 @@ class XplodifyTrack
     : public Cacheable
 {
     public:
-        XplodifyTrack(boost::shared_ptr<XplodifySession> sess);
+        XplodifyTrack(XplodifySession& sess);
         ~XplodifyTrack();
 
         bool          load(sp_track * track, int idx);
@@ -47,7 +47,7 @@ class XplodifyTrack
     private:
         friend class XplodifySession;
 
-        boost::weak_ptr<XplodifySession>      m_sess;
+        XplodifySession&                      m_session;
         sp_track *                            m_track;
 
         std::string                           m_name;

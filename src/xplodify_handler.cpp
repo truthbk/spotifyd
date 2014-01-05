@@ -26,6 +26,7 @@
 
 XplodifyHandler::XplodifyHandler()
     : SpotifyHandler() 
+    , m_session(this)
 {
     //check temp dir.
     boost::filesystem::path dir(get_cachedir());
@@ -104,9 +105,9 @@ bool XplodifyHandler::login(const std::string& uuid,
         return false;
     }
 
-    if(m_session.get_logged_in(username)) {
+    if(m_session.get_logged_in(username) == true) {
         return true;
-    }
+   }
 
     lock();
     m_user_cache.get<1>().insert(

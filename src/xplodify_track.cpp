@@ -14,9 +14,9 @@ extern "C" {
 
 //TODO: exceptions.
 
-XplodifyTrack::XplodifyTrack(boost::shared_ptr<XplodifySession> sess) 
+XplodifyTrack::XplodifyTrack(XplodifySession& sess) 
     : Cacheable()
-    , m_sess(sess) 
+    , m_session(sess) 
     , m_track(NULL)
     , m_name()
     , m_index(0)
@@ -76,8 +76,7 @@ bool XplodifyTrack::is_streamable(){
     }
 
     sp_track_availability available;
-    boost::shared_ptr<XplodifySession> sess(m_sess);
-    available = sp_track_get_availability(sess->get_sp_session(), m_track);
+    available = sp_track_get_availability(m_session.get_sp_session(), m_track);
     if(available == SP_TRACK_AVAILABILITY_NOT_STREAMABLE) {
         return false;
     }
@@ -143,8 +142,7 @@ bool XplodifyTrack::is_starred(bool cache){
     if(cache && is_cached()) {
         return m_starred;
     }
-    boost::shared_ptr<XplodifySession> sess(m_sess);
-    return sp_track_is_starred(sess->get_sp_session(), m_track);
+    return sp_track_is_starred(m_session.get_sp_session(), m_track);
 }
 
 int XplodifyTrack::get_disc(bool cache){
@@ -169,8 +167,7 @@ void XplodifyTrack::set_starred(bool star){
     if(!m_track) {
         return;
     }
-    boost::shared_ptr<XplodifySession> sess(m_sess);
-    sp_track_set_starred(sess->get_sp_session(), &m_track, 1, star);
+    sp_track_set_starred(m_session.get_sp_session(), &m_track, 1, star);
 }
 
 sp_error XplodifyTrack::get_track_error(){
