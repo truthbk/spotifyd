@@ -331,7 +331,7 @@ std::string XplodifySession::get_playlist_name(std::string user) {
 boost::shared_ptr<XplodifyTrack> XplodifySession::get_track(std::string user){
 
     boost::mutex::scoped_lock scoped_lock(m_mutex);
-    if (user_exists(user)) {
+    if (!user_exists(user)) {
         return boost::shared_ptr<XplodifyTrack>();
     }
 
@@ -588,8 +588,6 @@ void XplodifySession::flush(std::string const user) {
 //Doesn't make sense to lock in here because we should ensure the active user 
 //doesn't change at the caller.
 bool XplodifySession::is_user_active() {
-
-    boost::mutex::scoped_lock scoped_lock(m_mutex);
 
     return !(m_active_user.empty());
 }
