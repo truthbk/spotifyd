@@ -345,6 +345,7 @@ boost::shared_ptr<XplodifyTrack> XplodifySession::get_track(void){
 void XplodifySession::update_state_ts(void) {
     boost::mutex::scoped_lock scoped_lock(m_mutex);
     m_ts = std::time(NULL);
+    m_statuses[m_active_user].m_ts = m_ts;
 
     return;
 }
