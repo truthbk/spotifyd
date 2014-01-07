@@ -610,7 +610,6 @@ void XplodifySession::start_playback()
 #ifdef _DEBUG
     std::cout << "Starting playback." << std::endl;
 #endif
-    boost::mutex::scoped_lock scoped_lock(m_mutex);
     sp_session_player_play(m_session, 1);
 
     return;
@@ -621,9 +620,8 @@ void XplodifySession::stop_playback()
 #ifdef _DEBUG
     std::cout << "Stopping playback." << std::endl;
 #endif
-    boost::mutex::scoped_lock scoped_lock(m_mutex);
     sp_session_player_play(m_session, 0);
-    
+
     return;
 }
 
