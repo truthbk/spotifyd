@@ -81,7 +81,7 @@ std::string XplodifyHandler::check_in(){
 
 bool XplodifyHandler::check_out(const std::string& uuid){
 
-    if(is_checked_in(uuid)) {
+    if(!is_checked_in(uuid)) {
         //user not checked in.
         return false;
     }
@@ -101,13 +101,15 @@ bool XplodifyHandler::login(const std::string& uuid,
         const std::string& username, const std::string& passwd){
 
     if(is_checked_in(uuid)) {
-        //user not checked in.
-        return false;
+        //user already checked in.
+        return true;
     }
 
+#if 0
     if(m_session.get_logged_in(username) == true) {
         return true;
    }
+#endif
 
     lock();
     m_user_cache.get<1>().insert(
@@ -139,7 +141,7 @@ bool XplodifyHandler::login(const std::string& uuid, const std::string& token){
 
 bool XplodifyHandler::login_status(std::string uuid){
 
-    if(is_checked_in(uuid)) {
+    if(!is_checked_in(uuid)) {
         //user not checked in.
         return false;
     }
@@ -153,7 +155,7 @@ bool XplodifyHandler::login_status(std::string uuid){
 bool XplodifyHandler::logout(std::string uuid){
     bool switched = false;
 
-    if(is_checked_in(uuid)) {
+    if(!is_checked_in(uuid)) {
         //user not checked in.
         return false;
     }
@@ -172,7 +174,7 @@ std::vector< boost::shared_ptr<XplodifyPlaylist> > XplodifyHandler::get_playlist
 
     std::vector< boost::shared_ptr<XplodifyPlaylist> > pls;
 
-    if(is_checked_in(uuid)) {
+    if(!is_checked_in(uuid)) {
         //user not checked in.
         return pls;
     }
@@ -201,7 +203,7 @@ std::vector< boost::shared_ptr<XplodifyTrack> > XplodifyHandler::get_tracks(
 
     std::vector<boost::shared_ptr<XplodifyTrack> > playlist;
 
-    if(is_checked_in(uuid)) {
+    if(!is_checked_in(uuid)) {
         //user not checked in.
         return playlist;
     }
@@ -241,7 +243,7 @@ std::vector< boost::shared_ptr<XplodifyTrack> > XplodifyHandler::get_tracks(
 
     std::vector<boost::shared_ptr<XplodifyTrack> > playlist;
 
-    if(is_checked_in(uuid)) {
+    if(!is_checked_in(uuid)) {
         //user not checked in.
         return playlist;
     }
@@ -279,7 +281,7 @@ std::vector< boost::shared_ptr<XplodifyTrack> > XplodifyHandler::get_tracks(
 
 bool XplodifyHandler::select_playlist(std::string uuid, int pid){
 
-    if(is_checked_in(uuid)) {
+    if(!is_checked_in(uuid)) {
         //user not checked in.
         return false;
     }
@@ -292,7 +294,7 @@ bool XplodifyHandler::select_playlist(std::string uuid, int pid){
 
 bool XplodifyHandler::select_playlist(std::string uuid, std::string pname){
 
-    if(is_checked_in(uuid)) {
+    if(!is_checked_in(uuid)) {
         //user not checked in.
         return false;
     }
@@ -305,7 +307,7 @@ bool XplodifyHandler::select_playlist(std::string uuid, std::string pname){
 
 bool XplodifyHandler::select_track(std::string uuid, int tid){
 
-    if(is_checked_in(uuid)) {
+    if(!is_checked_in(uuid)) {
         //user not checked in.
         return false;
     }
@@ -323,7 +325,7 @@ bool XplodifyHandler::select_track(std::string uuid, int tid){
 }
 bool XplodifyHandler::select_track(std::string uuid, std::string tname){
 
-    if(is_checked_in(uuid)) {
+    if(!is_checked_in(uuid)) {
         //user not checked in.
         return false;
     }
@@ -485,7 +487,7 @@ int64_t XplodifyHandler::get_handler_state(){
 
 int64_t XplodifyHandler::get_session_state(std::string uuid){
 
-    if(is_checked_in(uuid)) {
+    if(!is_checked_in(uuid)) {
         //user not checked in.
         return 0;
     }
