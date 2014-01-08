@@ -210,13 +210,12 @@ bool XplodifyPlaylist::unload(bool cascade) {
     m_playlist = NULL;
     unlock();
 
-    m_session.update_state_ts();
     return true;
 }
 
 //when we put in Exceptions this will be a lot cleaner.
 std::string XplodifyPlaylist::get_name(bool cache) {
-    if(!m_playlist) {
+    if(!m_playlist && !is_cached()) {
         return std::string("");
     }
     if(cache && is_cached()) {
@@ -460,6 +459,7 @@ void XplodifyPlaylist::playlist_metadata_updated(){
     unlock();
     return;
 }
+
 void XplodifyPlaylist::track_created_changed(int position, sp_user *user, int when){
     //TODO
     return;

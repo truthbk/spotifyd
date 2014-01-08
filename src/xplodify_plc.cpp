@@ -81,8 +81,9 @@ bool XplodifyPlaylistContainer::unload(bool cascade) {
             boost::shared_ptr<XplodifyPlaylist> pl = it->_playlist;
             pl->unload(cascade);
 #ifdef _DEBUG
-            std::cout << "Unloading " << pl->get_name() << std::endl;
+            std::cout << "Unloading " << pl->get_name(true) << std::endl;
 #endif
+            it++;
         }
     }
 
@@ -204,7 +205,7 @@ void XplodifyPlaylistContainer::flush() {
     while(it != m_pl_cache.get<0>().end() ) {
         boost::shared_ptr<XplodifyPlaylist> pl = it->_playlist;
 #ifdef _DEBUG
-        std::cout << "Flushing " << pl->get_name() << std::endl;
+        std::cout << "Flushing " << pl->get_name(true) << std::endl;
 #endif
         it = c_r.erase(it);
 

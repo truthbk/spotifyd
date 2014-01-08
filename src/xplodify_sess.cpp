@@ -199,6 +199,9 @@ bool XplodifySession::logout(std::string user, bool unload, bool doflush) {
 
     m_logging_out = true;
 
+    scoped_lock.unlock(); //manual unlock -  set_track also will try to hold lock
+    update_state_ts();
+
     return true;
 }
 
@@ -213,6 +216,11 @@ void XplodifySession::logged_out() {
 #endif
     //sp_session_release(get_session());
     //m_active_session.reset();
+
+    scoped_lock.unlock(); //manual unlock -  set_track also will try to hold lock
+    update_state_ts();
+    scoped_lock.lock();
+
     m_logged_in = false;
     m_logging_in = false;
     m_logging_out = false;
