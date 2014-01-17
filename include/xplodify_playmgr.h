@@ -1,6 +1,12 @@
 #ifndef _XPLODIFY_PLMGR_HH
 #define _XPLODIFY_PLMGR_HH
 
+#include <cstdint>
+#include <map>
+
+#include <boost/shared_ptr.hpp>
+
+#include "lockable.h"
 #include "Spotify.h"
 
 
