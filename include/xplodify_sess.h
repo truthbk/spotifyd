@@ -92,8 +92,10 @@ class XplodifySession {
         int64_t get_state_ts(void);
         int64_t get_state_ts(std::string user);
 
-        void set_mode(SpotifyCmd::type mode);
-        SpotifyCmd::type get_mode(void);
+        void set_playback_mode(SpotifyCmd::type mode);
+        void set_repeat_mode(SpotifyCmd::type mode);
+        SpotifyCmd::type get_playback_mode(void);
+        SpotifyCmd::type get_repeat_mode(void);
 
         static XplodifySession * get_session_from_udata(sp_session * sp);
 
@@ -130,6 +132,9 @@ class XplodifySession {
             int                                           m_track_idx;
             bool                                          m_logged_in;
             bool                                          m_logged_earlier;
+            SpotifyCmd::type                              m_repeat_mode;
+            SpotifyCmd::type                              m_playback_mode;
+            SpotifyCmd::type                              m_playback;
         };
 
         void flush(std::string const user);
@@ -181,8 +186,9 @@ class XplodifySession {
         int                     m_playback_done;
         int                     m_remove_tracks;
 
-        SpotifyCmd::type        m_mode;
-        SpotifyCmd::type        m_playback;
+        SpotifyCmd::type        m_playback_mode; //LINEAR, RAND
+        SpotifyCmd::type        m_repeat_mode; //REPEAT, REPEAT_ONE, SINGLE
+        SpotifyCmd::type        m_playback; //PLAY, PAUSE
         std::time_t             m_ts;
 
         boost::mutex            m_mutex;

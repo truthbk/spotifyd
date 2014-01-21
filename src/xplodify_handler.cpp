@@ -418,6 +418,28 @@ void XplodifyHandler::prev(){
     update_timestamp();
 }
 
+void XplodifyHandler::set_playback_mode(SpotifyCmd::type cmd) {
+    switch(cmd){
+        case SpotifyCmd::RAND:
+        case SpotifyCmd::LINEAR:
+            m_session.set_playback_mode(cmd);
+            break;
+        default:
+            break;
+    }
+}
+void XplodifyHandler::set_repeat_mode(SpotifyCmd::type cmd){
+    switch(cmd){
+        case SpotifyCmd::SINGLE:
+        case SpotifyCmd::REPEAT_ONE:
+        case SpotifyCmd::REPEAT:
+            m_session.set_repeat_mode(cmd);
+            break;
+        default:
+            break;
+    }
+}
+
 void XplodifyHandler::notify_main_thread(void){
     lock();
     m_notify_events = 1;

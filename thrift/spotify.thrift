@@ -23,6 +23,7 @@ enum SpotifyCmd {
     NEXT,
     PREV,
     RAND,
+    SINGLE,
     LINEAR,
     REPEAT_ONE,
     REPEAT

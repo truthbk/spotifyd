@@ -10,6 +10,8 @@
 
 #include "runnable.h"
 #include "lockable.h"
+
+#include "spotify_types.h"
 #include "spotify_data.h"
 
 
@@ -63,6 +65,8 @@ class SpotifyHandler
         virtual void stop() = 0;
         virtual void next() = 0;
         virtual void prev() = 0;
+        virtual void set_playback_mode(SpotifyCmd::type cmd) = 0;
+        virtual void set_repeat_mode(SpotifyCmd::type cmd) = 0;
 
         virtual void notify_main_thread(void) = 0;
         virtual void set_playback_done(bool done) = 0;

@@ -33,7 +33,8 @@ XplodifySession::XplodifySession()
     , m_logging_out(false)
     , m_playback_done(1)
     , m_remove_tracks(0)
-    , m_mode(SpotifyCmd::LINEAR)
+    , m_playback_mode(SpotifyCmd::LINEAR)
+    , m_repeat_mode(SpotifyCmd::REPEAT)
     , m_playback(SpotifyCmd::PAUSE)
     , m_ts(0)
 {
@@ -47,7 +48,8 @@ XplodifySession::XplodifySession(XplodifyHandler * h)
     , m_logging_out(false)
     , m_playback_done(1)
     , m_remove_tracks(0)
-    , m_mode(SpotifyCmd::LINEAR)
+    , m_playback_mode(SpotifyCmd::LINEAR)
+    , m_repeat_mode(SpotifyCmd::REPEAT)
     , m_playback(SpotifyCmd::PAUSE)
     , m_ts(0)
 {
@@ -380,16 +382,32 @@ int64_t XplodifySession::get_state_ts(std::string user) {
     return state;
 }
 
-void XplodifySession::set_mode(SpotifyCmd::type mode) {
+//TODO: Make this per user.
+void XplodifySession::set_playback_mode(SpotifyCmd::type mode) {
 
     boost::mutex::scoped_lock scoped_lock(m_mutex);
-    m_mode = mode;
+    m_playback_mode = mode;
 }
 
-SpotifyCmd::type XplodifySession::get_mode(void) {
+//TODO: Make this per user.
+SpotifyCmd::type XplodifySession::get_playback_mode(void) {
 
     boost::mutex::scoped_lock scoped_lock(m_mutex);
-    return m_mode;
+    return m_playback_mode;
+}
+
+//TODO: Make this per user.
+void XplodifySession::set_repeat_mode(SpotifyCmd::type mode) {
+
+    boost::mutex::scoped_lock scoped_lock(m_mutex);
+    m_repeat_mode = mode;
+}
+
+//TODO: Make this per user.
+SpotifyCmd::type XplodifySession::get_repeat_mode(void) {
+
+    boost::mutex::scoped_lock scoped_lock(m_mutex);
+    return m_repeat_mode;
 }
 
 sp_session * XplodifySession::get_sp_session() {
@@ -503,18 +521,28 @@ void XplodifySession::end_of_track() {
 #ifdef _DEBUG
     std::cout << "Track has finished." << std::endl;
 #endif
-    switch(m_mode){
+    switch(m_playback_mode){
+#if 0
         case SpotifyCmd::REPEAT_ONE:
         case SpotifyCmd::REPEAT:
             break;
+        case SpotifyCmd::SINGLE:
+            break;
+#endif
         case SpotifyCmd::RAND:
             //Any track on the playlist.
+            if(m_repeat_mode == SpotifyCmd::SINGLE) {
+                break;
+            }
             next = rand() % num + 1;
             scoped_lock.unlock(); //manual unlock -  set_track also will try to hold lock
             set_track(m_active_user, next);
             start_playback();
             break;
         case SpotifyCmd::LINEAR:
+            if(m_repeat_mode == SpotifyCmd::SINGLE) {
+                break;
+            }
             //MEANT to get the NEXT playlist.
             trk = m_statuses[m_active_user].m_playlist->get_next_track();
             scoped_lock.unlock(); //manual unlock -  set_track also will try to hold lock

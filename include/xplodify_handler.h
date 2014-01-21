@@ -55,6 +55,8 @@ class XplodifyHandler
         virtual void stop();
         virtual void next();
         virtual void prev();
+        virtual void set_playback_mode(SpotifyCmd::type cmd);
+        virtual void set_repeat_mode(SpotifyCmd::type cmd);
 
         virtual void notify_main_thread(void);
         virtual void set_playback_done(bool done);

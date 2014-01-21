@@ -211,12 +211,13 @@ void XplodifyServer::sendCommand(const SpotifyCredential& cred, const SpotifyCmd
             break;
         case SpotifyCmd::RAND:
         case SpotifyCmd::LINEAR:
+            m_sh.set_playback_mode(cmd);
+            break;
+        case SpotifyCmd::SINGLE:
         case SpotifyCmd::REPEAT_ONE:
         case SpotifyCmd::REPEAT:
-#if 0
-            sess->set_mode(cmd);
+            m_sh.set_repeat_mode(cmd);
             break;
-#endif
         default:
             break;
     }

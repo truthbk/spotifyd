@@ -23,9 +23,10 @@ struct SpotifyCmd {
     NEXT = 3,
     PREV = 4,
     RAND = 5,
-    LINEAR = 6,
-    REPEAT_ONE = 7,
-    REPEAT = 8
+    SINGLE = 6,
+    LINEAR = 7,
+    REPEAT_ONE = 8,
+    REPEAT = 9
   };
 };
 

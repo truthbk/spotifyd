@@ -22,9 +22,10 @@ class SpotifyCmd:
   NEXT = 3
   PREV = 4
   RAND = 5
-  LINEAR = 6
-  REPEAT_ONE = 7
-  REPEAT = 8
+  SINGLE = 6
+  LINEAR = 7
+  REPEAT_ONE = 8
+  REPEAT = 9
 
   _VALUES_TO_NAMES = {
     1: "PLAY",
@@ -32,9 +33,10 @@ class SpotifyCmd:
     3: "NEXT",
     4: "PREV",
     5: "RAND",
-    6: "LINEAR",
-    7: "REPEAT_ONE",
-    8: "REPEAT",
+    6: "SINGLE",
+    7: "LINEAR",
+    8: "REPEAT_ONE",
+    9: "REPEAT",
   }
 
   _NAMES_TO_VALUES = {
@@ -43,9 +45,10 @@ class SpotifyCmd:
     "NEXT": 3,
     "PREV": 4,
     "RAND": 5,
-    "LINEAR": 6,
-    "REPEAT_ONE": 7,
-    "REPEAT": 8,
+    "SINGLE": 6,
+    "LINEAR": 7,
+    "REPEAT_ONE": 8,
+    "REPEAT": 9,
   }
 
 
