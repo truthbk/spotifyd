@@ -32,13 +32,14 @@ extern "C" {
 XplodifyIPCServer::XplodifyIPCServer()
     : Runnable()
     , Lockable()
+    , m_sh(std::to_string(getpid()))
     , m_ts(std::time(NULL))
-    , m_multi(true)
     , m_master(false)
     , m_logging_in(false)
     , LOGIN_IPC_TO(SP_IPC_TIMEOUT)
     , m_timer(m_io)
 {
+    m_sh.start();
 }
 
 
@@ -55,13 +56,23 @@ bool XplodifyIPCServer::set_slave() {
 }
 
 void XplodifyIPCServer::check_in(SpotifyIPCCredential& _return, const SpotifyIPCCredential& cred) {
+
+    if(!m_uuid.empty()) {
+        _return.__set__uuid(std::string("")); //Empty string is a failure to check in.
+        return;
+    }
     m_uuid = std::string(m_sh.check_in());
     _return = cred;
     _return.__set__uuid(m_uuid); //Empty string is a failure to check in.
 }
 
 bool XplodifyIPCServer::check_out() {
-    return m_sh.check_out(m_uuid);
+    bool res = false;
+    res =  m_sh.check_out(m_uuid);
+    if(res) {
+        m_uuid.clear();
+    }
+    return res;
 }
 
 bool XplodifyIPCServer::login(const SpotifyIPCCredential& cred) {
@@ -138,9 +149,10 @@ void XplodifyIPCServer::update_timestamp(void) {
 void XplodifyIPCServer::run() {
 
     while(!m_done){
-        //is this too much of a busy loop?
         m_io.poll();
         m_io.reset();
+        //yield CPU
+        sleep(0);
     }
 }
 
@@ -162,5 +174,7 @@ void XplodifyIPCServer::login_timeout(const boost::system::error_code& e,
         return;
     }
     m_logging_in = false;
+
+    m_sh.update_timestamp();
 }
 

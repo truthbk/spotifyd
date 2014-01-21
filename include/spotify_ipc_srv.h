@@ -45,14 +45,15 @@ class XplodifyIPCServer
 
         XplodifyHandler                         m_sh;
         std::time_t                             m_ts;
-        const bool                              m_multi;
         bool                                    m_master;
         bool                                    m_logging_in;
 
         const size_t                            LOGIN_IPC_TO;
         boost::asio::io_service                 m_io;
         boost::asio::deadline_timer             m_timer;
-        //IPC server meant to only have a single session.
+
+        //IPC server meant to only take a single session.
+        //We enforce that here(?)
         std::string                             m_uuid; 
 
 };
