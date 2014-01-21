@@ -28,6 +28,7 @@ class XplodifyHandler
 {
     public:
         XplodifyHandler();
+        XplodifyHandler(std::string cachedir);
         virtual ~XplodifyHandler();
 
         virtual bool handler_available();

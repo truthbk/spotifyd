@@ -61,6 +61,41 @@ XplodifyHandler::XplodifyHandler()
     }
 }
 
+XplodifyHandler::XplodifyHandler(std::string cachedir)
+{
+    //check temp dir.
+    boost::filesystem::path dir(cachedir);
+    if(!boost::filesystem::exists(dir)) {
+        if(!boost::filesystem::create_directories(dir)) {
+            //TODO: cleanup
+            exit(1);
+        }
+    }
+    enum audio_arch arch;
+#ifdef _OSX
+#ifdef HAS_OPENAL
+    arch = OPENAL_ARCH;
+#elif HAS_AUDIOTOOLKIT
+    arch = AUDIOTOOLKIT;
+#endif
+#else
+#ifdef _LINUX
+    arch = ALSA;
+#endif
+#endif
+    set_audio(arch);
+    audio_init(&m_audiofifo);
+
+    //create session
+
+    if(m_session.init_session(g_appkey, g_appkey_size )) {
+#ifdef _DEBUG
+        std::cout << "Unexpected error creating session. "<< std::endl;
+#endif
+        exit(1); //NASTY!
+    }
+}
+
 XplodifyHandler::~XplodifyHandler() {
     //EMPTY.
 }
