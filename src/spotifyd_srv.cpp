@@ -27,6 +27,8 @@
 #include "Spotify.h"
 
 #include "spotify_cust.h"
+#include "spotify_ipc_srv.h"
+
 #include "xplodify_sess.h"
 #include "xplodify_plc.h"
 #include "xplodify_pl.h"
@@ -57,9 +59,10 @@ XplodifyServer::XplodifyServer(bool multisession)
     , LOGIN_TO(1)
     , m_sh()
     , m_ts(std::time(NULL))
-    , m_multi(multisession) {
-        //start handler worker thread.
-        m_sh.start();
+    , m_multi(multisession) 
+{
+    //start handler worker thread.
+    m_sh.start();
 }
 
 
@@ -384,18 +387,22 @@ int main(int argc, char **argv) {
         child_port = port + 1;
     }
 
+    boost::shared_ptr<XplodifyIPCServer> spserver_ipc_1;
+    boost::shared_ptr<XplodifyIPCServer> spserver_ipc_2;
     if(multi) {
         master_pid = fork();
         if(!master_pid) { //MASTER CHILD process
-            //TODO Boost service.
+            //TODO Thrift service.
             exit(0);
         }
 
         slave_pid = fork();
         if(!slave_pid) { //SLAVE CHILD process
-            //TODO> Boost service.
+            //TODO> Thrift service.
             exit(0);
         }
+        spserver_ipc_1 = boost::shared_ptr<XplodifyIPCServer>(new XplodifyIPCServer());
+        spserver_ipc_2 = boost::shared_ptr<XplodifyIPCServer>(new XplodifyIPCServer());
     }
 
     //XplodifyServer
