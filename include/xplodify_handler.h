@@ -22,6 +22,7 @@
 #include "spotify_data.h"
 
 #include "xplodify_sess.h"
+#include "xplodify_playmgr.h"
 
 class XplodifyHandler
     : public SpotifyHandler
