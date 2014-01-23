@@ -32,5 +32,12 @@ const size_t g_appkey_size = sizeof(g_appkey);
 #define SP_TIMEOUT 1
 #define SP_IPC_TIMEOUT 3
 
+namespace xplodify {
+    namespace constants {
+        const uint32_t SRV_BASE_PORT=9090;
+        const uint32_t IPCSRV_BASE_PORT=9091;
+        const uint8_t IPC_DEF_NPROCS=2;
+    };
+};
 
 #endif //_SPOTIFY_DATA_H
