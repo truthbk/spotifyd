@@ -22,10 +22,12 @@ set(Spotifyd_SRCS
 	spotifyd_srv.cpp
 	spotify_ipc_srv.cpp
 	xplodify_handler.cpp
+	xplodify_multi_handler.cpp
 	xplodify_sess.cpp
 	xplodify_plc.cpp
 	xplodify_pl.cpp
 	xplodify_track.cpp
+	xplodify_playmgr.cpp
 	)
 
 #if this doesn't work add it to the top-level
@@ -53,9 +55,9 @@ endif(APPLE)
 
 add_executable(spotifyd ${Spotifyd_SRCS})
 if(UNIX AND NOT APPLE)
-	target_link_libraries(spotifyd SpotifydThrift SpotifydIPCThrift spotaudio ${Boost_LIBRARIES} ${ALSA_LIBRARIES} ${Spotify_LIB} ${Thrift_LIBS} ${LibEvent_LIBS} ${LIBRT_LIBRARIES})
+	target_link_libraries(spotifyd SpotifydThrift SpotifydIPCThrift spotaudio ${Boost_LIBRARIES} ${Thrift_LIBS} ${ALSA_LIBRARIES} ${Spotify_LIB} ${LibEvent_LIBS} ${LIBRT_LIBRARIES})
 elseif(APPLE)
-	target_link_libraries(spotifyd SpotifydThrift SpotifydIPCThrift spotaudio ${Boost_LIBRARIES} ${Spotify_LIB} ${Thrift_LIBS} ${LibEvent_LIBS} ${COREAUDIO} ${AUDIOUNIT} ${AUDIOTOOLBOX} ${OPENAL_LIBRARY})
+	target_link_libraries(spotifyd SpotifydThrift SpotifydIPCThrift spotaudio ${Boost_LIBRARIES} ${Thrift_LIBS} ${Spotify_LIB} ${LibEvent_LIBS} ${COREAUDIO} ${AUDIOUNIT} ${AUDIOTOOLBOX} ${OPENAL_LIBRARY})
 endif()
 
 add_custom_command(
