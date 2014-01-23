@@ -101,7 +101,7 @@ class XplodifyServer
                 std::string uuid);
 
 
-        XplodifyHandler m_sh;
+        boost::shared_ptr<XplodifyHandler> m_sh;
 
         //Session login timers...
         //no transfer of ownership, we're good with raw pointers.

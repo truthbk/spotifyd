@@ -29,6 +29,8 @@
 #include "spotify_cust.h"
 #include "spotify_ipc_srv.h"
 
+#include "xplodify_handler.h"
+#include "xplodify_multi_handler.h"
 #include "xplodify_sess.h"
 #include "xplodify_plc.h"
 #include "xplodify_pl.h"
@@ -38,6 +40,8 @@ using namespace ::apache::thrift;
 using namespace ::apache::thrift::protocol;
 using namespace ::apache::thrift::transport;
 using namespace ::apache::thrift::server;
+
+using namespace xplodify::constants;
 
 //define the operators
 //these must be moved to their own file with other possible
@@ -57,12 +61,16 @@ XplodifyServer::XplodifyServer(bool multisession)
     : Runnable()
     , Lockable()
     , LOGIN_TO(1)
-    , m_sh()
     , m_ts(std::time(NULL))
     , m_multi(multisession) 
 {
-    //start handler worker thread.
-    m_sh.start();
+    if(m_multi) {
+        m_sh = boost::shared_ptr<XplodifyHandler>(new XplodifyMultiHandler());
+    } else {
+        //start handler worker thread.
+        m_sh = boost::shared_ptr<XplodifyHandler>(new XplodifyHandler());
+    }
+    m_sh->start();
 }
 
 
@@ -83,7 +91,7 @@ bool XplodifyServer::is_service_ready() {
     }
 
     //in multisession handler, check with handler.
-    if(!m_sh.handler_available()){
+    if(!m_sh->handler_available()){
         return true;
     }
 
@@ -91,18 +99,18 @@ bool XplodifyServer::is_service_ready() {
 }
 
 void XplodifyServer::check_in(SpotifyCredential& _return, const SpotifyCredential& cred) {
-    std::string uuid_str = m_sh.check_in();
+    std::string uuid_str = m_sh->check_in();
     _return = cred;
     _return.__set__uuid(uuid_str); //Empty string is a failure to check in.
 }
 
 bool XplodifyServer::check_out(const SpotifyCredential& cred) {
-    return m_sh.check_out(cred._uuid);
+    return m_sh->check_out(cred._uuid);
 }
 
 bool XplodifyServer::loginSession(const SpotifyCredential& cred) {
 
-    bool logging_in = m_sh.login(cred._uuid, cred._username, cred._passwd);
+    bool logging_in = m_sh->login(cred._uuid, cred._username, cred._passwd);
 
     if(logging_in) {
 #ifdef _DEBUG
@@ -144,7 +152,7 @@ void XplodifyServer::login_timeout(const boost::system::error_code&,
     }
 
     //check session status...
-    bool logged = m_sh.login_status(uuid);
+    bool logged = m_sh->login_status(uuid);
 
     if(logged) {
 #ifdef _DEBUG
@@ -156,23 +164,23 @@ void XplodifyServer::login_timeout(const boost::system::error_code&,
 #if 0
     //not logged in, cleanup.
     lock();
-    m_sh.check_out(uuid);
+    m_sh->check_out(uuid);
     unlock();
 #endif
 
-    m_sh.update_timestamp();
+    m_sh->update_timestamp();
 }
 
 bool XplodifyServer::isLoggedIn(const SpotifyCredential& cred) {
 
-    return m_sh.login_status(cred._uuid);
+    return m_sh->login_status(cred._uuid);
 }
 
 int64_t XplodifyServer::getStateTS(const SpotifyCredential& cred) {
 
     int64_t ts;
 
-    ts = m_sh.get_handler_state();
+    ts = m_sh->get_handler_state();
     return ts;
 }
 
@@ -180,13 +188,13 @@ int64_t XplodifyServer::getSessionStateTS(const SpotifyCredential& cred) {
 
     int64_t ts;
 
-    ts = m_sh.get_session_state(cred._uuid);
+    ts = m_sh->get_session_state(cred._uuid);
     return ts;
 }
 
 void XplodifyServer::logoutSession(const SpotifyCredential& cred) {
 
-    m_sh.logout(cred._uuid);
+    m_sh->logout(cred._uuid);
 
     update_timestamp();
     return;
@@ -198,25 +206,25 @@ void XplodifyServer::sendCommand(const SpotifyCredential& cred, const SpotifyCmd
     //rethink role for cred._uuid for this RPC call.
     switch(cmd){
         case SpotifyCmd::PLAY:
-            m_sh.play();
+            m_sh->play();
             break;
         case SpotifyCmd::PAUSE:
-            m_sh.stop();
+            m_sh->stop();
             break;
         case SpotifyCmd::NEXT:
-            m_sh.next();
+            m_sh->next();
             break;
         case SpotifyCmd::PREV:
-            m_sh.prev();
+            m_sh->prev();
             break;
         case SpotifyCmd::RAND:
         case SpotifyCmd::LINEAR:
-            m_sh.set_playback_mode(cmd);
+            m_sh->set_playback_mode(cmd);
             break;
         case SpotifyCmd::SINGLE:
         case SpotifyCmd::REPEAT_ONE:
         case SpotifyCmd::REPEAT:
-            m_sh.set_repeat_mode(cmd);
+            m_sh->set_repeat_mode(cmd);
             break;
         default:
             break;
@@ -242,7 +250,7 @@ void XplodifyServer::search(SpotifyPlaylist& _return, const SpotifyCredential& c
 void XplodifyServer::getPlaylists(SpotifyPlaylistList& _return, const SpotifyCredential& cred) 
 {
 
-    std::vector< boost::shared_ptr<XplodifyPlaylist> > playlists(m_sh.get_playlists(cred._uuid));
+    std::vector< boost::shared_ptr<XplodifyPlaylist> > playlists(m_sh->get_playlists(cred._uuid));
     for(uint32_t i=0 ; i<playlists.size() ; i++) {
         std::string plstr(playlists[i]->get_name(true));
         _return.insert(plstr);
@@ -255,7 +263,7 @@ void XplodifyServer::getPlaylists(SpotifyPlaylistList& _return, const SpotifyCre
 void XplodifyServer::getPlaylist(SpotifyPlaylist& _return, const SpotifyCredential& cred,
         const int32_t plist_id) {
 
-    std::vector< boost::shared_ptr<XplodifyTrack> > tracks(m_sh.get_tracks(cred._uuid, plist_id));
+    std::vector< boost::shared_ptr<XplodifyTrack> > tracks(m_sh->get_tracks(cred._uuid, plist_id));
 
     for(unsigned int i = 0 ; i < tracks.size() ; i++ ) {
         boost::shared_ptr<XplodifyTrack> tr = tracks[i];
@@ -281,7 +289,7 @@ void XplodifyServer::getPlaylistByName(
         SpotifyPlaylist& _return, const SpotifyCredential& cred,
         const std::string& name) {
 
-    std::vector< boost::shared_ptr<XplodifyTrack> > tracks(m_sh.get_tracks(cred._uuid, name));
+    std::vector< boost::shared_ptr<XplodifyTrack> > tracks(m_sh->get_tracks(cred._uuid, name));
 
     for(unsigned int i = 0 ; i < tracks.size() ; i++ ) {
         boost::shared_ptr<XplodifyTrack> tr = tracks[i];
@@ -304,22 +312,22 @@ void XplodifyServer::getPlaylistByName(
 }
 
 void XplodifyServer::selectPlaylist(const SpotifyCredential& cred, const std::string& playlist) {
-    m_sh.select_playlist(cred._uuid, playlist);
+    m_sh->select_playlist(cred._uuid, playlist);
     return;
 }
 
 void XplodifyServer::selectPlaylistById(const SpotifyCredential& cred, const int32_t plist_id) {
-    m_sh.select_playlist(cred._uuid, plist_id);
+    m_sh->select_playlist(cred._uuid, plist_id);
     return;
 }
 
 void XplodifyServer::selectTrack(const SpotifyCredential& cred, const std::string& track) {
-    m_sh.select_track(cred._uuid, track);
+    m_sh->select_track(cred._uuid, track);
     return;
 }
 
 void XplodifyServer::selectTrackById(const SpotifyCredential& cred, const int32_t track_id) {
-    m_sh.select_track(cred._uuid, track_id);
+    m_sh->select_track(cred._uuid, track_id);
     return;
 }
 
@@ -338,7 +346,7 @@ bool XplodifyServer::add2playlist(const SpotifyCredential& cred, const std::stri
 }
 
 void XplodifyServer::whats_playing(SpotifyTrack& _return, const SpotifyCredential& cred ) {
-    boost::shared_ptr<XplodifyTrack> tr = m_sh.whats_playing(cred._uuid);
+    boost::shared_ptr<XplodifyTrack> tr = m_sh->whats_playing(cred._uuid);
     if(!tr) {
         return;
     }
@@ -356,10 +364,6 @@ void XplodifyServer::whats_playing(SpotifyTrack& _return, const SpotifyCredentia
     return;
 }
 
-
-namespace {
-    const uint32_t SRV_BASE_PORT=9090;
-}
 
 int main(int argc, char **argv) {
     uint32_t port, child_port;
