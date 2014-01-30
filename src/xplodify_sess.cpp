@@ -521,23 +521,20 @@ void XplodifySession::end_of_track() {
 #ifdef _DEBUG
     std::cout << "Track has finished." << std::endl;
 #endif
+    if(m_repeat_mode == SpotifyCmd::REPEAT_ONE) {
+        start_playback();
+        return;
+    }
     switch(m_playback_mode){
-#if 0
-        case SpotifyCmd::REPEAT_ONE:
-        case SpotifyCmd::REPEAT:
-            break;
-        case SpotifyCmd::SINGLE:
-            break;
-#endif
+        //TODO: still missing management of REPEAT repeat_mode.
         case SpotifyCmd::RAND:
             //Any track on the playlist.
-            if(m_repeat_mode == SpotifyCmd::SINGLE) {
-                break;
-            }
             next = rand() % num + 1;
             scoped_lock.unlock(); //manual unlock -  set_track also will try to hold lock
             set_track(m_active_user, next);
-            start_playback();
+            if(m_repeat_mode != SpotifyCmd::SINGLE){
+                start_playback();
+            }
             break;
         case SpotifyCmd::LINEAR:
             if(m_repeat_mode == SpotifyCmd::SINGLE) {
@@ -547,6 +544,9 @@ void XplodifySession::end_of_track() {
             trk = m_statuses[m_active_user].m_playlist->get_next_track();
             scoped_lock.unlock(); //manual unlock -  set_track also will try to hold lock
             set_track(m_active_user, trk->get_name());
+            if(m_repeat_mode != SpotifyCmd::SINGLE){
+                start_playback();
+            }
             start_playback();
             break;
         default:
