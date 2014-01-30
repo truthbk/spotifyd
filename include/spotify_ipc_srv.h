@@ -21,9 +21,9 @@ class XplodifyIPCServer
 
         bool set_master();
         bool set_slave();
-        void check_in(SpotifyIPCCredential& _return, const SpotifyIPCCredential& cred);
+        void check_in(SpotifyCredential& _return, const SpotifyCredential& cred);
         bool check_out();
-        bool login(const SpotifyIPCCredential& cred);
+        bool login(const SpotifyCredential& cred);
         void logout();
         bool is_logged();
         void selectPlaylist(const std::string& playlist);

@@ -1,18 +1,13 @@
 #!/opt/local/bin/thrift --gen cpp
 
-
-struct SpotifyIPCCredential {
-    1: required string _username;
-    2: required string _passwd;
-    3: optional string _uuid; //This could potentially be a i32 token as well...
-}
+include "spotify_types.thrift"
 
 service SpotifyIPC {
 	bool set_master();
 	bool set_slave();
-	SpotifyIPCCredential check_in(1: SpotifyIPCCredential cred);
+	spotify_types.SpotifyCredential check_in(1: spotify_types.SpotifyCredential cred);
 	bool check_out();
-	bool login(1: SpotifyIPCCredential cred);
+	bool login(1: spotify_types.SpotifyCredential cred);
 	bool is_logged();
 	oneway void logout();
 

@@ -55,7 +55,7 @@ bool XplodifyIPCServer::set_slave() {
     return m_master;
 }
 
-void XplodifyIPCServer::check_in(SpotifyIPCCredential& _return, const SpotifyIPCCredential& cred) {
+void XplodifyIPCServer::check_in(SpotifyCredential& _return, const SpotifyCredential& cred) {
 
     if(!m_uuid.empty()) {
         _return.__set__uuid(std::string("")); //Empty string is a failure to check in.
@@ -75,7 +75,7 @@ bool XplodifyIPCServer::check_out() {
     return res;
 }
 
-bool XplodifyIPCServer::login(const SpotifyIPCCredential& cred) {
+bool XplodifyIPCServer::login(const SpotifyCredential& cred) {
 
     if(cred._uuid != m_uuid) {
         return false;

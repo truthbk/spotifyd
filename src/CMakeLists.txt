@@ -2,12 +2,14 @@ set(ThriftGen_SRCS
 	${CMAKE_CURRENT_SOURCE_DIR}/gen-cpp/Spotify.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/gen-cpp/spotify_constants.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/gen-cpp/spotify_types.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/gen-cpp/spotify_types_types.cpp
 	)
 
 set(ThriftGen_IPC_SRCS
 	${CMAKE_CURRENT_SOURCE_DIR}/gen-cpp/SpotifyIPC.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/gen-cpp/spotify_ipc_constants.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/gen-cpp/spotify_ipc_types.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/gen-cpp/spotify_types_types.cpp
 	)
 
 set(ThriftPyGen_SRCS
@@ -89,7 +91,7 @@ add_custom_target(
 	DEPENDS ${ThriftPyGen_SRCS}
 	)
 
-# Gather list of all .xml and .conf files in "/config"
+# Gather list of all .h files in "/gen-cpp"
 file(GLOB ThriftHeaderFiles ${CMAKE_CURRENT_SOURCE_DIR}/gen-cpp/*.h)
 
 foreach(HeaderFile ${ThriftHeaderFiles})
