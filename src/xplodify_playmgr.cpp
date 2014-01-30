@@ -38,7 +38,7 @@ void XplodifyPlaybackManager::register_user(std::string user, std::string passwd
 //Any user we get here is expected to be correct.
 bool XplodifyPlaybackManager::login(std::string user, uint8_t client_id){
     //TODO
-    SpotifyIPCCredential cred, ret_cred;
+    SpotifyCredential cred, ret_cred;
     cred._username = m_users[user]._username;
     cred._passwd = m_users[user]._passwd;
 
