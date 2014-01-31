@@ -21,9 +21,9 @@ class XplodifyIPCServer
 
         bool set_master();
         bool set_slave();
-        void check_in(SpotifyCredential& _return, const SpotifyCredential& cred);
+        void check_in( ::SpotifyCredential& _return, const ::SpotifyCredential& cred);
         bool check_out();
-        bool login(const SpotifyCredential& cred);
+        bool login(const ::SpotifyCredential& cred);
         void logout();
         bool is_logged();
         void selectPlaylist(const std::string& playlist);
@@ -33,6 +33,9 @@ class XplodifyIPCServer
         void play();
         void stop();
         void terminate_proc();
+        void whats_playing( SpotifyTrack& _return);
+        void track_loaded( SpotifyTrack& _return, const SpotifyCredential& cred);
+        void playlist_loaded( SpotifyPlaylist& _return, const SpotifyCredential& cred);
 
 
     protected:

@@ -377,6 +377,15 @@ bool XplodifyHandler::select_track(std::string uuid, std::string tname){
     return true;
 
 }
+boost::shared_ptr<XplodifyTrack> XplodifyHandler::whats_playing(void) {
+    if(m_session.available()) {
+        return boost::shared_ptr<XplodifyTrack>();
+    }
+
+    boost::shared_ptr<XplodifyTrack> tr( m_session.get_track());
+
+    return tr;
+}
 boost::shared_ptr<XplodifyTrack> XplodifyHandler::whats_playing(std::string uuid) {
     //TODO: check if uuid is indeed checked-in
     if(!is_checked_in(uuid) || m_session.available()) {

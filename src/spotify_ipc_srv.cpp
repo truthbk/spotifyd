@@ -137,6 +137,33 @@ void XplodifyIPCServer::terminate_proc() {
     return;
 }
 
+void XplodifyIPCServer::whats_playing( SpotifyTrack& _return ){
+    //TODO:
+    boost::shared_ptr<XplodifyTrack> tr = m_sh.whats_playing();
+    if(!tr) {
+        return;
+    }
+
+    int duration = tr->get_duration(true); //millisecs?
+    _return.__set__id( tr->get_index(true) );
+    _return.__set__name( tr->get_name(true) );
+    _return.__set__artist( tr->get_artist(0, true) ); //first artist (this sucks).
+    _return.__set__minutes( duration / 60000 );
+    _return.__set__seconds( (duration / 1000) % 60 );
+    _return.__set__popularity( tr->get_popularity(true) );
+    _return.__set__starred( tr->is_starred(true) );
+    _return.__set__genre( "unknown" );
+
+    return;
+}
+void XplodifyIPCServer::track_loaded( SpotifyTrack& _return, const SpotifyCredential& cred ){
+    //TODO:
+    return;
+}
+void XplodifyIPCServer::playlist_loaded( SpotifyPlaylist& _return, const SpotifyCredential& cred ){
+    //TODO:
+    return;
+}
 
 
 void XplodifyIPCServer::update_timestamp(void) {
