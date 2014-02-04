@@ -123,12 +123,20 @@ void XplodifyPlaylistContainer::add_playlist(boost::shared_ptr<XplodifyPlaylist>
 
     //get iterator...
     pl_cache_by_rand& c_r = m_pl_cache.get<0>();
-    pl_cache_by_rand::iterator it = c_r.iterator_to(c_r[pos]);
+    //pl_cache_by_rand::iterator it = c_r.iterator_to(c_r[pos]);
+    pl_cache_by_rand::iterator it = c_r.begin();
+    for(int i=0 ; it!=c_r.end() && i<pos ; ) {
+        it++;
+    }
 
     //do this with exceptions once this is rolling.
     std::string name(pl->get_name());
     if(!name.empty()) {
+        if(it != c_r.end()) {
             c_r.insert(it, pl_entry(name, pl));
+        } else {
+            c_r.push_back(pl_entry(name, pl));
+        }
     }
 }
 
