@@ -10,6 +10,9 @@ import os.path
 #temporary hack, we'll be moving to virtualenv.
 sys.path.insert(1, './gen-py')
 
+from spotify_types.ttypes import *
+from spotify_types.constants import *
+
 from spotify import Spotify
 from spotify.ttypes import *
 from spotify.constants import *
