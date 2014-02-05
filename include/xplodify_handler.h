@@ -51,6 +51,7 @@ class XplodifyHandler
         virtual bool select_playlist(std::string uuid, std::string pname);
         virtual bool select_track(std::string uuid, int tid);
         virtual bool select_track(std::string uuid, std::string tname);
+        virtual boost::shared_ptr<XplodifyTrack> whats_playing(void);
         virtual boost::shared_ptr<XplodifyTrack> whats_playing(std::string uuid);
         virtual void play();
         virtual void stop();

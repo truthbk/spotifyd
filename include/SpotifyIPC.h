@@ -29,6 +29,9 @@ class SpotifyIPCIf {
   virtual void play() = 0;
   virtual void stop() = 0;
   virtual void terminate_proc() = 0;
+  virtual void whats_playing( ::SpotifyTrack& _return) = 0;
+  virtual void track_loaded( ::SpotifyTrack& _return, const  ::SpotifyCredential& cred) = 0;
+  virtual void playlist_loaded( ::SpotifyPlaylist& _return, const  ::SpotifyCredential& cred) = 0;
 };
 
 class SpotifyIPCIfFactory {
@@ -103,6 +106,15 @@ class SpotifyIPCNull : virtual public SpotifyIPCIf {
     return;
   }
   void terminate_proc() {
+    return;
+  }
+  void whats_playing( ::SpotifyTrack& /* _return */) {
+    return;
+  }
+  void track_loaded( ::SpotifyTrack& /* _return */, const  ::SpotifyCredential& /* cred */) {
+    return;
+  }
+  void playlist_loaded( ::SpotifyPlaylist& /* _return */, const  ::SpotifyCredential& /* cred */) {
     return;
   }
 };
@@ -1051,6 +1063,316 @@ class SpotifyIPC_terminate_proc_pargs {
 
 };
 
+
+class SpotifyIPC_whats_playing_args {
+ public:
+
+  SpotifyIPC_whats_playing_args() {
+  }
+
+  virtual ~SpotifyIPC_whats_playing_args() throw() {}
+
+
+  bool operator == (const SpotifyIPC_whats_playing_args & /* rhs */) const
+  {
+    return true;
+  }
+  bool operator != (const SpotifyIPC_whats_playing_args &rhs) const {
+    return !(*this == rhs);
+  }
+
+  bool operator < (const SpotifyIPC_whats_playing_args & ) const;
+
+  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+};
+
+
+class SpotifyIPC_whats_playing_pargs {
+ public:
+
+
+  virtual ~SpotifyIPC_whats_playing_pargs() throw() {}
+
+
+  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+};
+
+typedef struct _SpotifyIPC_whats_playing_result__isset {
+  _SpotifyIPC_whats_playing_result__isset() : success(false) {}
+  bool success;
+} _SpotifyIPC_whats_playing_result__isset;
+
+class SpotifyIPC_whats_playing_result {
+ public:
+
+  SpotifyIPC_whats_playing_result() {
+  }
+
+  virtual ~SpotifyIPC_whats_playing_result() throw() {}
+
+   ::SpotifyTrack success;
+
+  _SpotifyIPC_whats_playing_result__isset __isset;
+
+  void __set_success(const  ::SpotifyTrack& val) {
+    success = val;
+  }
+
+  bool operator == (const SpotifyIPC_whats_playing_result & rhs) const
+  {
+    if (!(success == rhs.success))
+      return false;
+    return true;
+  }
+  bool operator != (const SpotifyIPC_whats_playing_result &rhs) const {
+    return !(*this == rhs);
+  }
+
+  bool operator < (const SpotifyIPC_whats_playing_result & ) const;
+
+  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+};
+
+typedef struct _SpotifyIPC_whats_playing_presult__isset {
+  _SpotifyIPC_whats_playing_presult__isset() : success(false) {}
+  bool success;
+} _SpotifyIPC_whats_playing_presult__isset;
+
+class SpotifyIPC_whats_playing_presult {
+ public:
+
+
+  virtual ~SpotifyIPC_whats_playing_presult() throw() {}
+
+   ::SpotifyTrack* success;
+
+  _SpotifyIPC_whats_playing_presult__isset __isset;
+
+  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+
+};
+
+typedef struct _SpotifyIPC_track_loaded_args__isset {
+  _SpotifyIPC_track_loaded_args__isset() : cred(false) {}
+  bool cred;
+} _SpotifyIPC_track_loaded_args__isset;
+
+class SpotifyIPC_track_loaded_args {
+ public:
+
+  SpotifyIPC_track_loaded_args() {
+  }
+
+  virtual ~SpotifyIPC_track_loaded_args() throw() {}
+
+   ::SpotifyCredential cred;
+
+  _SpotifyIPC_track_loaded_args__isset __isset;
+
+  void __set_cred(const  ::SpotifyCredential& val) {
+    cred = val;
+  }
+
+  bool operator == (const SpotifyIPC_track_loaded_args & rhs) const
+  {
+    if (!(cred == rhs.cred))
+      return false;
+    return true;
+  }
+  bool operator != (const SpotifyIPC_track_loaded_args &rhs) const {
+    return !(*this == rhs);
+  }
+
+  bool operator < (const SpotifyIPC_track_loaded_args & ) const;
+
+  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+};
+
+
+class SpotifyIPC_track_loaded_pargs {
+ public:
+
+
+  virtual ~SpotifyIPC_track_loaded_pargs() throw() {}
+
+  const  ::SpotifyCredential* cred;
+
+  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+};
+
+typedef struct _SpotifyIPC_track_loaded_result__isset {
+  _SpotifyIPC_track_loaded_result__isset() : success(false) {}
+  bool success;
+} _SpotifyIPC_track_loaded_result__isset;
+
+class SpotifyIPC_track_loaded_result {
+ public:
+
+  SpotifyIPC_track_loaded_result() {
+  }
+
+  virtual ~SpotifyIPC_track_loaded_result() throw() {}
+
+   ::SpotifyTrack success;
+
+  _SpotifyIPC_track_loaded_result__isset __isset;
+
+  void __set_success(const  ::SpotifyTrack& val) {
+    success = val;
+  }
+
+  bool operator == (const SpotifyIPC_track_loaded_result & rhs) const
+  {
+    if (!(success == rhs.success))
+      return false;
+    return true;
+  }
+  bool operator != (const SpotifyIPC_track_loaded_result &rhs) const {
+    return !(*this == rhs);
+  }
+
+  bool operator < (const SpotifyIPC_track_loaded_result & ) const;
+
+  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+};
+
+typedef struct _SpotifyIPC_track_loaded_presult__isset {
+  _SpotifyIPC_track_loaded_presult__isset() : success(false) {}
+  bool success;
+} _SpotifyIPC_track_loaded_presult__isset;
+
+class SpotifyIPC_track_loaded_presult {
+ public:
+
+
+  virtual ~SpotifyIPC_track_loaded_presult() throw() {}
+
+   ::SpotifyTrack* success;
+
+  _SpotifyIPC_track_loaded_presult__isset __isset;
+
+  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+
+};
+
+typedef struct _SpotifyIPC_playlist_loaded_args__isset {
+  _SpotifyIPC_playlist_loaded_args__isset() : cred(false) {}
+  bool cred;
+} _SpotifyIPC_playlist_loaded_args__isset;
+
+class SpotifyIPC_playlist_loaded_args {
+ public:
+
+  SpotifyIPC_playlist_loaded_args() {
+  }
+
+  virtual ~SpotifyIPC_playlist_loaded_args() throw() {}
+
+   ::SpotifyCredential cred;
+
+  _SpotifyIPC_playlist_loaded_args__isset __isset;
+
+  void __set_cred(const  ::SpotifyCredential& val) {
+    cred = val;
+  }
+
+  bool operator == (const SpotifyIPC_playlist_loaded_args & rhs) const
+  {
+    if (!(cred == rhs.cred))
+      return false;
+    return true;
+  }
+  bool operator != (const SpotifyIPC_playlist_loaded_args &rhs) const {
+    return !(*this == rhs);
+  }
+
+  bool operator < (const SpotifyIPC_playlist_loaded_args & ) const;
+
+  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+};
+
+
+class SpotifyIPC_playlist_loaded_pargs {
+ public:
+
+
+  virtual ~SpotifyIPC_playlist_loaded_pargs() throw() {}
+
+  const  ::SpotifyCredential* cred;
+
+  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+};
+
+typedef struct _SpotifyIPC_playlist_loaded_result__isset {
+  _SpotifyIPC_playlist_loaded_result__isset() : success(false) {}
+  bool success;
+} _SpotifyIPC_playlist_loaded_result__isset;
+
+class SpotifyIPC_playlist_loaded_result {
+ public:
+
+  SpotifyIPC_playlist_loaded_result() {
+  }
+
+  virtual ~SpotifyIPC_playlist_loaded_result() throw() {}
+
+   ::SpotifyPlaylist success;
+
+  _SpotifyIPC_playlist_loaded_result__isset __isset;
+
+  void __set_success(const  ::SpotifyPlaylist& val) {
+    success = val;
+  }
+
+  bool operator == (const SpotifyIPC_playlist_loaded_result & rhs) const
+  {
+    if (!(success == rhs.success))
+      return false;
+    return true;
+  }
+  bool operator != (const SpotifyIPC_playlist_loaded_result &rhs) const {
+    return !(*this == rhs);
+  }
+
+  bool operator < (const SpotifyIPC_playlist_loaded_result & ) const;
+
+  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+};
+
+typedef struct _SpotifyIPC_playlist_loaded_presult__isset {
+  _SpotifyIPC_playlist_loaded_presult__isset() : success(false) {}
+  bool success;
+} _SpotifyIPC_playlist_loaded_presult__isset;
+
+class SpotifyIPC_playlist_loaded_presult {
+ public:
+
+
+  virtual ~SpotifyIPC_playlist_loaded_presult() throw() {}
+
+   ::SpotifyPlaylist* success;
+
+  _SpotifyIPC_playlist_loaded_presult__isset __isset;
+
+  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+
+};
+
 class SpotifyIPCClient : virtual public SpotifyIPCIf {
  public:
   SpotifyIPCClient(boost::shared_ptr< ::apache::thrift::protocol::TProtocol> prot) :
@@ -1105,6 +1427,15 @@ class SpotifyIPCClient : virtual public SpotifyIPCIf {
   void send_stop();
   void terminate_proc();
   void send_terminate_proc();
+  void whats_playing( ::SpotifyTrack& _return);
+  void send_whats_playing();
+  void recv_whats_playing( ::SpotifyTrack& _return);
+  void track_loaded( ::SpotifyTrack& _return, const  ::SpotifyCredential& cred);
+  void send_track_loaded(const  ::SpotifyCredential& cred);
+  void recv_track_loaded( ::SpotifyTrack& _return);
+  void playlist_loaded( ::SpotifyPlaylist& _return, const  ::SpotifyCredential& cred);
+  void send_playlist_loaded(const  ::SpotifyCredential& cred);
+  void recv_playlist_loaded( ::SpotifyPlaylist& _return);
  protected:
   boost::shared_ptr< ::apache::thrift::protocol::TProtocol> piprot_;
   boost::shared_ptr< ::apache::thrift::protocol::TProtocol> poprot_;
@@ -1134,6 +1465,9 @@ class SpotifyIPCProcessor : public ::apache::thrift::TDispatchProcessor {
   void process_play(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext);
   void process_stop(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext);
   void process_terminate_proc(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext);
+  void process_whats_playing(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext);
+  void process_track_loaded(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext);
+  void process_playlist_loaded(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext);
  public:
   SpotifyIPCProcessor(boost::shared_ptr<SpotifyIPCIf> iface) :
     iface_(iface) {
@@ -1151,6 +1485,9 @@ class SpotifyIPCProcessor : public ::apache::thrift::TDispatchProcessor {
     processMap_["play"] = &SpotifyIPCProcessor::process_play;
     processMap_["stop"] = &SpotifyIPCProcessor::process_stop;
     processMap_["terminate_proc"] = &SpotifyIPCProcessor::process_terminate_proc;
+    processMap_["whats_playing"] = &SpotifyIPCProcessor::process_whats_playing;
+    processMap_["track_loaded"] = &SpotifyIPCProcessor::process_track_loaded;
+    processMap_["playlist_loaded"] = &SpotifyIPCProcessor::process_playlist_loaded;
   }
 
   virtual ~SpotifyIPCProcessor() {}
@@ -1304,6 +1641,36 @@ class SpotifyIPCMultiface : virtual public SpotifyIPCIf {
       ifaces_[i]->terminate_proc();
     }
     ifaces_[i]->terminate_proc();
+  }
+
+  void whats_playing( ::SpotifyTrack& _return) {
+    size_t sz = ifaces_.size();
+    size_t i = 0;
+    for (; i < (sz - 1); ++i) {
+      ifaces_[i]->whats_playing(_return);
+    }
+    ifaces_[i]->whats_playing(_return);
+    return;
+  }
+
+  void track_loaded( ::SpotifyTrack& _return, const  ::SpotifyCredential& cred) {
+    size_t sz = ifaces_.size();
+    size_t i = 0;
+    for (; i < (sz - 1); ++i) {
+      ifaces_[i]->track_loaded(_return, cred);
+    }
+    ifaces_[i]->track_loaded(_return, cred);
+    return;
+  }
+
+  void playlist_loaded( ::SpotifyPlaylist& _return, const  ::SpotifyCredential& cred) {
+    size_t sz = ifaces_.size();
+    size_t i = 0;
+    for (; i < (sz - 1); ++i) {
+      ifaces_[i]->playlist_loaded(_return, cred);
+    }
+    ifaces_[i]->playlist_loaded(_return, cred);
+    return;
   }
 
 };
