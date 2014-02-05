@@ -96,17 +96,17 @@ bool XplodifyPlaylistContainer::unload(bool cascade) {
     return true;
 }
 
-void XplodifyPlaylistContainer::add_playlist(XplodifyPlaylist * pl) {
+bool XplodifyPlaylistContainer::add_playlist(XplodifyPlaylist * pl) {
     if(!pl) {
-        return;
+        return false;
     }
     boost::shared_ptr<XplodifyPlaylist> xpl(pl);
-    add_playlist(xpl);
+    return add_playlist(xpl);
 }
 
-void XplodifyPlaylistContainer::add_playlist(boost::shared_ptr<XplodifyPlaylist> pl) {
+bool XplodifyPlaylistContainer::add_playlist(boost::shared_ptr<XplodifyPlaylist> pl) {
     if(!pl) {
-        return;
+        return false;
     }
 
     //do this with exceptions once this is rolling.
@@ -114,12 +114,15 @@ void XplodifyPlaylistContainer::add_playlist(boost::shared_ptr<XplodifyPlaylist>
     if(!name.empty()) {
         typedef std::pair<pl_cache_by_rand::iterator, bool> res_pair;
         res_pair ret = m_pl_cache.get<0>().push_back(pl_entry(name, pl));
+        return ret.second;
     }
+
+    return false;
 }
 
-void XplodifyPlaylistContainer::add_playlist(boost::shared_ptr<XplodifyPlaylist> pl, int pos) {
+bool XplodifyPlaylistContainer::add_playlist(boost::shared_ptr<XplodifyPlaylist> pl, int pos) {
     if(!pl) {
-        return;
+        return false;
     }
 
     //get iterator...
@@ -132,12 +135,17 @@ void XplodifyPlaylistContainer::add_playlist(boost::shared_ptr<XplodifyPlaylist>
     //do this with exceptions once this is rolling.
     std::string name(pl->get_name());
     if(!name.empty()) {
+        typedef std::pair<pl_cache_by_rand::iterator, bool> res_pair;
+        res_pair ret;
         if(it != c_r.end()) {
-            c_r.insert(it, pl_entry(name, pl));
+            ret = c_r.insert(it, pl_entry(name, pl));
         } else {
-            c_r.push_back(pl_entry(name, pl));
+            ret = c_r.push_back(pl_entry(name, pl));
         }
+        return ret.second;
     }
+
+    return false;
 }
 
 void XplodifyPlaylistContainer::update_playlist_ptrs(bool cascade) {
