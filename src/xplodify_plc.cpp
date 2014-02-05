@@ -163,7 +163,6 @@ void XplodifyPlaylistContainer::update_cache() {
         boost::shared_ptr<XplodifyPlaylist> xpl(*it);
         if(xpl->is_loaded()) {
             xpl->cache();
-            add_playlist(xpl, xpl->get_index());
             //no longer deferred.
             it = m_pending_playlists.erase(it);
         } else {
