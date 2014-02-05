@@ -64,6 +64,11 @@ boost::shared_ptr<XplodifyTrack>
 XplodifyPlaylist::remove_track_from_cache(int idx) {
 
     track_cache_by_rand& tr_cache_rand = m_track_cache.get<0>();
+
+    if(tr_cache_rand.size() < static_cast<unsigned long>(idx-1)) {
+        return boost::shared_ptr<XplodifyTrack>();
+    }
+
     track_cache_by_rand::const_iterator cit = tr_cache_rand.begin();
 
     cit = cit+idx-1;
@@ -384,7 +389,9 @@ void XplodifyPlaylist::tracks_removed(const int *tracks, int num_tracks) {
     for(int i=0 ; i<num_tracks ; i++) {
         boost::shared_ptr<XplodifyTrack> tr = 
             remove_track_from_cache(tracks[num_tracks-i-1]);
-        tr.reset();
+        if(tr != NULL) {
+            tr.reset();
+        }
     }
 
     m_session.update_state_ts();

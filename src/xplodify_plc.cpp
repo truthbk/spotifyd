@@ -112,7 +112,8 @@ void XplodifyPlaylistContainer::add_playlist(boost::shared_ptr<XplodifyPlaylist>
     //do this with exceptions once this is rolling.
     std::string name(pl->get_name());
     if(!name.empty()) {
-        m_pl_cache.get<0>().push_back(pl_entry(name, pl));
+        typedef std::pair<pl_cache_by_rand::iterator, bool> res_pair;
+        res_pair ret = m_pl_cache.get<0>().push_back(pl_entry(name, pl));
     }
 }
 
@@ -123,7 +124,6 @@ void XplodifyPlaylistContainer::add_playlist(boost::shared_ptr<XplodifyPlaylist>
 
     //get iterator...
     pl_cache_by_rand& c_r = m_pl_cache.get<0>();
-    //pl_cache_by_rand::iterator it = c_r.iterator_to(c_r[pos]);
     pl_cache_by_rand::iterator it = c_r.begin();
     for(int i=0 ; it!=c_r.end() && i<pos ; ) {
         it++;
@@ -163,6 +163,7 @@ void XplodifyPlaylistContainer::update_cache() {
         boost::shared_ptr<XplodifyPlaylist> xpl(*it);
         if(xpl->is_loaded()) {
             xpl->cache();
+            add_playlist(xpl, xpl->get_index());
             //no longer deferred.
             it = m_pending_playlists.erase(it);
         } else {
@@ -196,7 +197,7 @@ XplodifyPlaylistContainer::get_playlist(std::string name) {
 
     pl_cache_by_name::iterator it = c_n.find(name);
 
-    if(it == m_pl_cache.get<1>().end() ) {
+    if(it == c_n.end() ) {
         return boost::shared_ptr<XplodifyPlaylist>();
     }
 
@@ -269,7 +270,7 @@ void XplodifyPlaylistContainer::playlist_moved(sp_playlist *pl, int pos, int new
     pl_cache_by_name::iterator it = c_n.find(sp_playlist_name(pl));
 
     //shouldn't happen
-    if(it == m_pl_cache.get<1>().end()) {
+    if(it == c_n.end()) {
         return;
     }
 
@@ -291,19 +292,25 @@ void XplodifyPlaylistContainer::container_loaded(){
     std::cout << "Playlist container loaded succesfully. Contains " 
         << n << " playlists" << std::endl;
 #endif
+    pl_cache_by_name& cache = m_pl_cache.get<1>();
     for(int i=0 ; i<n ; i++ ) {
         sp_playlist * p = sp_playlistcontainer_playlist( m_plcontainer, i);
+        //we need name before creating smart pointer.
+        std::string spname(sp_playlist_name(p));
 
-        boost::shared_ptr<XplodifyPlaylist> npl(new XplodifyPlaylist(m_session, i));
-        npl->load(p);
-        if(npl->is_loaded()) {
+        pl_cache_by_name::const_iterator it = cache.find(spname);
+        if(it == cache.end()) {
+            boost::shared_ptr<XplodifyPlaylist> npl(new XplodifyPlaylist(m_session, i));
+            npl->load(p);
+            if(npl->is_loaded()) {
 #ifdef _DEBUG
-            std::cout << "Playlist " << npl->get_name() << " loaded into plc." << std::endl;
+                std::cout << "Playlist " << npl->get_name() << " loaded into plc." << std::endl;
 #endif
-            npl->cache();
-            add_playlist(npl);
-        } else {
-            m_pending_playlists.push_back(npl);
+                npl->cache();
+                add_playlist(npl);
+            } else {
+                m_pending_playlists.push_back(npl);
+            }
         }
     }
     return;
