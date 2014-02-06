@@ -34,7 +34,7 @@ class XplodifyPlaylistContainer :
         bool    add_playlist(boost::shared_ptr<XplodifyPlaylist> pl);
         bool    add_playlist(boost::shared_ptr<XplodifyPlaylist> pl, int pos);
         void    update_playlist_ptrs(bool cascade=false);
-        void    update_cache();
+        void    update_pending_cache();
         size_t  get_num_playlists();
         boost::shared_ptr<XplodifyPlaylist> get_playlist(size_t idx);
         boost::shared_ptr<XplodifyPlaylist> get_playlist(std::string name);
@@ -47,6 +47,8 @@ class XplodifyPlaylistContainer :
         void playlist_moved(sp_playlist *pl, int pos, int newpos);
         void container_loaded();
     private:
+        bool cache_has_key(std::string key);
+
         static void SP_CALLCONV cb_playlist_added(
                 sp_playlistcontainer *pc, sp_playlist *pl, int pos, void *userdata);
         static void SP_CALLCONV cb_playlist_removed(
@@ -90,6 +92,9 @@ class XplodifyPlaylistContainer :
         std::vector<
             boost::shared_ptr<XplodifyPlaylist>
             >                              m_pending_playlists;
+        std::vector<
+            boost::shared_ptr<XplodifyPlaylist>
+            >                              m_failed_playlists;
         sp_playlistcontainer *             m_plcontainer;
         XplodifySession&                   m_session;
         bool                               m_loading;

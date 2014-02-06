@@ -416,8 +416,9 @@ void XplodifyPlaylist::playlist_state_changed(){
         if(m_loading) {
             m_loading = false;
             //we should now create shared_ptr and insert into cache.
-            m_session.get_pl_container()->add_playlist(shared_from_this());
-            m_session.get_pl_container()->update_cache();
+            if(m_session.get_pl_container()->add_playlist(shared_from_this())) {
+                m_session.get_pl_container()->update_pending_cache();
+            }
         }
         load_tracks();
 #ifdef _DEBUG

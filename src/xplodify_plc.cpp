@@ -165,7 +165,7 @@ void XplodifyPlaylistContainer::update_playlist_ptrs(bool cascade) {
 }
 
 
-void XplodifyPlaylistContainer::update_cache() {
+void XplodifyPlaylistContainer::update_pending_cache() {
     std::vector< boost::shared_ptr<XplodifyPlaylist> >::iterator it;
     for (it = m_pending_playlists.begin() ; it!= m_pending_playlists.end() ;) {
         boost::shared_ptr<XplodifyPlaylist> xpl(*it);
@@ -251,7 +251,9 @@ void XplodifyPlaylistContainer::playlist_added(sp_playlist *pl, int pos){
         std::cout << "Playlist " << npl->get_name() << " loaded into plc." << std::endl;
 #endif
         npl->cache();
-        add_playlist(npl, pos);
+        if(!add_playlist(npl, pos)) {
+            m_failed_playlists.push_back(npl);
+        }
      } else {
 #ifdef _DEBUG
         std::cout << "Playlist not fully loaded: deferring." << std::endl;
@@ -286,7 +288,9 @@ void XplodifyPlaylistContainer::playlist_moved(sp_playlist *pl, int pos, int new
     c_n.erase(it);
 
     //add it in the new position.
-    add_playlist(xpl, newpos-1);
+    if(!add_playlist(xpl, newpos-1)) {
+        m_failed_playlists.push_back(xpl);
+    }
     return;
 }
 
@@ -299,14 +303,12 @@ void XplodifyPlaylistContainer::container_loaded(){
     std::cout << "Playlist container loaded succesfully. Contains " 
         << n << " playlists" << std::endl;
 #endif
-    pl_cache_by_name& cache = m_pl_cache.get<1>();
     for(int i=0 ; i<n ; i++ ) {
         sp_playlist * p = sp_playlistcontainer_playlist( m_plcontainer, i);
         //we need name before creating smart pointer.
         std::string spname(sp_playlist_name(p));
 
-        pl_cache_by_name::const_iterator it = cache.find(spname);
-        if(it == cache.end()) {
+        if(!cache_has_key(spname)) {
             boost::shared_ptr<XplodifyPlaylist> npl(new XplodifyPlaylist(m_session, i));
             npl->load(p);
             if(npl->is_loaded()) {
@@ -323,6 +325,12 @@ void XplodifyPlaylistContainer::container_loaded(){
     return;
 }
 
+
+bool XplodifyPlaylistContainer::cache_has_key(std::string key){
+    pl_cache_by_name& cache = m_pl_cache.get<1>();
+    pl_cache_by_name::const_iterator it = cache.find(key);
+    return (it != cache.end());
+}
 
 XplodifyPlaylistContainer * XplodifyPlaylistContainer::get_plcontainer_from_udata(
         sp_playlistcontainer * plc, void * userdata) {
