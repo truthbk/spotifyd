@@ -148,6 +148,30 @@ bool XplodifyPlaylistContainer::add_playlist(boost::shared_ptr<XplodifyPlaylist>
     return false;
 }
 
+bool XplodifyPlaylistContainer::gen_starred() {
+    size_t num;
+
+    num = get_num_playlists();
+    boost::shared_ptr<XplodifyPlaylist> starred_pl(new XplodifyPlaylist(m_session, num));
+    for(size_t i=0 ; i<num ; i++) {
+        boost::shared_ptr<XplodifyPlaylist> pl(get_playlist(i));
+        size_t n_tracks = pl->get_num_tracks();
+        for(size_t j=0 ; j<n_tracks ; j++) {
+            boost::shared_ptr<XplodifyTrack> tr(pl->get_track(j));
+            if(tr->is_starred()) {
+                starred_pl->add_track(tr);
+            }
+        }
+    }
+
+    if(starred_pl->get_num_tracks()) {
+        add_playlist(starred_pl);
+        return true;
+    }
+
+    return false;
+}
+
 void XplodifyPlaylistContainer::update_playlist_ptrs(bool cascade) {
 
     pl_cache_by_rand& pl_r = m_pl_cache.get<0>();

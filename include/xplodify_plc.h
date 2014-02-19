@@ -33,6 +33,7 @@ class XplodifyPlaylistContainer :
         bool    add_playlist(XplodifyPlaylist * pl);
         bool    add_playlist(boost::shared_ptr<XplodifyPlaylist> pl);
         bool    add_playlist(boost::shared_ptr<XplodifyPlaylist> pl, int pos);
+        bool    gen_starred();
         void    update_playlist_ptrs(bool cascade=false);
         void    update_pending_cache();
         size_t  get_num_playlists();
