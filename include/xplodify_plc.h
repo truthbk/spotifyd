@@ -96,6 +96,8 @@ class XplodifyPlaylistContainer :
         std::vector<
             boost::shared_ptr<XplodifyPlaylist>
             >                              m_failed_playlists;
+        boost::shared_ptr<XplodifyPlaylist> 
+                                           m_starred;
         sp_playlistcontainer *             m_plcontainer;
         XplodifySession&                   m_session;
         bool                               m_loading;

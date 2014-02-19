@@ -21,6 +21,7 @@ const sp_playlistcontainer_callbacks XplodifyPlaylistContainer::cbs = {
 XplodifyPlaylistContainer::XplodifyPlaylistContainer(
         XplodifySession& sess)
     : m_plcontainer(NULL)
+    , m_starred(NULL)
     , m_session(sess)
     , m_loading(true) 
 {
@@ -152,7 +153,7 @@ bool XplodifyPlaylistContainer::gen_starred() {
     size_t num;
 
     num = get_num_playlists();
-    boost::shared_ptr<XplodifyPlaylist> starred_pl(new XplodifyPlaylist(m_session, num));
+    boost::shared_ptr<XplodifyPlaylist> starred_pl(new XplodifyPlaylist(m_session, -1));
     for(size_t i=0 ; i<num ; i++) {
         boost::shared_ptr<XplodifyPlaylist> pl(get_playlist(i));
         size_t n_tracks = pl->get_num_tracks();
@@ -165,7 +166,7 @@ bool XplodifyPlaylistContainer::gen_starred() {
     }
 
     if(starred_pl->get_num_tracks()) {
-        add_playlist(starred_pl);
+        m_starred = starred_pl;
         return true;
     }
 
