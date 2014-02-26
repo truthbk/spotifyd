@@ -14,6 +14,7 @@ class XplodifyMultiHandler
                 uint8_t nprocs,
                 std::string cachedir);
 
+        void register_playback(std::string uuid);
     private:
         XplodifyPlaybackManager      m_playmgr;
 };

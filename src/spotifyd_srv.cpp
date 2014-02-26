@@ -158,6 +158,12 @@ void XplodifyServer::login_timeout(const boost::system::error_code&,
 #ifdef _DEBUG
         std::cout << "Session: " << uuid << " Succesfully logged in ...\n";
 #endif
+        if(m_multi) {
+            //register for playback.
+            boost::shared_ptr<XplodifyMultiHandler> handler = 
+                boost::static_pointer_cast<XplodifyMultiHandler>(m_sh);
+            handler->register_playback(uuid);
+        }
         return;
     }
 

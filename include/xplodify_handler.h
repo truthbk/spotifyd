@@ -24,9 +24,13 @@
 #include "xplodify_sess.h"
 #include "xplodify_playmgr.h"
 
+//forward declaration
+class XplodifyMultiHandler;
+
 class XplodifyHandler
     : public SpotifyHandler
 {
+    friend class XplodifyMultiHandler;
     public:
         XplodifyHandler();
         XplodifyHandler(std::string cachedir);
