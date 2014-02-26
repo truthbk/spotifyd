@@ -22,6 +22,12 @@ XplodifyPlaybackManager::XplodifyPlaybackManager(
 bool XplodifyPlaybackManager::switch_roles(void){
     //TODO
     try {
+        //logout master before switching
+        logout(m_master);
+        m_clients[m_master]->_master = false;
+        m_master++;
+        m_master = m_master % m_nprocs;
+        m_clients[m_master]->_master = true;
     } catch (TException &ex) {
         std::cout << ex.what() << "\n"; 
     }
@@ -47,6 +53,7 @@ bool XplodifyPlaybackManager::login(std::string user, uint8_t client_id){
         m_clients[client_id]->_client.check_in(ret_cred, cred);
         m_clients[client_id]->_client.login(ret_cred);
         m_clients[client_id]->_transport->close();
+        m_clients[client_id]->_user = &m_users[user];
     } catch (TException &ex) {
         std::cout << ex.what() << "\n"; 
     }
@@ -67,20 +74,23 @@ bool XplodifyPlaybackManager::is_logged_in(std::string user){
 #endif
     return logged;
 }
-bool XplodifyPlaybackManager::logout(std::string user) {
+bool XplodifyPlaybackManager::logout(uint8_t client_id) {
 
     bool logged_out = false;
     //TODO
-#if 0
     try {
-        m_clients[client_id]._client._transport->open();
-        logged_out = m_clients[client_id]._client.logout();
-        m_clients[client_id]._client._transport->close();
+        m_clients[client_id]->_transport->open();
+        m_clients[client_id]->_client.logout();
+        m_clients[client_id]->_transport->close();
+        logged_out = true;
     } catch (TException &ex) {
         std::cout << ex.what() << "\n"; 
     }
-#endif
     return logged_out;
+}
+
+bool XplodifyPlaybackManager::logout(std::string user) {
+    return false;
 }
 
 void XplodifyPlaybackManager::select_playlist(

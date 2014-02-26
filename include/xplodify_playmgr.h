@@ -30,6 +30,7 @@ class XplodifyPlaybackManager
         void register_user(std::string user, std::string passwd);
         bool login(std::string user, uint8_t client_id);
         bool is_logged_in(std::string user);
+        bool logout(uint8_t client_id);
         bool logout(std::string user);
 
         void select_playlist(std::string user, int32_t playlist_id);
@@ -50,30 +51,6 @@ class XplodifyPlaybackManager
         const uint8_t     m_nprocs;
         bool              m_play;
         uint8_t           m_master; //port for master process
-
-        struct XplodifyClient {
-            std::string _host;
-            uint32_t _port;
-
-            boost::shared_ptr<TSocket> _socket;
-            boost::shared_ptr<TBufferedTransport> _transport;
-            boost::shared_ptr<TBinaryProtocol> _protocol;
-
-            SpotifyIPCClient _client;
-
-            bool _master;
-
-            XplodifyClient(std::string host, int32_t port)
-                : _host(host)
-                , _port(port)
-                , _socket(new TSocket(_host, _port))
-                , _transport(new TBufferedTransport(_socket))
-                , _protocol(new TBinaryProtocol(_transport))
-                , _client(_protocol)
-                , _master(false)
-            {
-            };
-        };
 
         struct MgrUser {
             std::string     _username;
@@ -99,6 +76,32 @@ class XplodifyPlaybackManager
             {
             };
         };
+        struct XplodifyClient {
+            std::string _host;
+            uint32_t _port;
+            MgrUser * _user;
+
+            boost::shared_ptr<TSocket> _socket;
+            boost::shared_ptr<TBufferedTransport> _transport;
+            boost::shared_ptr<TBinaryProtocol> _protocol;
+
+            SpotifyIPCClient _client;
+
+            bool _master;
+
+            XplodifyClient(std::string host, int32_t port)
+                : _host(host)
+                , _port(port)
+                , _user(NULL)
+                , _socket(new TSocket(_host, _port))
+                , _transport(new TBufferedTransport(_socket))
+                , _protocol(new TBinaryProtocol(_transport))
+                , _client(_protocol)
+                , _master(false)
+            {
+            };
+        };
+
 
         typedef std::map<uint32_t, boost::shared_ptr<XplodifyClient> > client_map;
         typedef std::map<std::string, MgrUser> user_map;
