@@ -24,6 +24,7 @@ XplodifyPlaylistContainer::XplodifyPlaylistContainer(
     , m_starred(NULL)
     , m_session(sess)
     , m_loading(true) 
+    , m_relogin(false) 
 {
     //EMPTY
 }
@@ -171,6 +172,14 @@ bool XplodifyPlaylistContainer::gen_starred() {
     }
 
     return false;
+}
+
+bool XplodifyPlaylistContainer::set_relogin(bool relogin) {
+    m_relogin = relogin;
+}
+
+bool XplodifyPlaylistContainer::get_relogin() {
+    return m_relogin;
 }
 
 void XplodifyPlaylistContainer::update_playlist_ptrs(bool cascade) {
@@ -347,6 +356,10 @@ void XplodifyPlaylistContainer::container_loaded(){
             } else {
                 m_pending_playlists.push_back(npl);
             }
+        } else if (m_relogin) {
+            boost::shared_ptr<XplodifyPlaylist> xpl = get_playlist(spname);
+            xpl->set_sp_playlist(p);
+            xpl->update_track_ptrs();
         }
     }
     return;

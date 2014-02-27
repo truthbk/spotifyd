@@ -231,7 +231,7 @@ void XplodifySession::logged_out() {
     return;
 }
 
-void XplodifySession::update_plcontainer(std::string user, bool cascade) {
+void XplodifySession::update_plcontainer(std::string user) {
 
     boost::mutex::scoped_lock scoped_lock(m_mutex);
     if(!user_exists(user)) {
@@ -247,10 +247,8 @@ void XplodifySession::update_plcontainer(std::string user, bool cascade) {
         return;
     }
 
-    m_statuses[user].m_plcontainer->set_plcontainer(c);
-    if(cascade) {
-        m_statuses[user].m_plcontainer->update_playlist_ptrs(cascade);
-    }
+    m_statuses[user].m_plcontainer->set_relogin(true);
+    m_statuses[user].m_plcontainer->load(c);
 
     return;
 }
@@ -593,7 +591,7 @@ void XplodifySession::logged_in(sp_session *sess, sp_error error) {
         scoped_lock.lock();
     } else {
         scoped_lock.unlock();
-        update_plcontainer(m_active_user, true);
+        update_plcontainer(m_active_user);
         scoped_lock.lock();
     }
 

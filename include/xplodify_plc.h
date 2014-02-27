@@ -34,6 +34,8 @@ class XplodifyPlaylistContainer :
         bool    add_playlist(boost::shared_ptr<XplodifyPlaylist> pl);
         bool    add_playlist(boost::shared_ptr<XplodifyPlaylist> pl, int pos);
         bool    gen_starred();
+        bool    set_relogin(bool relogin);
+        bool    get_relogin();
         void    update_playlist_ptrs(bool cascade=false);
         void    update_pending_cache();
         size_t  get_num_playlists();
@@ -103,6 +105,7 @@ class XplodifyPlaylistContainer :
                                            m_starred;
         XplodifySession&                   m_session;
         bool                               m_loading;
+        bool                               m_relogin;
 };
 
 #endif
