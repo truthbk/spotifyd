@@ -93,12 +93,14 @@ class XplodifyPlaylistContainer :
         std::vector<
             boost::shared_ptr<XplodifyPlaylist>
             >                              m_pending_playlists;
+        //This is likely expendable.
         std::vector<
             boost::shared_ptr<XplodifyPlaylist>
             >                              m_failed_playlists;
+
+        sp_playlistcontainer *             m_plcontainer;
         boost::shared_ptr<XplodifyPlaylist> 
                                            m_starred;
-        sp_playlistcontainer *             m_plcontainer;
         XplodifySession&                   m_session;
         bool                               m_loading;
 };

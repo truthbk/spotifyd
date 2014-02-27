@@ -180,10 +180,12 @@ void XplodifyPlaylistContainer::update_playlist_ptrs(bool cascade) {
     for(uint32_t i=0 ; i<pl_r.size() ; i++ ) {
         sp_playlist * p = sp_playlistcontainer_playlist( 
                 m_plcontainer, pl_r[i]._playlist->get_index(true));
-        pl_r[i]._playlist->set_sp_playlist(p);
-        //might be wise to recache...
-        if(cascade) {
-            pl_r[i]._playlist->update_track_ptrs();
+        if(pl_r[i]._playlist->get_name().compare(sp_playlist_name(p)) == 0) {
+            pl_r[i]._playlist->set_sp_playlist(p);
+            //might be wise to recache...
+            if(cascade) {
+                pl_r[i]._playlist->update_track_ptrs();
+            }
         }
     }
     return;
