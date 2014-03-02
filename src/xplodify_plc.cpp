@@ -189,7 +189,7 @@ void XplodifyPlaylistContainer::update_playlist_ptrs(bool cascade) {
     for(uint32_t i=0 ; i<pl_r.size() ; i++ ) {
         sp_playlist * p = sp_playlistcontainer_playlist( 
                 m_plcontainer, pl_r[i]._playlist->get_index(true));
-        if(pl_r[i]._playlist->get_name().compare(sp_playlist_name(p)) == 0) {
+        if(pl_r[i]._playlist->get_name(true).compare(sp_playlist_name(p)) == 0) {
             pl_r[i]._playlist->set_sp_playlist(p);
             //might be wise to recache...
             if(cascade) {
@@ -359,6 +359,10 @@ void XplodifyPlaylistContainer::container_loaded(){
         } else if (m_relogin) {
             boost::shared_ptr<XplodifyPlaylist> xpl = get_playlist(spname);
             xpl->set_sp_playlist(p);
+            if(i != xpl->get_index(true)) {
+                xpl->set_index(i);
+                //TODO: relocated in container.
+            }
             xpl->update_track_ptrs();
         }
     }

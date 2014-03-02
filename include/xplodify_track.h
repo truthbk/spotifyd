@@ -30,6 +30,7 @@ class XplodifyTrack
         bool          is_loaded();
         bool          is_streamable();
         std::string   get_name(bool cache=false);
+        void          set_index(int idx);
         int           get_index(bool cache=false);
         int           get_duration(bool cache=false);
         int           get_num_artists(bool cache=false);

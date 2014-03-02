@@ -37,10 +37,11 @@ class XplodifyPlaylist
         bool unload(bool cascade=true);
         void flush();
         bool load_tracks();
-        void update_track_ptrs();
+        bool update_track_ptrs();
         bool set_sp_playlist(sp_playlist * pl);
         bool is_loaded();
         std::string get_name(bool cache=false);
+        void   set_index(int idx);
         int    get_index(bool cache=true);
         size_t get_num_tracks(bool cache=false);
         void   add_track(boost::shared_ptr<XplodifyTrack> tr);

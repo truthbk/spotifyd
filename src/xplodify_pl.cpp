@@ -186,16 +186,30 @@ bool XplodifyPlaylist::set_sp_playlist(sp_playlist * pl) {
     return true;
 }
 
-void XplodifyPlaylist::update_track_ptrs() {
+bool XplodifyPlaylist::update_track_ptrs() {
+
+    if(m_loading) {
+        return false;
+    }
 
     lock();
-    track_cache_by_rand& t_r = m_track_cache.get<0>();
-    for(uint32_t i=0 ; i<t_r.size() ; i++) {
-        sp_track * t = sp_playlist_track(m_playlist, t_r[i].track->get_index(true));
-        t_r[i].track->set_sp_track(t);
+    track_cache_by_name& t_n = m_track_cache.get<1>();
+    track_cache_by_name::iterator it;
+    int num = sp_playlist_num_tracks(m_playlist);
+    for(uint32_t i=0 ; i<num ; i++) {
+        sp_track * t = sp_playlist_track(m_playlist, i);
+        it = t_n.find(sp_track_name(t));
+        if(it != t_n.end()) {
+            it->track->set_sp_track(t);
+            //what if tracks move around... Must fix indexes.
+            if(i != it->track->get_index(true)){
+                it->track->set_index(i);
+                //TODO: relocate in container...
+            }
+        }
     }
     unlock();
-    return;
+    return true;
 }
 bool XplodifyPlaylist::unload(bool cascade) {
 
@@ -228,6 +242,10 @@ std::string XplodifyPlaylist::get_name(bool cache) {
     }
 
     return std::string(sp_playlist_name(m_playlist));
+}
+
+void XplodifyPlaylist::set_index(int idx) {
+    m_index = idx;
 }
 
 int XplodifyPlaylist::get_index(bool cache) {

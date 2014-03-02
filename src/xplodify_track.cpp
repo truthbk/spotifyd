@@ -92,6 +92,9 @@ std::string XplodifyTrack::get_name(bool cache){
     }
     return std::string(sp_track_name(m_track));
 }
+void XplodifyTrack::set_index(int idx){
+    m_index = idx;
+}
 int XplodifyTrack::get_index(bool cache){
     if(!m_track) {
         return 0;
