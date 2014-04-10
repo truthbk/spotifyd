@@ -372,7 +372,7 @@ void XplodifyServer::whats_playing(SpotifyTrack& _return, const SpotifyCredentia
 
 
 int main(int argc, char **argv) {
-    uint32_t port, child_port;
+    uint32_t port = 0, child_port = 0;
     bool multi = true;
 
     pid_t master_pid = 0, slave_pid = 0;
@@ -395,41 +395,67 @@ int main(int argc, char **argv) {
 
     if(vm.count("mono")) {
         multi = false;
+     } else {
         child_port = port + 1;
-    }
+     }
 
     boost::shared_ptr<XplodifyIPCServer> spserver_ipc_1;
     boost::shared_ptr<XplodifyIPCServer> spserver_ipc_2;
     if(multi) {
         master_pid = fork();
         if(!master_pid) { //MASTER CHILD process
-            //TODO Thrift service.
+            //TODO: cleaner exit.
             exit(0);
+        } else {
+            spserver_ipc_1 = boost::shared_ptr<XplodifyIPCServer>(new XplodifyIPCServer());
         }
 
         slave_pid = fork();
         if(!slave_pid) { //SLAVE CHILD process
-            //TODO> Thrift service.
+            //TODO: cleaner exit.
             exit(0);
+        } else {
+            master_pid = 0;
+            spserver_ipc_2 = boost::shared_ptr<XplodifyIPCServer>(new XplodifyIPCServer());
         }
-        spserver_ipc_1 = boost::shared_ptr<XplodifyIPCServer>(new XplodifyIPCServer());
-        spserver_ipc_2 = boost::shared_ptr<XplodifyIPCServer>(new XplodifyIPCServer());
     }
 
-    //XplodifyServer
-    boost::shared_ptr<XplodifyServer> spserver(new XplodifyServer(multi));
+    if(master_pid) {
+        //XplodifyIPCServer 1
+        boost::shared_ptr<TProcessor> processor(new SpotifyIPCProcessor(spserver_ipc_1));
+        boost::shared_ptr<TServerTransport> serverTransport(new TServerSocket(child_port));
+        boost::shared_ptr<TTransportFactory> transportFactory(new TBufferedTransportFactory());
+        boost::shared_ptr<TProtocolFactory> protocolFactory(new TBinaryProtocolFactory());
 
-    //THRIFT Server
-    boost::shared_ptr<TProcessor> processor(new SpotifyProcessor(spserver));
-    boost::shared_ptr<TServerTransport> serverTransport(new TServerSocket(port));
-    boost::shared_ptr<TTransportFactory> transportFactory(new TBufferedTransportFactory());
-    boost::shared_ptr<TProtocolFactory> protocolFactory(new TBinaryProtocolFactory());
+        TSimpleServer server(processor, serverTransport, transportFactory, protocolFactory);
+        server.serve();
 
-    TSimpleServer server(processor, serverTransport, transportFactory, protocolFactory);
+    } else if(slave_pid) {
+        //XplodifyIPCServer 2
+        boost::shared_ptr<TProcessor> processor(new SpotifyIPCProcessor(spserver_ipc_2));
+        boost::shared_ptr<TServerTransport> serverTransport(new TServerSocket(port));
+        boost::shared_ptr<TTransportFactory> transportFactory(new TBufferedTransportFactory());
+        boost::shared_ptr<TProtocolFactory> protocolFactory(new TBinaryProtocolFactory());
+
+        TSimpleServer server(processor, serverTransport, transportFactory, protocolFactory);
+        server.serve();
+
+    } else {
+        //XplodifyServer
+        boost::shared_ptr<XplodifyServer> spserver(new XplodifyServer(multi));
+
+        //THRIFT Server
+        boost::shared_ptr<TProcessor> processor(new SpotifyProcessor(spserver));
+        boost::shared_ptr<TServerTransport> serverTransport(new TServerSocket(port));
+        boost::shared_ptr<TTransportFactory> transportFactory(new TBufferedTransportFactory());
+        boost::shared_ptr<TProtocolFactory> protocolFactory(new TBinaryProtocolFactory());
+
+        TSimpleServer server(processor, serverTransport, transportFactory, protocolFactory);
 
 
-    spserver->start();
-    server.serve();
+        spserver->start();
+        server.serve();
+    }
 
     //TODO: proper cleanup
     int status;
