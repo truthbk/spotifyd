@@ -15,6 +15,9 @@
 #include "runnable.h"
 #include "SpotifyIPC.h"
 
+//Forward declaration.
+class XplodifyMultiHandler;
+
 using namespace ::apache::thrift;
 using namespace ::apache::thrift::protocol;
 using namespace ::apache::thrift::transport;
@@ -23,6 +26,7 @@ class XplodifyPlaybackManager
     : private Lockable
     , private Runnable
 {
+    friend class XplodifyMultiHandler;
     public:
         XplodifyPlaybackManager(
                 std::string host, int32_t base_port, uint8_t n_procs);

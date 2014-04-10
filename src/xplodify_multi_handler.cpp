@@ -12,6 +12,8 @@ XplodifyMultiHandler::XplodifyMultiHandler()
             IPCSRV_BASE_PORT,
             IPC_DEF_NPROCS )
 {
+    //get the playback manager running
+    m_playmgr.start();
 }
 
 XplodifyMultiHandler::XplodifyMultiHandler(
@@ -22,6 +24,8 @@ XplodifyMultiHandler::XplodifyMultiHandler(
     : XplodifyHandler(cachedir)
     , m_playmgr(host, port, nprocs)
 {
+    //get the playback manager running
+    m_playmgr.start();
 }
 
 
