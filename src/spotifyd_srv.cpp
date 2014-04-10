@@ -65,6 +65,7 @@ XplodifyServer::XplodifyServer(bool multisession)
     , m_multi(multisession) 
 {
     if(m_multi) {
+        //start multi handler worker thread.
         m_sh = boost::shared_ptr<XplodifyHandler>(new XplodifyMultiHandler());
     } else {
         //start handler worker thread.
@@ -372,7 +373,7 @@ void XplodifyServer::whats_playing(SpotifyTrack& _return, const SpotifyCredentia
 
 
 int main(int argc, char **argv) {
-    uint32_t port = 0, child_port = 0;
+    uint32_t port = 0;
     bool multi = true;
 
     pid_t master_pid = 0, slave_pid = 0;
@@ -395,8 +396,6 @@ int main(int argc, char **argv) {
 
     if(vm.count("mono")) {
         multi = false;
-     } else {
-        child_port = port + 1;
      }
 
     boost::shared_ptr<XplodifyIPCServer> spserver_ipc_1;
@@ -423,7 +422,7 @@ int main(int argc, char **argv) {
     if(master_pid) {
         //XplodifyIPCServer 1
         boost::shared_ptr<TProcessor> processor(new SpotifyIPCProcessor(spserver_ipc_1));
-        boost::shared_ptr<TServerTransport> serverTransport(new TServerSocket(child_port));
+        boost::shared_ptr<TServerTransport> serverTransport(new TServerSocket(port+1));
         boost::shared_ptr<TTransportFactory> transportFactory(new TBufferedTransportFactory());
         boost::shared_ptr<TProtocolFactory> protocolFactory(new TBinaryProtocolFactory());
 
@@ -433,7 +432,7 @@ int main(int argc, char **argv) {
     } else if(slave_pid) {
         //XplodifyIPCServer 2
         boost::shared_ptr<TProcessor> processor(new SpotifyIPCProcessor(spserver_ipc_2));
-        boost::shared_ptr<TServerTransport> serverTransport(new TServerSocket(port));
+        boost::shared_ptr<TServerTransport> serverTransport(new TServerSocket(port+2));
         boost::shared_ptr<TTransportFactory> transportFactory(new TBufferedTransportFactory());
         boost::shared_ptr<TProtocolFactory> protocolFactory(new TBinaryProtocolFactory());
 
