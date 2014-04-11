@@ -463,6 +463,16 @@ void XplodifyHandler::set_playback_done(bool done){
     update_timestamp();
 }
 
+bool XplodifyHandler::get_playback_done(){
+    bool done = false;
+    lock();
+    done = m_playback_done;
+    unlock();
+
+    return done;
+}
+
+
 int XplodifyHandler::music_playback(const sp_audioformat * format, 
         const void * frames, int num_frames) {
     size_t s;

@@ -10,6 +10,7 @@ service SpotifyIPC {
 	bool login(1: spotify_types.SpotifyCredential cred);
 	bool is_logged();
 	oneway void logout();
+	bool playback_done();
 
 	oneway void selectPlaylist(1: string playlist);
 	oneway void selectPlaylistById(1: i32 plist_id);

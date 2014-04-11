@@ -95,6 +95,10 @@ void XplodifyIPCServer::logout() {
     return;
 }
 
+bool XplodifyIPCServer::playback_done() {
+    return m_sh.get_playback_done();
+}
+
 bool XplodifyIPCServer::is_logged(){
     bool status = m_sh.login_status(m_uuid);
     return status;

@@ -66,6 +66,7 @@ class XplodifyHandler
 
         virtual void notify_main_thread(void);
         virtual void set_playback_done(bool done);
+        virtual bool get_playback_done();
         virtual int  music_playback(const sp_audioformat * format, 
                 const void * frames, int num_frames);
         virtual void audio_fifo_stats(sp_audio_buffer_stats *stats);
