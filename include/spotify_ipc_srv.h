@@ -25,6 +25,7 @@ class XplodifyIPCServer
         bool check_out();
         bool login(const ::SpotifyCredential& cred);
         void logout();
+        bool playback_done();
         bool is_logged();
         void selectPlaylist(const std::string& playlist);
         void selectPlaylistById(const int32_t plist_id);
