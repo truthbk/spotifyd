@@ -4,6 +4,7 @@ XplodifyPlaybackManager::XplodifyPlaybackManager(
         std::string host, int32_t base_port, uint8_t nprocs) 
     : Lockable()
     , Runnable()
+    , m_work(false)
     , m_host(host)
     , m_base_port(base_port)
     , m_nprocs(nprocs)
@@ -92,6 +93,26 @@ bool XplodifyPlaybackManager::logout(uint8_t client_id) {
 bool XplodifyPlaybackManager::logout(std::string user) {
     return false;
 }
+
+//call holding lock.
+bool XplodifyPlaybackManager::playback_done() {
+
+    bool pback_done = true;
+    //only master process plays back.
+    if(!m_master) {
+        return pback_done;
+    }
+
+    try {
+        m_clients[m_master]->_transport->open();
+        pback_done = m_clients[m_master]->_client.playback_done();
+        m_clients[m_master]->_transport->close();
+    } catch (TException &ex) {
+        std::cout << ex.what() << "\n"; 
+    }
+    return pback_done;
+}
+
 
 void XplodifyPlaybackManager::select_playlist(
         std::string user, int32_t playlist_id){
@@ -200,7 +221,46 @@ void XplodifyPlaybackManager::stop(void) {
 
 
 void XplodifyPlaybackManager::run() {
+    struct timespec ts;
+
+
     while(!m_done){
-        sleep(1);
+#if _POSIX_TIMERS > 0
+        clock_gettime(CLOCK_REALTIME, &ts);
+#else
+        struct timeval tv;
+        gettimeofday(&tv, NULL);
+        TIMEVAL_TO_TIMESPEC(&tv, &ts);
+#endif
+        ts.tv_sec += ipc_poll_to;
+        lock();
+        if(!m_work) {
+            cond_timedwait(&ts);
+        }
+
+        if(m_work) {
+            //do whatever needs to be done
+            ;;
+        }
+
+        //check if playback done.
+        if(m_master && playback_done()) {
+            //TODO: logic is more complex... real simple skeleton for now.
+            switch_roles();
+            play();
+        }
+
     }
+}
+
+//Call holding lock.
+boost::shared_ptr<XplodifyPlaybackManager::XplodifyClient> 
+XplodifyPlaybackManager::get_client(uint32_t port) {
+        client_map::const_iterator cit = m_clients.find(m_master);
+        boost::shared_ptr<XplodifyClient> cli(NULL);
+        if(cit != m_clients.cend()) {
+            cli = cit->second;
+        }
+
+        return cli;
 }

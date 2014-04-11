@@ -22,6 +22,10 @@ using namespace ::apache::thrift;
 using namespace ::apache::thrift::protocol;
 using namespace ::apache::thrift::transport;
 
+namespace {
+    const uint8_t ipc_poll_to = 1;
+}
+
 class XplodifyPlaybackManager 
     : private Lockable
     , private Runnable
@@ -36,6 +40,7 @@ class XplodifyPlaybackManager
         bool is_logged_in(std::string user);
         bool logout(uint8_t client_id);
         bool logout(std::string user);
+        bool playback_done();
 
         void select_playlist(std::string user, int32_t playlist_id);
         void select_playlist(std::string user, std::string playlist);
@@ -50,6 +55,7 @@ class XplodifyPlaybackManager
         virtual void run();
 
     private:
+        bool              m_work;
         const std::string m_host;
         const int32_t     m_base_port;
         const uint8_t     m_nprocs;
@@ -106,6 +112,7 @@ class XplodifyPlaybackManager
             };
         };
 
+        boost::shared_ptr<XplodifyClient> get_client(uint32_t port);
 
         typedef std::map<uint32_t, boost::shared_ptr<XplodifyClient> > client_map;
         typedef std::map<std::string, MgrUser> user_map;
