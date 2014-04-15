@@ -40,3 +40,49 @@ void XplodifyMultiHandler::register_playback(std::string uuid) {
     m_playmgr.register_user(sit->_user,sit->_passwd);
     return;
 }
+
+bool XplodifyMultiHandler::select_playlist(std::string uuid, int pid) {
+    //TODO
+    return false;
+}
+bool XplodifyMultiHandler::select_playlist(std::string uuid, std::string pname) {
+    //TODO
+    return false;
+}
+bool XplodifyMultiHandler::select_track(std::string uuid, int tid) {
+    //TODO
+    return false;
+}
+bool XplodifyMultiHandler::select_track(std::string uuid, std::string tname) {
+    //TODO
+    return false;
+}
+boost::shared_ptr<XplodifyTrack> XplodifyMultiHandler::whats_playing(void) {
+    return boost::shared_ptr<XplodifyTrack>();
+}
+boost::shared_ptr<XplodifyTrack> XplodifyMultiHandler::whats_playing(std::string uuid) {
+    return boost::shared_ptr<XplodifyTrack>();
+}
+void XplodifyMultiHandler::play() {
+    //TODO: only admin can play/stop/etc
+    m_playmgr.play();
+}
+void XplodifyMultiHandler::stop() {
+    //TODO: only admin can play/stop/etc
+    m_playmgr.stop();
+}
+void XplodifyMultiHandler::next(){
+    //TODO: only admin can play/stop/etc
+    m_playmgr.next();
+}
+void XplodifyMultiHandler::prev() {
+    //TODO: only admin can play/stop/etc
+    //m_playmgr.prev();
+    return;
+}
+void XplodifyMultiHandler::set_playback_mode(SpotifyCmd::type cmd) {
+    return;
+}
+void XplodifyMultiHandler::set_repeat_mode(SpotifyCmd::type cmd) {
+    return;
+}

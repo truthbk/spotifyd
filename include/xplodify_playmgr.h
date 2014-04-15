@@ -49,6 +49,8 @@ class XplodifyPlaybackManager
 
         void play(void);
         void stop(void);
+        void next(void);
+        //void prev(void);
 
     protected:
         //implementing runnable
@@ -119,6 +121,8 @@ class XplodifyPlaybackManager
 
         client_map m_clients;
         user_map m_users;
+        client_map::iterator                   m_cli_it;
+        user_map::iterator                     m_user_it;
 };
 
 

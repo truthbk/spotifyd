@@ -10,6 +10,8 @@ XplodifyPlaybackManager::XplodifyPlaybackManager(
     , m_nprocs(nprocs)
     , m_play(false)
     , m_master(0)
+    , m_cli_it(m_clients.begin())
+    , m_user_it(m_users.begin())
 {
     for(int i=0 ; i<m_nprocs ; i++) {
         boost::shared_ptr<XplodifyClient> client_ptr(
@@ -22,16 +24,28 @@ XplodifyPlaybackManager::XplodifyPlaybackManager(
 
 bool XplodifyPlaybackManager::switch_roles(void){
     //TODO
+    lock();
     try {
         //logout master before switching
         logout(m_master);
+        //next client to get busy.
+        if(m_cli_it++ == m_clients.end()) {
+            m_cli_it = m_clients.begin();
+        }
+        //next user to load in.
+        if(m_user_it++ == m_users.end()){
+            m_user_it = m_users.begin();
+        }
         m_clients[m_master]->_master = false;
-        m_master++;
-        m_master = m_master % m_nprocs;
+        login(m_user_it->second._username, m_master);
+
+        m_master = m_cli_it->second->_port;
         m_clients[m_master]->_master = true;
+
     } catch (TException &ex) {
         std::cout << ex.what() << "\n"; 
     }
+    unlock();
     return true;
 }
 
@@ -193,29 +207,45 @@ void XplodifyPlaybackManager::select_track(std::string user, std::string track){
 }
 
 void XplodifyPlaybackManager::play(void) {
-    //TODO
-#if 0
+    if(!m_master) {
+        return;
+    }
+
     try {
-        m_clients[client_id]._client._transport->open();
-    //TODO
-        m_clients[client_id]._client._transport->close();
+        m_clients[m_master]->_transport->open();
+        m_clients[m_master]->_client.play();
+        m_clients[m_master]->_transport->close();
     } catch (TException &ex) {
         std::cout << ex.what() << "\n"; 
     }
-#endif
     return;
 }
 void XplodifyPlaybackManager::stop(void) {
-    //TODO
-#if 0
+    if(!m_master) {
+        return;
+    }
+
     try {
-        m_clients[client_id]._client._transport->open();
-    //TODO
-        m_clients[client_id]._client._transport->close();
+        m_clients[m_master]->_transport->open();
+        m_clients[m_master]->_client.stop();
+        m_clients[m_master]->_transport->close();
     } catch (TException &ex) {
         std::cout << ex.what() << "\n"; 
     }
-#endif
+    return;
+}
+void XplodifyPlaybackManager::next(void) {
+    if(!m_master) {
+        return;
+    }
+
+    try {
+        m_clients[m_master]->_transport->open();
+        m_clients[m_master]->_client.stop();
+        m_clients[m_master]->_transport->close();
+    } catch (TException &ex) {
+        std::cout << ex.what() << "\n"; 
+    }
     return;
 }
 
