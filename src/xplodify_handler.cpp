@@ -101,8 +101,7 @@ XplodifyHandler::~XplodifyHandler() {
 }
 
 bool XplodifyHandler::handler_available(){
-    //TODO: accomodate to new architecture.
-    return true;
+    return m_session.available();
 }
 
 std::string XplodifyHandler::check_in(){

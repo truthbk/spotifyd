@@ -142,7 +142,7 @@ int XplodifySession::init_session(const uint8_t * appkey, size_t appkey_size,
 }
 
 bool XplodifySession::available(void) {
-    bool available;
+    bool available = false;
     boost::mutex::scoped_lock scoped_lock(m_mutex);
     available = (m_active_user.empty() && !m_logged_in);
 

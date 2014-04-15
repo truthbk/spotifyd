@@ -92,11 +92,7 @@ bool XplodifyServer::is_service_ready() {
     }
 
     //in multisession handler, check with handler.
-    if(!m_sh->handler_available()){
-        return true;
-    }
-
-    return false;
+    return m_sh->handler_available();
 }
 
 void XplodifyServer::check_in(SpotifyCredential& _return, const SpotifyCredential& cred) {
@@ -111,6 +107,9 @@ bool XplodifyServer::check_out(const SpotifyCredential& cred) {
 
 bool XplodifyServer::loginSession(const SpotifyCredential& cred) {
 
+    if(!is_service_ready()) {
+        return false;
+    }
     bool logging_in = m_sh->login(cred._uuid, cred._username, cred._passwd);
 
     if(logging_in) {
@@ -243,7 +242,7 @@ void XplodifyServer::sendCommand(const SpotifyCredential& cred, const SpotifyCmd
 
 
 void XplodifyServer::search(SpotifyPlaylist& _return, const SpotifyCredential& cred,
-		const SpotifySearch& criteria) {
+        const SpotifySearch& criteria) {
     // Your implementation goes here
     printf("search\n");
 #if 0
