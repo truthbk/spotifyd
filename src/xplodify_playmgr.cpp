@@ -24,27 +24,44 @@ XplodifyPlaybackManager::XplodifyPlaybackManager(
 
 bool XplodifyPlaybackManager::switch_roles(void){
     //TODO
+    uint8_t slave_port = 0;
+
     lock();
-    try {
+    if(m_clients.size()<2||!m_users.size()) {
+        unlock();
+        return false;
+    }
+
+    if(!m_master) {
+        //there was no master, lets just login first user, and set first client
+        //as master.
+        m_master = m_cli_it->second->_port;
+        login(m_user_it->second._username, m_master);
+        m_clients[m_master]->_user = &m_user_it->second;
+    } else {
         //logout master before switching
         logout(m_master);
-        //next client to get busy.
-        if(m_cli_it++ == m_clients.end()) {
-            m_cli_it = m_clients.begin();
-        }
-        //next user to load in.
-        if(m_user_it++ == m_users.end()){
-            m_user_it = m_users.begin();
-        }
         m_clients[m_master]->_master = false;
-        login(m_user_it->second._username, m_master);
-
+        m_clients[m_master]->_user = NULL;
         m_master = m_cli_it->second->_port;
-        m_clients[m_master]->_master = true;
-
-    } catch (TException &ex) {
-        std::cout << ex.what() << "\n"; 
     }
+    m_clients[m_master]->_master = true;
+
+    //next client is current slave.
+    if(m_cli_it++ == m_clients.end()) {
+        m_cli_it = m_clients.begin();
+    }
+    slave_port = m_cli_it->second->_port;
+
+    //next user to log in.
+    if(m_user_it++ == m_users.end()){
+        m_user_it = m_users.begin();
+    }
+
+    //get slave ready.
+    login(m_user_it->second._username, slave_port);
+    m_clients[slave_port]->_user = &m_user_it->second;
+
     unlock();
     return true;
 }
@@ -130,79 +147,33 @@ bool XplodifyPlaybackManager::playback_done() {
 
 void XplodifyPlaybackManager::select_playlist(
         std::string user, int32_t playlist_id){
-    //TODO
     lock();
     m_users[user]._playlist_id = playlist_id;
-
-    client_map::iterator it;
-    for( it = m_clients.begin() ; it != m_clients.end() ; it++){
-        try {
-            it->second->_transport->open();
-            it->second->_client.selectPlaylistById(playlist_id);
-            it->second->_transport->close();
-        } catch (TException &ex) {
-            std::cout << ex.what() << "\n"; 
-        }
-    }
     unlock();
+
     return;
 }
 void XplodifyPlaybackManager::select_playlist(std::string user, std::string playlist){
-    //TODO
     lock();
     m_users[user]._playlist = playlist;
-
-    client_map::iterator it;
-    for( it = m_clients.begin() ; it != m_clients.end() ; it++){
-        try {
-            it->second->_transport->open();
-            it->second->_client.selectPlaylist(playlist);
-            it->second->_transport->close();
-        } catch (TException &ex) {
-            std::cout << ex.what() << "\n"; 
-        }
-    }
     unlock();
+
     return;
 }
 
 //Must be contained in the selected playlist.. else trouble.
 void XplodifyPlaybackManager::select_track(std::string user, int32_t track_id){
-    //TODO
     lock();
     m_users[user]._track_id = track_id;
-
-    client_map::iterator it;
-    for( it = m_clients.begin() ; it != m_clients.end() ; it++){
-        //propagate selection 
-        try {
-            it->second->_transport->open();
-            it->second->_client.selectTrackById(track_id);
-            it->second->_transport->close();
-        } catch (TException &ex) {
-            std::cout << ex.what() << "\n"; 
-        }
-    }
     unlock();
+
     return;
 }
 void XplodifyPlaybackManager::select_track(std::string user, std::string track){
-    //TODO
     lock();
     m_users[user]._track = track;
-
-    client_map::iterator it;
-    for( it = m_clients.begin() ; it != m_clients.end() ; it++){
-        //propagate selection 
-        try {
-            it->second->_transport->open();
-            it->second->_client.selectTrack(track);
-            it->second->_transport->close();
-        } catch (TException &ex) {
-            std::cout << ex.what() << "\n"; 
-        }
-    }
     unlock();
+
     return;
 }
 
@@ -249,6 +220,43 @@ void XplodifyPlaybackManager::next(void) {
     return;
 }
 
+void XplodifyPlaybackManager::client_set_track(
+        uint8_t client_id, std::string username, bool by_id){
+    lock();
+    try {
+        m_clients[client_id]->_transport->open();
+        if(by_id) {
+            int32_t track_id = m_users[username]._track_id;
+            m_clients[client_id]->_client.selectTrackById(track_id);
+        } else {
+            std::string track_name(m_users[username]._track);
+            m_clients[client_id]->_client.selectTrack(track_name);
+        }
+        m_clients[client_id]->_transport->close();
+    } catch (TException &ex) {
+        std::cout << ex.what() << "\n"; 
+    }
+    unlock();
+}
+
+void XplodifyPlaybackManager::client_set_playlist(
+        uint8_t client_id, std::string username, bool by_id){
+    lock();
+    try {
+        m_clients[client_id]->_transport->open();
+        if(by_id) {
+            int32_t playlist_id = m_users[username]._playlist_id;
+            m_clients[client_id]->_client.selectPlaylistById(playlist_id);
+        } else {
+            std::string playlist(m_users[username]._playlist);
+            m_clients[client_id]->_client.selectPlaylist(playlist);
+        }
+        m_clients[client_id]->_transport->close();
+    } catch (TException &ex) {
+        std::cout << ex.what() << "\n"; 
+    }
+    unlock();
+}
 
 void XplodifyPlaybackManager::run() {
     struct timespec ts;
@@ -294,3 +302,4 @@ XplodifyPlaybackManager::get_client(uint32_t port) {
 
         return cli;
 }
+

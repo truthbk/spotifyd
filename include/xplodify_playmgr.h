@@ -51,6 +51,8 @@ class XplodifyPlaybackManager
         void stop(void);
         void next(void);
         //void prev(void);
+        void client_set_track(uint8_t client_id, std::string username, bool by_id=false);
+        void client_set_playlist(uint8_t client_id, std::string username, bool by_id=false);
 
     protected:
         //implementing runnable
@@ -121,8 +123,8 @@ class XplodifyPlaybackManager
 
         client_map m_clients;
         user_map m_users;
-        client_map::iterator                   m_cli_it;
-        user_map::iterator                     m_user_it;
+        client_map::iterator                   m_cli_it; //points to the first available slave.
+        user_map::iterator                     m_user_it; //points to next user to login.
 };
 
 
