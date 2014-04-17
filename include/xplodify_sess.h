@@ -42,6 +42,8 @@ class XplodifySession {
         };
         boost::shared_ptr<XplodifyTrack> get_track(std::string user);
         boost::shared_ptr<XplodifyTrack> get_track(void);
+        boost::shared_ptr<XplodifyTrack> get_next(std::string user);
+        boost::shared_ptr<XplodifyTrack> get_next(void);
 #if 0
         boost::shared_ptr<XplodifyPlaylist> get_active_playlist(void){
             return m_playlist;

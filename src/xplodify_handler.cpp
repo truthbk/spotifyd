@@ -396,6 +396,15 @@ boost::shared_ptr<XplodifyTrack> XplodifyHandler::whats_playing(std::string uuid
     return tr;
 
 }
+boost::shared_ptr<XplodifyTrack> XplodifyHandler::whats_next() {
+    if(m_session.available()) {
+        return boost::shared_ptr<XplodifyTrack>();
+    }
+
+    boost::shared_ptr<XplodifyTrack> tr( m_session.get_next());
+
+    return tr;
+}
 
 void XplodifyHandler::play(){
 

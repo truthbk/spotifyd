@@ -35,6 +35,7 @@ class XplodifyIPCServer
         void stop();
         void terminate_proc();
         void whats_playing( SpotifyTrack& _return);
+        void whats_next( SpotifyTrack& _return);
         void track_loaded( SpotifyTrack& _return, const SpotifyCredential& cred);
         void playlist_loaded( SpotifyPlaylist& _return, const SpotifyCredential& cred);
 

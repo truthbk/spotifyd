@@ -22,6 +22,7 @@ service SpotifyIPC {
 	oneway void terminate_proc();
 
 	spotify_types.SpotifyTrack whats_playing();
+	spotify_types.SpotifyTrack whats_next();
 	spotify_types.SpotifyTrack track_loaded(1: spotify_types.SpotifyCredential cred);
 	spotify_types.SpotifyPlaylist playlist_loaded(1: spotify_types.SpotifyCredential cred);
 }

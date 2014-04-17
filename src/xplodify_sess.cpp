@@ -321,6 +321,7 @@ void XplodifySession::set_active_playlist(std::string user, std::string plname) 
 }
 
 std::string XplodifySession::get_playlist_name(void) {
+    return std::string("");
 }
 
 std::string XplodifySession::get_playlist_name(std::string user) {
@@ -348,6 +349,36 @@ boost::shared_ptr<XplodifyTrack> XplodifySession::get_track(std::string user){
 
 boost::shared_ptr<XplodifyTrack> XplodifySession::get_track(void){
     return get_track(m_active_user);
+}
+
+boost::shared_ptr<XplodifyTrack> XplodifySession::get_next(std::string user){
+    boost::shared_ptr<XplodifyTrack> trk;
+
+    boost::mutex::scoped_lock scoped_lock(m_mutex);
+    int num = m_statuses[m_active_user].m_playlist->get_num_tracks();
+
+    if (!user_exists(user)) {
+        return boost::shared_ptr<XplodifyTrack>();
+    }
+
+    int next = 0;
+    switch(m_playback_mode){
+        case SpotifyCmd::RAND:
+            next = rand() % num + 1;
+            trk = m_statuses[m_active_user].m_playlist->get_track(next);
+            break;
+        case SpotifyCmd::LINEAR:
+        default:
+            if(m_repeat_mode == SpotifyCmd::SINGLE) {
+                break;
+            }
+            trk = m_statuses[m_active_user].m_playlist->get_next_track();
+            break;
+    }
+    return trk;
+}
+boost::shared_ptr<XplodifyTrack> XplodifySession::get_next(){
+    return get_next(m_active_user);
 }
 
 void XplodifySession::update_state_ts(void) {
@@ -530,6 +561,7 @@ void XplodifySession::end_of_track() {
             next = rand() % num + 1;
             scoped_lock.unlock(); //manual unlock -  set_track also will try to hold lock
             set_track(m_active_user, next);
+            scoped_lock.lock();
             if(m_repeat_mode != SpotifyCmd::SINGLE){
                 start_playback();
             }
@@ -542,6 +574,7 @@ void XplodifySession::end_of_track() {
             trk = m_statuses[m_active_user].m_playlist->get_next_track();
             scoped_lock.unlock(); //manual unlock -  set_track also will try to hold lock
             set_track(m_active_user, trk->get_name());
+            scoped_lock.lock();
             if(m_repeat_mode != SpotifyCmd::SINGLE){
                 start_playback();
             }
