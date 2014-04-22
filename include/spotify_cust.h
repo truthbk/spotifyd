@@ -93,11 +93,11 @@ class XplodifyServer
         //runnable, to process timer events...
         void run();
 
-        const size_t                            LOGIN_TO;
-
     private:
         void update_timestamp(void);
         void login_timeout(const boost::system::error_code&,
+                std::string uuid);
+        void cacheload_timeout(const boost::system::error_code&,
                 std::string uuid);
 
 

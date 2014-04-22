@@ -37,6 +37,8 @@ namespace xplodify {
         const uint32_t SRV_BASE_PORT=9090;
         const uint32_t IPCSRV_BASE_PORT=9091;
         const uint8_t IPC_DEF_NPROCS=2;
+        const uint16_t CACHE_TO=30;
+        const uint8_t  LOGIN_TO=1;
     };
 };
 

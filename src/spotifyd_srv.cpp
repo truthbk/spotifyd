@@ -60,7 +60,6 @@ bool SpotifyCredential::operator < (const SpotifyCredential & other) const
 XplodifyServer::XplodifyServer(bool multisession)
     : Runnable()
     , Lockable()
-    , LOGIN_TO(1)
     , m_ts(std::time(NULL))
     , m_multi(multisession) 
 {
@@ -163,8 +162,17 @@ void XplodifyServer::login_timeout(const boost::system::error_code&,
             boost::shared_ptr<XplodifyMultiHandler> handler = 
                 boost::static_pointer_cast<XplodifyMultiHandler>(m_sh);
             handler->register_playback(uuid);
+
+            //give a few minutes to load and cache and call callback.
+            boost::asio::deadline_timer * t = new boost::asio::deadline_timer(m_io);
+            t->expires_from_now(boost::posix_time::seconds(CACHE_TO));
+            t->async_wait(boost::bind(&XplodifyServer::cacheload_timeout,
+                        this, boost::asio::placeholders::error, uuid));
+
+            lock();
+            m_timers.insert(std::pair< std::string, boost::asio::deadline_timer *>(uuid, t));
+            unlock();
         }
-        return;
     }
 
 #if 0
@@ -174,6 +182,27 @@ void XplodifyServer::login_timeout(const boost::system::error_code&,
     unlock();
 #endif
 
+    m_sh->update_timestamp();
+}
+
+void XplodifyServer::cacheload_timeout(const boost::system::error_code&,
+        std::string uuid) {
+#ifdef _DEBUG
+    std::cout << "Cache should be loaded for: " << uuid << "\n";
+#endif
+    timer_map::iterator it = m_timers.find(uuid);
+
+    //Free up resources, cleanup.
+    if(it != m_timers.end()) {
+        lock();
+        delete it->second;
+        m_timers.erase(it);
+        unlock();
+    } else {
+        return;
+    }
+
+    m_sh->logout(uuid); //logs out but cached info remains (user is not checked out).
     m_sh->update_timestamp();
 }
 
