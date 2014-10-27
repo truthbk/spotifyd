@@ -37,12 +37,12 @@ bool XplodifyPlaybackManager::switch_roles(void){
         //as master.
         m_master = m_cli_it->second->_port;
         login(m_user_it->second._username, m_master);
-        m_clients[m_master]->_user = &m_user_it->second;
+        //FIX
+        //m_clients[m_master]->_user = &m_user_it->second;
     } else {
         //logout master before switching
         logout(m_master);
         m_clients[m_master]->_master = false;
-        m_clients[m_master]->_user = NULL;
         m_master = m_cli_it->second->_port;
     }
     m_clients[m_master]->_master = true;
@@ -60,7 +60,8 @@ bool XplodifyPlaybackManager::switch_roles(void){
 
     //get slave ready.
     login(m_user_it->second._username, slave_port);
-    m_clients[slave_port]->_user = &m_user_it->second;
+    //FIX
+    //m_clients[slave_port]->_user = &m_user_it->second;
 
     unlock();
     return true;
@@ -85,25 +86,30 @@ bool XplodifyPlaybackManager::login(std::string user, uint8_t client_id){
         m_clients[client_id]->_client.check_in(ret_cred, cred);
         m_clients[client_id]->_client.login(ret_cred);
         m_clients[client_id]->_transport->close();
-        m_clients[client_id]->_user = &m_users[user];
+        //FIX
+        //m_clients[client_id]->_user = &m_users[user];
     } catch (TException &ex) {
         std::cout << ex.what() << "\n"; 
     }
     return true;
 }
+
+//Always expecting a good user? Otherwise don't user [] operator
+//go with find. This should probably be FIXED.
 bool XplodifyPlaybackManager::is_logged_in(std::string user){
     bool logged = m_users[user]._ready;
+    boost::shared_ptr<XplodifyClient> cli(m_users[user]._client);
 
-#if 0
     //TODO
-    try {
-        m_clients[client_id]._client._transport->open();
-        logged = m_clients[client_id]._client.is_logged();
-        m_clients[client_id]._client._transport->close();
-    } catch (TException &ex) {
-        std::cout << ex.what() << "\n"; 
+    if(logged && cli) {
+        try {
+            cli->_transport->open();
+            logged = cli->_client.is_logged();
+            cli->_transport->close();
+        } catch (TException &ex) {
+            std::cout << ex.what() << "\n"; 
+        }
     }
-#endif
     return logged;
 }
 bool XplodifyPlaybackManager::logout(uint8_t client_id) {
