@@ -100,7 +100,7 @@ bool XplodifyPlaybackManager::is_logged_in(std::string user){
     bool logged = m_users[user]._ready;
     boost::shared_ptr<XplodifyClient> cli(m_users[user]._client);
 
-    //TODO
+    //TODO: Doublecheck.
     if(logged && cli) {
         try {
             cli->_transport->open();
@@ -109,6 +109,9 @@ bool XplodifyPlaybackManager::is_logged_in(std::string user){
         } catch (TException &ex) {
             std::cout << ex.what() << "\n"; 
         }
+    }
+    if(!logged) {
+        m_users[user]._ready = false;
     }
     return logged;
 }
@@ -128,7 +131,21 @@ bool XplodifyPlaybackManager::logout(uint8_t client_id) {
 }
 
 bool XplodifyPlaybackManager::logout(std::string user) {
-    return false;
+    boost::shared_ptr<XplodifyClient> cli(m_users[user]._client);
+    if (!cli || !is_logged_in(user)){
+        return true; //already logged out.
+    }
+
+    //TODO:
+    try {
+        cli->_transport->open();
+        cli->_client.logout();
+        cli->_transport->close();
+    } catch (TException &ex) {
+        std::cout << ex.what() << "\n"; 
+    }
+
+    return true;
 }
 
 //call holding lock.
@@ -153,16 +170,49 @@ bool XplodifyPlaybackManager::playback_done() {
 
 void XplodifyPlaybackManager::select_playlist(
         std::string user, int32_t playlist_id){
+
     lock();
     m_users[user]._playlist_id = playlist_id;
     unlock();
 
+    //If user is playing, this will only go into effect next time
+    //he plays. No 'live' changes on active user.
+    boost::shared_ptr<XplodifyClient> cli(m_users[user]._client);
+    if(cli && cli->_master) {
+        return;
+    }
+
+    try {
+        cli->_transport->open();
+        cli->_client.selectPlaylistById(playlist_id);
+        cli->_transport->close();
+    } catch (TException &ex) {
+        std::cout << ex.what() << "\n"; 
+    }
+
     return;
 }
+
+//Must consolidate this with above (if ID changes we need to update name, and viceversa)..
 void XplodifyPlaybackManager::select_playlist(std::string user, std::string playlist){
     lock();
     m_users[user]._playlist = playlist;
     unlock();
+
+    //If user is playing, this will only go into effect next time
+    //he plays. No 'live' changes on active user.
+    boost::shared_ptr<XplodifyClient> cli(m_users[user]._client);
+    if(cli && cli->_master) {
+        return;
+    }
+
+    try {
+        cli->_transport->open();
+        cli->_client.selectPlaylist(playlist);
+        cli->_transport->close();
+    } catch (TException &ex) {
+        std::cout << ex.what() << "\n"; 
+    }
 
     return;
 }
@@ -173,12 +223,42 @@ void XplodifyPlaybackManager::select_track(std::string user, int32_t track_id){
     m_users[user]._track_id = track_id;
     unlock();
 
+    //If user is playing, this will only go into effect next time
+    //he plays. No 'live' changes on active user.
+    boost::shared_ptr<XplodifyClient> cli(m_users[user]._client);
+    if(cli && cli->_master) {
+        return;
+    }
+
+    try {
+        cli->_transport->open();
+        cli->_client.selectTrackById(track_id);
+        cli->_transport->close();
+    } catch (TException &ex) {
+        std::cout << ex.what() << "\n"; 
+    }
+
     return;
 }
 void XplodifyPlaybackManager::select_track(std::string user, std::string track){
     lock();
     m_users[user]._track = track;
     unlock();
+
+    //If user is playing, this will only go into effect next time
+    //he plays. No 'live' changes on active user.
+    boost::shared_ptr<XplodifyClient> cli(m_users[user]._client);
+    if(cli && cli->_master) {
+        return;
+    }
+
+    try {
+        cli->_transport->open();
+        cli->_client.selectTrack(track);
+        cli->_transport->close();
+    } catch (TException &ex) {
+        std::cout << ex.what() << "\n"; 
+    }
 
     return;
 }
@@ -197,32 +277,20 @@ void XplodifyPlaybackManager::play(void) {
     }
     return;
 }
+
 void XplodifyPlaybackManager::stop(void) {
     if(!m_master) {
         return;
     }
 
-    try {
-        m_clients[m_master]->_transport->open();
-        m_clients[m_master]->_client.stop();
-        m_clients[m_master]->_transport->close();
-    } catch (TException &ex) {
-        std::cout << ex.what() << "\n"; 
-    }
     return;
 }
+
 void XplodifyPlaybackManager::next(void) {
     if(!m_master) {
         return;
     }
 
-    try {
-        m_clients[m_master]->_transport->open();
-        m_clients[m_master]->_client.stop();
-        m_clients[m_master]->_transport->close();
-    } catch (TException &ex) {
-        std::cout << ex.what() << "\n"; 
-    }
     return;
 }
 
