@@ -27,41 +27,39 @@ bool XplodifyPlaybackManager::switch_roles(void){
     uint8_t slave_port = 0;
 
     lock();
-    if(m_clients.size()<2||!m_users.size()) {
+    if(!m_clients.size()||!m_users.size()) {
         unlock();
-        return false;
+        return true; //not true, but true ;)
     }
 
-    if(!m_master) {
-        //there was no master, lets just login first user, and set first client
-        //as master.
-        m_master = m_cli_it->second->_port;
-        login(m_user_it->second._username, m_master);
-        //FIX
-        //m_clients[m_master]->_user = &m_user_it->second;
-    } else {
+    if(m_master && m_users.size()>1) {
         //logout master before switching
-        logout(m_master);
         m_clients[m_master]->_master = false;
-        m_master = m_cli_it->second->_port;
+        logout(m_master);
     }
+
+    //first slave in line becomes master.
+    m_master = m_cli_it->second->_port;
     m_clients[m_master]->_master = true;
 
-    //next client is current slave.
-    if(m_cli_it++ == m_clients.end()) {
+    //next client in line becomes new slave (others idle).
+    if(++m_cli_it == m_clients.end()) {
         m_cli_it = m_clients.begin();
     }
-    slave_port = m_cli_it->second->_port;
 
-    //next user to log in.
-    if(m_user_it++ == m_users.end()){
-        m_user_it = m_users.begin();
+    if(m_users.size()>1) {
+        slave_port = m_cli_it->second->_port;
+
+        //round robin to next user.
+        if(m_user_it++ == m_users.end()){
+            m_user_it = m_users.begin();
+        }
+
+        m_user_it->second._client = m_cli_it->second;
+
+        //get slave ready.
+        login(m_user_it->second._username, slave_port);
     }
-
-    //get slave ready.
-    login(m_user_it->second._username, slave_port);
-    //FIX
-    //m_clients[slave_port]->_user = &m_user_it->second;
 
     unlock();
     return true;
@@ -282,6 +280,13 @@ void XplodifyPlaybackManager::stop(void) {
     if(!m_master) {
         return;
     }
+    try {
+        m_clients[m_master]->_transport->open();
+        m_clients[m_master]->_client.stop();
+        m_clients[m_master]->_transport->close();
+    } catch (TException &ex) {
+        std::cout << ex.what() << "\n"; 
+    }
 
     return;
 }
@@ -361,7 +366,6 @@ void XplodifyPlaybackManager::run() {
             switch_roles();
             play();
         }
-
     }
 }
 
