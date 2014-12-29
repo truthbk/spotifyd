@@ -100,6 +100,14 @@ void XplodifyServer::check_in(SpotifyCredential& _return, const SpotifyCredentia
     _return.__set__uuid(uuid_str); //Empty string is a failure to check in.
 }
 
+::SpotifyMode::type XplodifyServer::server_mode(){
+    if(m_multi) {
+        return SpotifyMode::MULTI;
+    }
+
+    return SpotifyMode::MONO;
+}
+
 bool XplodifyServer::check_out(const SpotifyCredential& cred) {
     return m_sh->check_out(cred._uuid);
 }

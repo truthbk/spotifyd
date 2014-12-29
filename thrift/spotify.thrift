@@ -4,6 +4,7 @@ include "spotify_types.thrift"
 
 service Spotify {
         bool is_service_ready();
+        spotify_types.SpotifyMode server_mode();
         spotify_types.SpotifyCredential check_in(1: spotify_types.SpotifyCredential cred);
         bool check_out(1: spotify_types.SpotifyCredential cred);
         bool loginSession(1: spotify_types.SpotifyCredential cred);

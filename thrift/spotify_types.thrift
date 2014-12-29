@@ -31,6 +31,12 @@ enum SpotifyCmd {
     REPEAT
 }
 
+enum SpotifyMode {
+    MONO = 1,
+    MULTI,
+    OTHER
+}
+
 struct SpotifyCredential {
     1: required string _username;
     2: required string _passwd;
