@@ -81,6 +81,10 @@ class spclient(object):
     def service_ready(self):
         return self._client.is_service_ready()
 
+    def server_mode(self):
+        return self._client.server_mode()
+
+
     def check_in(self):
         try:
             credentials = SpotifyCredential("","","")
@@ -314,6 +318,7 @@ class XplodifyApp(urwid.Frame):
 
     def __init__(self, host='localhost', port=XPLODIFYD_PORT):
         self.logged = False
+        self.server_mode = SpotifyMode.MONO; # default is MONO.
         self.spoticlient = spclient(host, port)
 
         #get UUID
@@ -436,6 +441,8 @@ class XplodifyApp(urwid.Frame):
             # TODO: bring up a warning for a couple seconds... will do this different with webUI
             self.body = self.mainview
             return
+
+        self.server_mode = self.spoticlient.server_mode();
 
         username = self.loginview.original_widget.\
             widget_list[0].get_edit_text()
