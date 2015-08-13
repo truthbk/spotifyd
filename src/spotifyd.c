@@ -476,7 +476,7 @@ int main(int argc, char **argv)
                 {
                         exit(EXIT_SUCCESS);
                 }
-                
+
                 umask(0);
 
                 sid = setsid();
@@ -551,7 +551,7 @@ int main(int argc, char **argv)
 
                 pthread_mutex_lock(&g_notify_mutex);
         }
-        
+
         return 0;
 }
 
