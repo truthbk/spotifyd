@@ -478,7 +478,7 @@ class XplodifyApp(urwid.Frame):
             self.loginview.original_widget.focus_position = 0
             self._stop.set()
             self._poller.join(POLL_IVAL+1)
-            if self._poller.isAlive(): 
+            if self._poller.isAlive():
                 exit(1) # this might be too much.
 
             self.logged = False
